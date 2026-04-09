@@ -1,0 +1,28 @@
+# Dependências
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Ambiente
+.env
+.env.*
+!.env.example
+
+# Tooling local (nunca commitar)
+CLAUDE.md
+.claude/
+
+# IDEs
+.vscode/
+.idea/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Dados e logs gerados em runtime
+*.db
+data/
+logs/
