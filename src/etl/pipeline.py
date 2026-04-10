@@ -85,6 +85,7 @@ def _carregar_config() -> dict:
         "mongo_db_name": os.getenv("MONGO_DB_NAME"),
         "mongo_collection": os.getenv("MONGO_COLLECTION"),
         "sqlite_path": os.getenv("SQLITE_DB_PATH") or None,
+        "pncp_timeout": int(os.getenv("PNCP_TIMEOUT", "60")),
     }
 
 
@@ -159,6 +160,7 @@ def main() -> None:
         extractor = PNCPExtractor(
             base_url=config["pncp_base_url"],
             tamanho_pagina=config["pncp_tamanho_pagina"],
+            timeout=config["pncp_timeout"],
         )
         registros_raw = extractor.extrair_publicacoes(
             codigo_modalidade=config["pncp_codigo_modalidade"],

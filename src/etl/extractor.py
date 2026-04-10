@@ -214,7 +214,7 @@ class PNCPExtractor:
             params["uf"] = uf
 
         return self._extrair_endpoint(
-            "/v1/contratacoes/publicacao",
+            "/contratacoes/publicacao",
             params,
             f"publicações ({data_inicial}–{data_final}, modalidade={codigo_modalidade})",
         )
@@ -242,7 +242,7 @@ class PNCPExtractor:
             params["uf"] = uf
 
         return self._extrair_endpoint(
-            "/v1/contratacoes/proposta",
+            "/contratacoes/proposta",
             params,
             f"propostas abertas (dataFinal={data_final})",
         )
