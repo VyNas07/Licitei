@@ -4,6 +4,22 @@
 
 Projeto Integrador — 5º período de Análise e Desenvolvimento de Sistemas | CESAR School | Grupo 10
 
+# Equipe
+
+Mariana Ferreira Wanderley
+
+Pedro Diniz Bim Vasconcelos e Silva
+
+Pierre Costa Santiago de Oliveira Neto
+
+Thaíssa Fernandes Siqueira Silva
+
+Vyktor Fellype Pereira do Nascimento
+
+Ylson dos Santos Queiroz Filho
+
+Yuri Ricardo Albuquerque de França
+
 ---
 
 ## Proposta
