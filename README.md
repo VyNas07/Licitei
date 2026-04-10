@@ -66,6 +66,7 @@ Copie `.env.example` para `.env` e preencha com seus valores. **Nunca commite o 
 | `PNCP_DATA_INICIAL` | Início do intervalo de consulta (`YYYYMMDD`) | Não (padrão: hoje) |
 | `PNCP_DATA_FINAL` | Fim do intervalo de consulta (`YYYYMMDD`) | Não (padrão: hoje) |
 | `SQLITE_DB_PATH` | Caminho para o arquivo SQLite | Não (desabilita SQLite se vazio) |
+| `PNCP_TIMEOUT` | Timeout em segundos por requisição à API | Não (padrão: 60) |
 
 ---
 

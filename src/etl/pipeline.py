@@ -89,22 +89,29 @@ def _carregar_config() -> dict:
     }
 
 
-def _validar_datas(data_inicial: str, data_final: str) -> str:
-    """Valida o formato das datas e garante que data_final seja >= hoje.
+_LIMITE_DIAS_API = 365
 
-    Para o endpoint /proposta, a API exige data_final >= data atual.
-    Se a data configurada for passada, o pipeline ajusta para hoje com aviso.
+
+def _validar_datas(data_inicial: str, data_final: str) -> tuple[str, str]:
+    """Valida o formato das datas e aplica as regras da API do PNCP.
+
+    Regras aplicadas:
+    - Formato obrigatório: YYYYMMDD
+    - data_final deve ser >= hoje (exigência do endpoint /proposta)
+    - Intervalo máximo de 365 dias (limite da API — retorna 422 se excedido)
 
     Args:
         data_inicial: Data de início no formato YYYYMMDD.
         data_final: Data de fim no formato YYYYMMDD.
 
     Returns:
-        data_final validada (pode ter sido ajustada para hoje).
+        Tupla (data_inicial, data_final) validadas e possivelmente ajustadas.
 
     Raises:
         SystemExit: Se o formato das datas for inválido.
     """
+    from datetime import timedelta
+
     hoje = date.today()
 
     for nome, valor in [("PNCP_DATA_INICIAL", data_inicial), ("PNCP_DATA_FINAL", data_final)]:
@@ -115,15 +122,23 @@ def _validar_datas(data_inicial: str, data_final: str) -> str:
             raise SystemExit(1)
 
     data_final_dt = datetime.strptime(data_final, "%Y%m%d").date()
+    data_inicial_dt = datetime.strptime(data_inicial, "%Y%m%d").date()
+
     if data_final_dt < hoje:
-        data_final_ajustada = hoje.strftime("%Y%m%d")
+        data_final_dt = hoje
         logger.warning(
             f"PNCP_DATA_FINAL={data_final} está no passado. "
-            f"Ajustando para hoje ({data_final_ajustada}) para evitar erro 422 da API."
+            f"Ajustando para hoje ({hoje.strftime('%Y%m%d')}) para evitar erro 422 da API."
         )
-        return data_final_ajustada
 
-    return data_final
+    if (data_final_dt - data_inicial_dt).days > _LIMITE_DIAS_API:
+        data_inicial_dt = data_final_dt - timedelta(days=_LIMITE_DIAS_API)
+        logger.warning(
+            f"Intervalo excede {_LIMITE_DIAS_API} dias (limite da API). "
+            f"Ajustando PNCP_DATA_INICIAL para {data_inicial_dt.strftime('%Y%m%d')}."
+        )
+
+    return data_inicial_dt.strftime("%Y%m%d"), data_final_dt.strftime("%Y%m%d")
 
 
 def main() -> None:
@@ -144,14 +159,15 @@ def main() -> None:
 
     # --- Configuração ---
     config = _carregar_config()
-    data_final = _validar_datas(config["pncp_data_inicial"], config["pncp_data_final"])
+    data_inicial, data_final = _validar_datas(config["pncp_data_inicial"], config["pncp_data_final"])
+    config["pncp_data_inicial"] = data_inicial
     config["pncp_data_final"] = data_final
 
     logger.info(
         f"Configuração carregada | "
         f"uf={config['pncp_uf']} | "
         f"modalidade={config['pncp_codigo_modalidade']} | "
-        f"período={config['pncp_data_inicial']}–{data_final}"
+        f"período={data_inicial}–{data_final}"
     )
 
     # --- Etapa 1: Extract ---
