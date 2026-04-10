@@ -122,6 +122,8 @@ Os logs são exibidos no console e salvos em `logs/pipeline_<data>.log`.
 | [python-dotenv](https://pypi.org/project/python-dotenv/) | Gerenciamento de variáveis de ambiente |
 | [loguru](https://loguru.readthedocs.io) | Logging estruturado com rotação de arquivos |
 | [MongoDB Atlas](https://www.mongodb.com/atlas) | Banco de dados principal (nuvem) |
+| [Streamlit](https://streamlit.io) | Dashboard interativo (diferencial) |
+| [Plotly](https://plotly.com/python/) | Gráficos interativos no dashboard (diferencial) |
 
 ---
 
@@ -133,9 +135,9 @@ Os itens abaixo vão além dos requisitos obrigatórios da entrega e foram imple
 
 O pipeline suporta uma segunda camada de persistência em SQLite, ativada ao definir `SQLITE_DB_PATH` no `.env`. Os dados são gravados na tabela `contratacoes` com `INSERT OR REPLACE`, garantindo deduplicação mesmo em execuções repetidas.
 
-### Dashboard Streamlit *(em desenvolvimento)*
+### Dashboard Streamlit
 
-Um painel de análise exploratória visual será disponibilizado via [Streamlit](https://streamlit.io). Para executar o stub atual:
+Painel de análise exploratória visual implementado com [Streamlit](https://streamlit.io) e [Plotly](https://plotly.com/python/). Exibe KPIs, gráficos interativos e tabela filtrável com os dados carregados no MongoDB Atlas.
 
 ```bash
 streamlit run dashboard/app.py
