@@ -1,182 +1,122 @@
 # Licitei
 
-> Plataforma para simplificar o acesso de Microempreendedores Individuais (MEIs) às licitações públicas governamentais.
+> Plataforma que simplifica o acesso de Microempreendedores Individuais (MEIs) às licitações públicas governamentais.
 
-Projeto Integrador — 5º período de Análise e Desenvolvimento de Sistemas | CESAR School | Grupo 10
-
-# Equipe
-
-Mariana Ferreira Wanderley
-
-Pedro Diniz Bim Vasconcelos e Silva
-
-Pierre Costa Santiago de Oliveira Neto
-
-Thaíssa Fernandes Siqueira Silva
-
-Vyktor Fellype Pereira do Nascimento
-
-Ylson dos Santos Queiroz Filho
-
-Yuri Ricardo Albuquerque de França
+Projeto Integrador — 5º período de Análise e Desenvolvimento de Sistemas | [CESAR School](https://www.cesar.school/) | Grupo 10
 
 ---
 
-## Proposta
+## O problema
 
-O processo de participação em licitações públicas é burocrático e pouco acessível para pequenos empreendedores. O **Licitei** consome dados da API pública do [PNCP (Portal Nacional de Contratações Públicas)](https://www.gov.br/pncp) e os organiza de forma estruturada, viabilizando filtros por estado, município e modalidade — tornando as oportunidades de negócio com o governo visíveis e alcançáveis para MEIs.
+Participar de licitações públicas é burocrático e pouco acessível para pequenos empreendedores. As oportunidades existem — mas estão fragmentadas em portais complexos, com linguagem técnica e sem filtros práticos para quem está começando.
+
+## A solução
+
+O **Licitei** consome dados em tempo real da API pública do [PNCP (Portal Nacional de Contratações Públicas)](https://www.gov.br/pncp), processa e organiza essas informações e as entrega via aplicativo mobile com um assistente de IA integrado — tornando as licitações visíveis e alcançáveis para MEIs.
 
 ---
 
 ## Arquitetura
 
 ```mermaid
-flowchart TD
-    ENV[".env\nconfiguração"]:::config --> PIPELINE
-
-    subgraph PIPELINE["pipeline.py — Orquestrador ETL"]
-        direction LR
-        EXT["PNCPExtractor\nextractor.py"]
-        TRF["PNCPTransformer\ntransformer.py"]
-        LDR["PNCPLoader\nloader.py"]
-        EXT -->|"list[dict] brutos"| TRF
-        TRF -->|"list[dict] normalizados"| LDR
-    end
-
-    PNCP["API PNCP\npncp.gov.br"]:::external
-    PNCP -->|"HTTP GET + paginação"| EXT
-
-    LDR -->|"upsert bulk_write"| MONGO[("MongoDB Atlas")]:::db
-    LDR -.->|"INSERT OR REPLACE\ndiferencial"| SQLITE[("SQLite\nlocal")]:::db
-
-    classDef config fill:#f5f5f5,stroke:#999
-    classDef external fill:#dbeafe,stroke:#3b82f6
-    classDef db fill:#dcfce7,stroke:#16a34a
+flowchart LR
+    A[Dados do Governo] --> B[API PNCP]
+    B --> C[ETL]
+    C --> D[(SQL - Supabase)]
+    C --> E[(Atlas MongoDB)]
+    C --> F[Data Science]
+    C --> G[MCP / FastMCP]
+    G --> H{LLM}
+    D --> I[Backend - Elysia]
+    E --> I
+    F --> I
+    H --> I
+    H --> J[Frontend Mobile]
+    F --> J
+    I <--> J
 ```
 
 ---
 
-## Fluxo de Dados
+## Tracks
 
-| Etapa | Entrada | Saída | Operações principais |
+| Track | Descrição | Stack | Responsável |
 | --- | --- | --- | --- |
-| **Extract** | Configuração via `.env` | `list[dict]` brutos | Requisições paginadas à API PNCP, retry exponencial, tratamento de HTTP 204 |
-| **Transform** | `list[dict]` brutos | `list[dict]` normalizados | Renomeação de campos, cast de tipos, extração de campos aninhados, descarte de registros inválidos |
-| **Load** | `list[dict]` normalizados | Documentos no MongoDB e SQLite | Upsert via `bulk_write` (MongoDB), `INSERT OR REPLACE` (SQLite), criação de índice único |
+| Track 1 — Dados | ETL, engenharia de dados e análises | Python, MongoDB Atlas, Supabase | Vyktor |
+| Track 2 — Mobile & Backend | App mobile e API REST | React Native, Elysia, TypeScript | Pedro, Yuri, Ylson |
+| Track 3 — IA & MCP | Assistente inteligente via LLM | FastMCP, Python, HTTP + SSE | Vyktor, Thaíssa |
+| Track 4 — Segurança | Revisão transversal de segurança | — | Mariana |
+| Track 5 — Negócios | Monetização, métricas e UX | — | Ylson |
 
 ---
 
-## Variáveis de Ambiente
-
-Copie `.env.example` para `.env` e preencha com seus valores. **Nunca commite o arquivo `.env`.**
-
-| Variável | Descrição | Obrigatória |
-| --- | --- | --- |
-| `MONGO_URI` | URI de conexão com o MongoDB Atlas | Sim |
-| `MONGO_DB_NAME` | Nome do banco de dados | Sim |
-| `MONGO_COLLECTION` | Nome da coleção | Sim |
-| `PNCP_BASE_URL` | URL base da API do PNCP | Não (padrão definido) |
-| `PNCP_TAMANHO_PAGINA` | Registros por página (máx. 50) | Não (padrão: 50) |
-| `PNCP_UF` | Filtro por estado (ex: `PE`) | Não (padrão: todos) |
-| `PNCP_CODIGO_MODALIDADE` | Código da modalidade de contratação | Não (padrão: 8) |
-| `PNCP_DATA_INICIAL` | Início do intervalo de consulta (`YYYYMMDD`) | Não (padrão: hoje) |
-| `PNCP_DATA_FINAL` | Fim do intervalo de consulta (`YYYYMMDD`) | Não (padrão: hoje) |
-| `SQLITE_DB_PATH` | Caminho para o arquivo SQLite | Não (desabilita SQLite se vazio) |
-| `PNCP_TIMEOUT` | Timeout em segundos por requisição à API | Não (padrão: 60) |
-
----
-
-## Como Executar
-
-### Pré-requisitos
-
-- Python 3.11+
-- Conta no [MongoDB Atlas](https://www.mongodb.com/atlas) com uma cluster criada e URI de conexão disponível
-
-### Instalação
-
-```bash
-# 1. Clone o repositório
-git clone https://github.com/<seu-usuario>/licitei.git
-cd licitei
-
-# 2. Crie e ative o ambiente virtual
-python -m venv .venv
-
-# Linux/Mac
-source .venv/bin/activate
-
-# Windows
-.venv\Scripts\activate
-
-# 3. Instale as dependências
-pip install -r requirements.txt
-
-# 4. Configure as variáveis de ambiente
-cp .env.example .env
-# Edite o arquivo .env com seus dados do MongoDB Atlas
-```
-
-### Execução do Pipeline
-
-```bash
-python -m src.etl.pipeline
-```
-
-Os logs são exibidos no console e salvos em `logs/pipeline_<data>.log`.
-
----
-
-## Tecnologias
-
-| Tecnologia | Uso |
-| --- | --- |
-| Python 3.11+ | Linguagem principal |
-| [requests](https://docs.python-requests.org) | Requisições HTTP à API PNCP |
-| [pandas](https://pandas.pydata.org) | Transformação e análise de dados |
-| [pymongo](https://www.mongodb.com/docs/drivers/pymongo/) | Conexão e carga no MongoDB Atlas |
-| [python-dotenv](https://pypi.org/project/python-dotenv/) | Gerenciamento de variáveis de ambiente |
-| [loguru](https://loguru.readthedocs.io) | Logging estruturado com rotação de arquivos |
-| [MongoDB Atlas](https://www.mongodb.com/atlas) | Banco de dados principal (nuvem) |
-| [Streamlit](https://streamlit.io) | Dashboard interativo (diferencial) |
-| [Plotly](https://plotly.com/python/) | Gráficos interativos no dashboard (diferencial) |
-
----
-
-## Diferenciais
-
-Os itens abaixo vão além dos requisitos obrigatórios da entrega e foram implementados como diferencial:
-
-### SQLite — Persistência Local
-
-O pipeline suporta uma segunda camada de persistência em SQLite, ativada ao definir `SQLITE_DB_PATH` no `.env`. Os dados são gravados na tabela `contratacoes` com `INSERT OR REPLACE`, garantindo deduplicação mesmo em execuções repetidas.
-
-### Dashboard Streamlit
-
-Painel de análise exploratória visual implementado com [Streamlit](https://streamlit.io) e [Plotly](https://plotly.com/python/). Exibe KPIs, gráficos interativos e tabela filtrável com os dados carregados no MongoDB Atlas.
-
-```bash
-streamlit run dashboard/app.py
-```
-
----
-
-## Estrutura do Projeto
+## Estrutura do monorepo
 
 ```text
 licitei/
-├── src/
-│   └── etl/
-│       ├── extractor.py   # PNCPExtractor — extração com paginação e retry
-│       ├── transformer.py # PNCPTransformer — normalização de campos e tipos
-│       ├── loader.py      # PNCPLoader — carga no MongoDB e SQLite
-│       └── pipeline.py    # Orquestrador ETL
-├── dashboard/
-│   └── app.py             # Painel Streamlit (diferencial)
-├── docs/
-│   └── architecture.md    # Documentação técnica de arquitetura
-├── tests/
-├── .env.example
-├── requirements.txt
-└── README.md
+├── etl/              # Track 1 — ETL e engenharia de dados
+├── data-science/     # Track 1 — análises exploratórias e modelos
+├── mcp/              # Track 3 — servidor FastMCP + LLM
+├── backend/          # Track 2 — API REST (Elysia)
+├── mobile/           # Track 2 — app React Native
+├── infra/            # configurações de deploy e CI/CD
+├── docs/             # documentação técnica geral
+└── tests/            # testes de integração entre tracks
 ```
+
+Cada subprojeto é independente e possui seu próprio `README.md` com instruções de instalação e execução.
+
+---
+
+## Como começar
+
+Escolha o track em que vai trabalhar e siga o README correspondente:
+
+| Subprojeto | README |
+| --- | --- |
+| ETL (extração e carga de dados) | [etl/README.md](etl/README.md) |
+| Data Science (análises e modelos) | [data-science/README.md](data-science/README.md) *(em breve)* |
+| Backend (API REST) | [backend/README.md](backend/README.md) *(em breve)* |
+| Mobile (app React Native) | [mobile/README.md](mobile/README.md) *(em breve)* |
+| MCP / IA (assistente LLM) | [mcp/README.md](mcp/README.md) *(em breve)* |
+| Infra (deploy e CI/CD) | [infra/README.md](infra/README.md) *(em breve)* |
+
+---
+
+## Branch strategy
+
+| Branch | Uso |
+| --- | --- |
+| `main` | código em produção |
+| `develop` | integração contínua — código funcionando |
+| `feature/<descricao>` | desenvolvimento de funcionalidades |
+| `chore/<descricao>` | configuração e infraestrutura |
+
+---
+
+## Time
+
+| Membro | Papel | Contato |
+| --- | --- | --- |
+| Vyktor Fellype Pereira do Nascimento | Porta-Voz · Gerente de Projeto | [LinkedIn](https://www.linkedin.com/in/vyktor-nascimento/) |
+| Pierre Costa Santiago de Oliveira Neto | Guardião dos Dados | — |
+| Mariana Ferreira Wanderley | Track 4 — Segurança | — |
+| Pedro Diniz Bim Vasconcelos e Silva | Track 2 — Backend | — |
+| Thaíssa Fernandes Siqueira Silva | Track 3 — IA & MCP | — |
+| Ylson dos Santos Queiroz Filho | Track 2 — Mobile · Track 5 — Negócios | — |
+| Yuri Ricardo Albuquerque de França | Track 2 — Mobile | — |
+
+---
+
+## 🔗 Links Rápidos
+
+| Recurso | Link |
+| --- | --- |
+| Formulário Semanal (até terça 17h) | [forms.gle/bwTUUNx78rQUCw4e7](https://forms.gle/bwTUUNx78rQUCw4e7) |
+| Repositório GitHub | [github.com/VyNas07/Licitei](https://github.com/VyNas07/Licitei) |
+| API PNCP | [pncp.gov.br/api/consulta](https://pncp.gov.br/api/consulta) |
+| Documentação Notion | [Projeto Integrador — MEI Licitações](https://www.notion.so/Projeto-Integrador-MEI-Licita-es-CESAR-School-33c97155b5d980dca01fe04fc306670e) |
+
+---
+
+Projeto desenvolvido na CESAR School — ADS 5º período · Grupo 10 · Dados extraídos da API pública do [PNCP — Portal Nacional de Contratações Públicas](https://www.gov.br/pncp)
