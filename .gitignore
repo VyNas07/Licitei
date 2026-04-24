@@ -26,3 +26,4 @@ Thumbs.db
 *.db
 data/
 logs/
+temp/
