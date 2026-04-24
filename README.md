@@ -22,18 +22,16 @@ O **Licitei** consome dados em tempo real da API pública do [PNCP (Portal Nacio
 flowchart LR
     A[Dados do Governo] --> B[API PNCP]
     B --> C[ETL]
-    C --> D[(SQL - Supabase)]
-    C --> E[(Atlas MongoDB)]
-    C --> F[Data Science]
-    C --> G[MCP / FastMCP]
-    G --> H{LLM}
-    D --> I[Backend - Elysia]
-    E --> I
-    F --> I
-    H --> I
-    H --> J[Frontend Mobile]
-    F --> J
-    I <--> J
+    C --> E[(MongoDB Atlas)]
+    E --> F[Data Science]
+    E --> G[MCP / FastMCP]
+    E --> I[Backend - Elysia]
+    G --> H{LLM - Groq}
+    H --> G
+    I <--> D[(Supabase - Postgres)]
+    I --> G
+    G --> I
+    I <--> J[App Mobile]
 ```
 
 ---
