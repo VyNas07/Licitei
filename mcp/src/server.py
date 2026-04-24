@@ -20,6 +20,7 @@ from src.config import carregar_config
 from src.llm import chat
 from src.tools.buscar_licitacoes import buscar_licitacoes as _buscar
 from src.tools.detalhar_licitacao import detalhar_licitacao as _detalhar
+from src.tools.keywords_cnae import keywords_cnae as _keywords_cnae
 
 # ---------------------------------------------------------------------------
 # Logger
@@ -63,6 +64,7 @@ mcp = FastMCP("licitei")
 _ferramentas = {
     "buscar_licitacoes": lambda **kw: _buscar(**kw, config=config),
     "detalhar_licitacao": lambda **kw: _detalhar(**kw, config=config),
+    "keywords_cnae": lambda **kw: _keywords_cnae(**kw),
 }
 
 # ---------------------------------------------------------------------------
@@ -95,6 +97,19 @@ def detalhar_licitacao(numero_controle_pncp: str) -> dict:
         numero_controle_pncp: Identificador único da licitação no PNCP.
     """
     return _detalhar(numero_controle_pncp=numero_controle_pncp, config=config)
+
+
+@mcp.tool()
+def keywords_cnae(codigo_cnae: str) -> dict:
+    """Retorna descrição e atividades de uma subclasse CNAE para geração de keywords.
+
+    Use quando o usuário informar o CNAE do seu negócio e quiser encontrar
+    licitações relacionadas ao seu ramo de atividade.
+
+    Args:
+        codigo_cnae: Código da subclasse CNAE do MEI (ex: "4751201").
+    """
+    return _keywords_cnae(codigo_cnae=codigo_cnae)
 
 
 # ---------------------------------------------------------------------------
