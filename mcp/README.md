@@ -27,6 +27,10 @@ O servidor expõe tools via MCP protocol (HTTP + SSE) e um endpoint HTTP `POST /
 mcp/
 ├── requirements.txt
 ├── .env.example
+├── data/
+│   └── cnae.json               # 1.332 subclasses CNAE (API IBGE — não editar manualmente)
+├── scripts/
+│   └── fetch_cnae.py           # regenera cnae.json via API IBGE quando necessário
 └── src/
     ├── server.py       # entrada principal — FastMCP + endpoint /chat
     ├── config.py       # carregamento e validação do .env
@@ -36,7 +40,8 @@ mcp/
     ├── llm.py          # loop de agente: query → LLM → tools → resposta
     └── tools/
         ├── buscar_licitacoes.py    # busca por palavra-chave + filtros
-        └── detalhar_licitacao.py   # detalhe completo por ID PNCP
+        ├── detalhar_licitacao.py   # detalhe completo por ID PNCP
+        └── keywords_cnae.py        # retorna contexto CNAE para geração de keywords
 ```
 
 ---
@@ -115,21 +120,23 @@ Segunda chamada com a mesma query retorna `"cache": true` sem chamar o LLM.
 
 ---
 
-## Tools disponíveis (Sprint 1)
+## Tools disponíveis
+
+### Sprint 1
 
 | Tool | Parâmetros | Descrição |
 | --- | --- | --- |
 | `buscar_licitacoes` | `termo`, `uf?`, `valor_max?`, `limite?` | Busca por palavra-chave no `objeto_compra` |
 | `detalhar_licitacao` | `numero_controle_pncp` | Documento completo de uma licitação pelo ID |
 
-### Sprint 2 (planejado)
+### Sprint 2
 
-| Tool | Descrição |
-| --- | --- |
-| `keywords_cnae` | Extrai termos de busca a partir do CNAE do MEI (base IBGE) |
-| `gerar_checklist` | Gera checklist de habilitação a partir do edital |
-| `resumir_edital` | Resume o edital em linguagem simples |
-| `listar_documentos` | Lista documentos necessários para participar |
+| Tool | Parâmetros | Descrição | Status |
+| --- | --- | --- | --- |
+| `keywords_cnae` | `codigo_cnae` | Retorna descrição e atividades de uma subclasse CNAE (base IBGE) para o LLM derivar termos de busca | ✅ |
+| `gerar_checklist` | — | Gera checklist de habilitação a partir do edital | ⬜ |
+| `resumir_edital` | — | Resume o edital em linguagem simples | ⬜ |
+| `listar_documentos` | — | Lista documentos necessários para participar | ⬜ |
 
 ---
 
