@@ -61,6 +61,27 @@ _TOOLS_SCHEMA = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "keywords_cnae",
+            "description": (
+                "Retorna a descrição e as atividades de uma subclasse CNAE pelo código. "
+                "Use quando o usuário informar o CNAE do seu negócio para encontrar "
+                "licitações relacionadas ao seu ramo de atividade."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "codigo_cnae": {
+                        "type": "string",
+                        "description": "Código da subclasse CNAE do MEI (ex: '4751201').",
+                    },
+                },
+                "required": ["codigo_cnae"],
+            },
+        },
+    },
 ]
 
 _SYSTEM_PROMPT = (
