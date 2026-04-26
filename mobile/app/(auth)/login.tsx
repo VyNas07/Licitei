@@ -1,147 +1,106 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  SafeAreaView, 
+  StatusBar,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../../src/services/supabase';
 
-export default function Login() {
+// Componentes
+import { AuthHeader } from '../../src/components/auth/AuthHeader';
+import { GovbrButton } from '../../src/components/auth/GovbrButton';
+import { Divider } from '../../src/components/auth/Divider';
+import { Input } from '../../src/components/ui/Input';
+import { Button } from '../../src/components/ui/Button';
+import { Footer } from '../../src/components/landing/Footer'; // Importação do Footer
+
+export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [senha, setSenha] = useState('');
 
-  async function handleLogin() {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  const handleLogin = () => {
+    router.push('/(tabs)');
+  };
 
-    if (error) {
-      Alert.alert('Erro no acesso', error.message);
-      setLoading(false);
-    } else {
-      router.replace('/(tabs)'); // Vai para a listagem de editais
-    }
-  }
+  const handleGovbr = () => {
+    router.push('/(tabs)');
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Licitei</Text>
-        <Text style={styles.subtitle}>Acesse sua conta para gerenciar licitações</Text>
-
-        <View style={styles.form}>
-          <Text style={styles.label}>E-mail</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="exemplo@email.com"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
+    <SafeAreaView style={estilos.areaSegura}>
+      <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={estilos.flex1}
+      >
+        <ScrollView contentContainerStyle={estilos.conteudoScroll} bounces={false}>
+          
+          <AuthHeader 
+            titulo="Bem-vindo de volta" 
+            subtitulo="Entre para ver suas oportunidades." 
           />
 
-          <Text style={styles.label}>Senha</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={estilos.containerCartao}>
+            <View style={estilos.cartao}>
+              
+              <GovbrButton onPress={handleGovbr} />
+              
+              <Divider />
 
-          <TouchableOpacity 
-            style={styles.button} 
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={styles.buttonText}>Entrar</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+              <Input 
+                label="E-mail"
+                icone="mail"
+                placeholder="voce@email.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
 
-        <TouchableOpacity onPress={() => router.push('/(auth)/cadastro')}>
-          <Text style={styles.linkText}>
-            Não tem uma conta? <Text style={styles.linkBold}>Cadastre-se</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+              <Input 
+                label="Senha"
+                icone="lock-closed"
+                placeholder="••••••••"
+                secureTextEntry
+                value={senha}
+                onChangeText={setSenha}
+              />
+
+              <Button texto="Entrar" onPress={handleLogin} />
+
+              <View style={estilos.containerCadastro}>
+                <Text style={estilos.textoNaoTemConta}>Ainda não tem conta? </Text>
+                <TouchableOpacity onPress={() => router.push('/(auth)/cadastro')}>
+                  <Text style={estilos.textoLinkCadastro}>Criar conta</Text>
+                </TouchableOpacity>
+              </View>
+
+            </View>
+          </View>
+
+          {/* Adicionando o Footer no final do scroll */}
+          <Footer />
+
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB', // Fundo claro do seu molde
-    justifyContent: 'center',
-    padding: 20,
-  },
-  card: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#111827',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  form: {
-    gap: 16,
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: -8,
-  },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    backgroundColor: '#FFF',
-  },
-  button: {
-    backgroundColor: '#0F172A', // Tom escuro do shadcn/ui
-    height: 48,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  linkText: {
-    textAlign: 'center',
-    color: '#6B7280',
-    fontSize: 14,
-  },
-  linkBold: {
-    color: '#0F172A',
-    fontWeight: 'bold',
-  },
+const estilos = StyleSheet.create({
+  areaSegura: { flex: 1, backgroundColor: '#0F172A' },
+  flex1: { flex: 1 },
+  conteudoScroll: { flexGrow: 1, backgroundColor: '#F8FAFC' },
+  containerCartao: { paddingHorizontal: 20, marginTop: 10 , marginBottom: 20 }, // Margem negativa para o "efeito" de sobreposição e margem inferior para separar do footer
+  cartao: { backgroundColor: '#FFF', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
+  containerCadastro: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
+  textoNaoTemConta: { fontSize: 12, color: '#64748B' },
+  textoLinkCadastro: { fontSize: 12, fontWeight: 'bold', color: '#0F172A' }
 });

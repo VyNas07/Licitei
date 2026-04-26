@@ -15,6 +15,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../src/services/supabase';
 
+// Importação do Footer
+import { Footer } from '../../src/components/landing/Footer';
+
 // Função para aplicar máscara de CNPJ
 function formatCnpj(v: string) {
   const d = v.replace(/\D/g, "").slice(0, 14);
@@ -41,7 +44,6 @@ export default function Cadastro() {
 
     setLoading(true);
     
-    // 1. Cria o usuário no Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password: senha,
@@ -53,15 +55,14 @@ export default function Cadastro() {
       return;
     }
 
-    // 2. Opcional: Salva Nome e CNPJ em uma tabela de "perfis" no Supabase (se você tiver uma)
     if (authData.user) {
       const { error: profileError } = await supabase
-        .from('perfis_mei') // Certifique-se de que essa tabela existe no Supabase
+        .from('perfis_mei') 
         .insert([
           { 
             id_usuario: authData.user.id, 
             nome_responsavel: nome, 
-            cnpj: cnpj.replace(/\D/g, "") // Salva só os números
+            cnpj: cnpj.replace(/\D/g, "") 
           }
         ]);
         
@@ -71,7 +72,6 @@ export default function Cadastro() {
     }
 
     setLoading(false);
-    // No seu molde ia para /onboarding, mas vamos mandar pro app principal por enquanto
     router.replace('/(tabs)'); 
   }
 
@@ -80,9 +80,9 @@ export default function Cadastro() {
       style={styles.container} 
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         
-        {/* Cabeçalho Azul (Estilo do Molde) */}
+        {/* Cabeçalho Azul */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={16} color="#E2E8F0" />
@@ -143,7 +143,6 @@ export default function Cadastro() {
                     onChangeText={(text) => setCnpj(formatCnpj(text))}
                   />
                 </View>
-                {/* Info Box do Molde */}
                 <View style={styles.infoBox}>
                   <Ionicons name="information-circle" size={14} color="#1E3A8A" style={{marginTop: 2}} />
                   <Text style={styles.infoText}>
@@ -203,6 +202,8 @@ export default function Cadastro() {
           </View>
         </View>
 
+        <Footer />
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -222,14 +223,14 @@ const styles = StyleSheet.create({
   },
   backButton: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
   backText: { color: '#E2E8F0', fontSize: 12, marginLeft: 4 },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   iconBox: { width: 32, height: 32, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   logoText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
   title: { color: '#FFF', fontSize: 24, fontWeight: 'bold', letterSpacing: -0.5 },
   subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 4 },
 
-  cardWrapper: { paddingHorizontal: 20, marginTop: -24, paddingBottom: 40 },
-  card: { backgroundColor: '#FFF', borderRadius: 16, padding: 20, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 },
+  cardWrapper: { paddingHorizontal: 20, marginTop: 10, paddingBottom: 20 },
+  card: { backgroundColor: '#FFF', borderRadius: 16, padding: 20, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 , marginBottom: 20 },
   
   govbrButton: { flexDirection: 'row', backgroundColor: '#1351B4', height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 8 },
   govbrBadge: { backgroundColor: '#FFF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
