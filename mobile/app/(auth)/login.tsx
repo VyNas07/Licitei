@@ -85,7 +85,6 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Adicionando o Footer no final do scroll */}
           <Footer />
 
         </ScrollView>

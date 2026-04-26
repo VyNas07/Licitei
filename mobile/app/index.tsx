@@ -155,7 +155,7 @@ export default function Landing() {
             titulo="Licitei PRO"
             preco="R$ 29,90"
             descricao="Para quem quer escalar e vencer licitações com segurança."
-            funcionalidades={['Editais Ilimitados', 'Checklist automático da Lei 14.133', 'Alertas de Teto MEI (R$ 81.000)', 'Templates de Documentos para habilitação']}
+            funcionalidades={['Editais Ilimitados', 'Checklist automático da Lei 14.133', 'Alertas de Teto MEI (R$ 81.000)']}
             destaque={true}
             textoBotao="Começar com PRO"
             onPress={() => router.push('/(auth)/cadastro')}
