@@ -32,7 +32,7 @@ export function AuthHeader({ titulo, subtitulo }: Props) {
 }
 
 const estilos = StyleSheet.create({
-  cabecalho: { backgroundColor: '#0F172A', paddingHorizontal: 20, paddingTop: 40, paddingBottom: 60, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+  cabecalho: { backgroundColor: '#0F172A', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 35, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   botaoVoltar: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 24 },
   textoVoltar: { color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '500' },
   containerLogo: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },

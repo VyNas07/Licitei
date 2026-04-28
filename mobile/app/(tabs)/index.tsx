@@ -1,107 +1,100 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, SafeAreaView, StatusBar, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { FeatureCard } from '../../src/components/landing/FeatureCard';
-import { PlanCard } from '../../src/components/landing/PlanCard';
-import { CtaBox } from '../../src/components/landing/CtaBox';
+// Componentes Reutilizáveis
+import { Input } from '../../src/components/ui/Input';
+import { SectorCard } from '../../src/components/editais/SectorCard';
+import { EditalCard } from '../../src/components/editais/EditalCard';
 
-export default function Landing() {
+export default function HomeUsuario() {
   const router = useRouter();
 
-  const funcionalidades = [
-    { id: '1', icone: 'search' as const, titulo: 'Match por CNAE', desc: 'Cruzamos editais do PNCP com seu CNPJ e mostramos só o que combina com seu negócio.' },
-    { id: '2', icone: 'sparkles' as const, titulo: 'Resumo Inteligente', desc: 'Substituímos PDFs longos por cards objetivos: objeto, valor, prazo e requisitos.' },
-    { id: '3', icone: 'bar-chart' as const, titulo: 'Gestão de Riscos', desc: 'Alerta de teto MEI (R$ 81.000) e checklist de habilitação para não perder a disputa.' },
+  const setores = [
+    { id: '1', icone: 'construct' as const, nome: 'Manutenção', desc: 'Ar-condicionado, predial...', qtd: 14 },
+    { id: '2', icone: 'restaurant' as const, nome: 'Alimentos', desc: 'Merenda escolar, perecíveis...', qtd: 9 },
+    { id: '3', icone: 'hammer' as const, nome: 'Obras', desc: 'Reformas e reparos civis...', qtd: 5 },
   ];
 
   return (
     <SafeAreaView style={estilos.areaSegura}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
-      <ScrollView contentContainerStyle={estilos.conteudoScroll} bounces={false}>
-        
-        {/* --- SEÇÃO HERO --- */}
-        <View style={estilos.secaoHero}>
-          <View style={estilos.barraTopoHero}>
-            <View style={estilos.containerLogo}>
-              <View style={estilos.fundoIconeLogo}><Ionicons name="sparkles" size={16} color="#FFF" /></View>
-              <Text style={estilos.textoLogo}>Licitei</Text>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Cabeçalho Navy */}
+      <View style={estilos.cabecalho}>
+        <View style={estilos.linhaTopo}>
+          <View>
+            <Text style={estilos.saudacao}>Olá, Ylson</Text>
+            <Text style={estilos.tituloPagina}>Boas oportunidades hoje</Text>
+          </View>
+          <TouchableOpacity style={estilos.botaoNotificacao} onPress={() => router.push('/(tabs)/alertas')}>
+            <Ionicons name="notifications-outline" size={22} color="#FFF" />
+            <View style={estilos.pontoAlerta} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={estilos.containerBusca}>
+          <View style={estilos.barraBusca}>
+            <Ionicons name="search-outline" size={18} color="#94A3B8" />
+            <Text style={estilos.placeholderBusca}>Buscar editais, órgãos, CNAE...</Text>
+          </View>
+          <TouchableOpacity style={estilos.botaoFiltro}>
+            <Ionicons name="options-outline" size={22} color="#0F172A" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView 
+        style={estilos.rolagem} 
+        contentContainerStyle={estilos.conteudoRolagem}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Banner PRO */}
+        <TouchableOpacity style={estilos.bannerPro} activeOpacity={0.9}>
+          <View style={estilos.proInfo}>
+            <View style={estilos.proIcone}>
+              <Ionicons name="ribbon" size={20} color="#FFF" />
             </View>
-            <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-              <Text style={estilos.textoEntrar}>Entrar</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={estilos.containerBadgeMei}>
-            <View style={estilos.badgeMei}>
-              <Ionicons name="shield-checkmark" size={12} color="#FFF" />
-              <Text style={estilos.textoBadgeMei}>FEITO PARA MEIS</Text>
+            <View>
+              <Text style={estilos.proTitulo}>Upgrade para PRO</Text>
+              <Text style={estilos.proSubtitulo}>Editais ilimitados + checklist automático</Text>
             </View>
           </View>
+          <Ionicons name="arrow-forward" size={18} color="#FFF" />
+        </TouchableOpacity>
 
-          <Text style={estilos.tituloHero}>Venda para o Governo sem burocracia.</Text>
-          <Text style={estilos.subtituloHero}>
-            O Licitei traduz a complexidade dos editais públicos em oportunidades claras.
-            Encontramos licitações pelo seu CNAE, resumimos as regras e avisamos sobre o teto MEI.
-          </Text>
-
-          <View style={estilos.botoesHero}>
-            <TouchableOpacity style={estilos.botaoPrimario} onPress={() => router.push('/(auth)/login')}>
-              <Text style={estilos.textoBotaoPrimario}>Acessar Plataforma</Text>
-              <Ionicons name="arrow-forward" size={16} color="#0F172A" />
-            </TouchableOpacity>
-            <TouchableOpacity style={estilos.botaoSecundario} onPress={() => router.push('/(auth)/cadastro')}>
-              <Text style={estilos.textoBotaoSecundario}>Criar conta grátis</Text>
-            </TouchableOpacity>
+        {/* Setores */}
+        <View style={estilos.secao}>
+          <View style={estilos.cabecalhoSecao}>
+            <Text style={estilos.tituloSecao}>Setores</Text>
+            <Text style={estilos.linkSecao}>Toque para filtrar</Text>
           </View>
+          {setores.map(s => (
+            <SectorCard key={s.id} {...s} />
+          ))}
         </View>
 
-        {/* --- COMO FUNCIONA --- */}
+        {/* Editais Recentes */}
         <View style={estilos.secao}>
-          <Text style={estilos.overlineSecao}>COMO FUNCIONA</Text>
-          <Text style={estilos.tituloSecao}>Vencemos a complexidade dos editais por você</Text>
-
-          <View style={{ marginTop: 16 }}>
-            {funcionalidades.map((f) => (
-              <FeatureCard key={f.id} icone={f.icone} titulo={f.titulo} descricao={f.desc} />
-            ))}
+          <View style={estilos.cabecalhoSecao}>
+            <Text style={estilos.tituloSecao}>Editais recentes</Text>
+            <Text style={estilos.fonteDados}>via PNCP</Text>
           </View>
-        </View>
-
-        {/* --- PLANOS --- */}
-        <View style={estilos.secao}>
-          <Text style={estilos.overlineSecao}>PLANOS</Text>
-          <Text style={estilos.tituloSecao}>Escolha o plano ideal para o seu momento</Text>
-          <Text style={estilos.subtituloSecao}>Transparência desde o primeiro clique. Sem surpresas.</Text>
-
-          <PlanCard 
-            titulo="Iniciante"
-            preco="R$ 0"
-            descricao="Para quem está validando os primeiros processos de licitação."
-            funcionalidades={['Match inteligente por CNAE', 'Visualize até 2 editais por mês', 'Acesso ao Dashboard de oportunidades']}
-            textoBotao="Começar grátis"
-            onPress={() => router.push('/(auth)/cadastro')}
-          />
-
-          <PlanCard 
-            titulo="Licitei PRO"
-            preco="R$ 29,90"
-            descricao="Para quem quer escalar e vencer licitações com segurança."
-            funcionalidades={['Editais Ilimitados', 'Checklist automático da Lei 14.133', 'Alertas de Teto MEI (R$ 81.000)']}
-            destaque={true}
-            textoBotao="Começar com PRO"
-            onPress={() => router.push('/(auth)/cadastro')}
+          
+          <EditalCard 
+            onPress={() => {}}
+            item={{
+              numero_controle_pncp: '2024/001',
+              objeto_compra: 'Serviços de Manutenção Elétrica e Hidráulica',
+              orgao_razao_social: 'Prefeitura de Recife',
+              valor_total_estimado: 85000,
+              uf: 'PE',
+              municipio: 'Recife',
+              data_encerramento_proposta: '2026-05-20'
+            }}
           />
         </View>
-
-        {/* --- CTA FINAL --- */}
-        <CtaBox onPress={() => router.push('/(auth)/cadastro')} />
-
-        <View style={estilos.rodape}>
-          <Text style={estilos.textoRodape}>© {new Date().getFullYear()} Licitei · Dados públicos via PNCP</Text>
-        </View>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -109,30 +102,26 @@ export default function Landing() {
 
 const estilos = StyleSheet.create({
   areaSegura: { flex: 1, backgroundColor: '#0F172A' },
-  conteudoScroll: { backgroundColor: '#F8FAFC', paddingBottom: 40, flexGrow: 1 },
-  
-  secaoHero: { backgroundColor: '#0F172A', borderBottomLeftRadius: 32, borderBottomRightRadius: 32, paddingHorizontal: 20, paddingTop: 40, paddingBottom: 40 },
-  barraTopoHero: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
-  containerLogo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  fundoIconeLogo: { width: 32, height: 32, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  textoLogo: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
-  textoEntrar: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 8 },
-  containerBadgeMei: { flexDirection: 'row' },
-  badgeMei: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 16, marginBottom: 16, gap: 6 },
-  textoBadgeMei: { color: '#FFF', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  tituloHero: { color: '#FFF', fontSize: 32, fontWeight: 'bold', lineHeight: 36, letterSpacing: -0.5 },
-  subtituloHero: { color: 'rgba(255,255,255,0.75)', fontSize: 14, lineHeight: 22, marginTop: 12 },
-  botoesHero: { marginTop: 28, gap: 12 },
-  botaoPrimario: { flexDirection: 'row', backgroundColor: '#FFF', height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  textoBotaoPrimario: { color: '#0F172A', fontSize: 14, fontWeight: 'bold' },
-  botaoSecundario: { backgroundColor: 'transparent', height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-  textoBotaoSecundario: { color: '#FFF', fontSize: 14, fontWeight: 'bold' },
-
-  secao: { paddingHorizontal: 20, marginTop: 32 },
-  overlineSecao: { fontSize: 11, fontWeight: 'bold', color: '#64748B', letterSpacing: 1 },
-  tituloSecao: { fontSize: 20, fontWeight: 'bold', color: '#0F172A', marginTop: 4, letterSpacing: -0.5 },
-  subtituloSecao: { fontSize: 12, color: '#64748B', marginTop: 6, lineHeight: 18 },
-
-  rodape: { paddingHorizontal: 20, paddingVertical: 24, marginTop: 24, alignItems: 'center' },
-  textoRodape: { fontSize: 11, color: '#94A3B8' }
+  cabecalho: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 25, backgroundColor: '#0F172A', borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
+  linhaTopo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  saudacao: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase' },
+  tituloPagina: { color: '#FFF', fontSize: 22, fontWeight: 'bold', marginTop: 4 },
+  botaoNotificacao: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  pontoAlerta: { position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFB800', borderWidth: 2, borderColor: '#0F172A' },
+  containerBusca: { flexDirection: 'row', gap: 10 },
+  barraBusca: { flex: 1, height: 48, backgroundColor: '#FFF', borderRadius: 15, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15 },
+  placeholderBusca: { marginLeft: 10, color: '#94A3B8', fontSize: 14 },
+  botaoFiltro: { width: 48, height: 48, backgroundColor: '#FFF', borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  rolagem: { flex: 1, backgroundColor: '#F8FAFC' },
+  conteudoRolagem: { paddingBottom: 40 },
+  bannerPro: { marginHorizontal: 20, marginTop: 24, backgroundColor: '#0F172A', borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  proInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  proIcone: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  proTitulo: { color: '#FFF', fontSize: 14, fontWeight: 'bold' },
+  proSubtitulo: { color: 'rgba(255,255,255,0.7)', fontSize: 10 },
+  secao: { marginTop: 32, paddingHorizontal: 20 },
+  cabecalhoSecao: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  tituloSecao: { fontSize: 16, fontWeight: 'bold', color: '#0F172A' },
+  linkSecao: { fontSize: 12, color: '#64748B' },
+  fonteDados: { fontSize: 10, color: '#94A3B8', fontWeight: 'bold' }
 });
