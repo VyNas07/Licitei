@@ -74,8 +74,8 @@ const estilos = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
-    height: Platform.OS === 'ios' ? 90 : 70,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 10,
+    height: Platform.OS === 'ios' ? 70 : 70,
+    paddingBottom: Platform.OS === 'ios' ? 10 : 10,
     paddingTop: 10,
   },
   labelTab: {

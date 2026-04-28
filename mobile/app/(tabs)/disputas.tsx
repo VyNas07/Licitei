@@ -46,6 +46,7 @@ export default function TelaDisputas() {
       <AuthHeader 
         titulo="Histórico de Participações" 
         subtitulo="Acompanhe o andamento dos seus editais" 
+        exibirVoltar={false}
       />
 
       <ScrollView 
@@ -106,71 +107,16 @@ export default function TelaDisputas() {
 }
 
 const estilos = StyleSheet.create({
-  recipiente: { 
-    flex: 1, 
-    backgroundColor: '#0F172A' 
-  },
-  rolagem: { 
-    flex: 1, 
-    backgroundColor: '#F8FAFC' 
-  },
-  conteudoRolagem: { 
-    paddingBottom: 110 
-  },
-  secaoResumo: { 
-    flexDirection: 'row', 
-    gap: 10, 
-    paddingHorizontal: 20, 
-    marginTop: 10,
-  },
-  secaoLista: { 
-    marginTop: 32, 
-    paddingHorizontal: 20 
-  },
-  cabecalhoLista: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 16 
-  },
-  tituloSecao: { 
-    fontSize: 16, 
-    fontWeight: 'bold', 
-    color: '#0F172A' 
-  },
-  cartaoIncentivo: { 
-    marginHorizontal: 20, 
-    marginTop: 24, 
-    backgroundColor: '#F1F5F9', 
-    borderRadius: 24, 
-    padding: 24, 
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.1)'
-  },
-  tituloIncentivo: { 
-    fontSize: 14, 
-    fontWeight: 'bold', 
-    color: '#0F172A', 
-    textAlign: 'center' 
-  },
-  descIncentivo: { 
-    fontSize: 12, 
-    color: '#64748B', 
-    textAlign: 'center', 
-    marginTop: 6, 
-    marginBottom: 16,
-    lineHeight: 18 
-  },
-  botaoExplorar: { 
-    backgroundColor: '#0F172A', 
-    paddingHorizontal: 24, 
-    paddingVertical: 12, 
-    borderRadius: 16 
-  },
-  textoBotaoExplorar: { 
-    color: '#FFF', 
-    fontSize: 14, 
-    fontWeight: 'bold' 
-  }
+  recipiente: { flex: 1, backgroundColor: '#0F172A' },
+  rolagem: { flex: 1, backgroundColor: '#F8FAFC' },
+  conteudoRolagem: { paddingBottom: 110 },
+  secaoResumo: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginTop: 10 },
+  secaoLista: { marginTop: 32, paddingHorizontal: 20 },
+  cabecalhoLista: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  tituloSecao: { fontSize: 16, fontWeight: 'bold', color: '#0F172A' },
+  cartaoIncentivo: { marginHorizontal: 20, marginTop: 24, backgroundColor: '#F1F5F9', borderRadius: 24, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(15, 23, 42, 0.1)' },
+  tituloIncentivo: { fontSize: 14, fontWeight: 'bold', color: '#0F172A', textAlign: 'center' },
+  descIncentivo: { fontSize: 12, color: '#64748B', textAlign: 'center', marginTop: 6, marginBottom: 16, lineHeight: 18 },
+  botaoExplorar: { backgroundColor: '#0F172A', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 16 },
+  textoBotaoExplorar: { color: '#FFF', fontSize: 14, fontWeight: 'bold' }
 });
