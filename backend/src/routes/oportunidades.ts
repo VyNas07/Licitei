@@ -20,35 +20,20 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
 
         // 1. Busca perfil do usuário no Supabase
         const { data: perfil } = await supabase
-          .from('perfis_mei')
-          .select('cnpj, cnaes')
-          .eq('id_usuario', userId)
+          .from('mei_profile')
+          .select('cnpj, cnae, ramo_atuacao')
+          .eq('user_id', userId)
           .single()
 
         let keywords: string[] = []
 
-        if (perfil) {
-          // 2. Usa CNAEs já salvos ou re-busca na BrasilAPI
-          let cnaesDescricoes: string[] = perfil.cnaes ?? []
-
-          if (cnaesDescricoes.length === 0 && perfil.cnpj) {
-            const cnaes = await getCnaesFromCnpj(perfil.cnpj)
-            cnaesDescricoes = cnaes.map(c => c.descricao)
-
-            // Persiste os CNAEs buscados para evitar nova chamada à BrasilAPI
-            if (cnaesDescricoes.length > 0) {
-              await supabase
-                .from('perfis_mei')
-                .update({ cnaes: cnaesDescricoes })
-                .eq('id_usuario', userId)
-            }
-
-            keywords = buildKeywordsFromCnaes(cnaes)
-          } else {
-            keywords = buildKeywordsFromCnaes(
-              cnaesDescricoes.map(d => ({ codigo: '', descricao: d }))
-            )
-          }
+        if (perfil?.ramo_atuacao) {
+          // 2a. Usa ramo_atuacao — preenchido manualmente ou auto-populado via CNPJ no PUT /perfil
+          keywords = buildKeywordsFromCnaes([{ codigo: perfil.cnae ?? '', descricao: perfil.ramo_atuacao }])
+        } else if (perfil?.cnpj) {
+          // 2b. Fallback: CNPJ disponível mas ramo não preenchido — chama BrasilAPI
+          const cnaes = await getCnaesFromCnpj(perfil.cnpj)
+          keywords = buildKeywordsFromCnaes(cnaes)
         }
 
         // 3. Monta filtro MongoDB

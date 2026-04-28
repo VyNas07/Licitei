@@ -8,7 +8,7 @@ import { healthRoutes } from './routes/health'
 import { editaisRoutes } from './routes/editais'
 import { oportunidadesRoutes } from './routes/oportunidades'
 import { perfilRoutes } from './routes/perfil'
-import { favoritosRoutes } from './routes/favoritos'
+import { participacoesRoutes } from './routes/participacoes'
 import { alertasRoutes } from './routes/alertas'
 import { chatRoutes } from './routes/chat'
 
@@ -17,7 +17,7 @@ const app = new Elysia()
   .use(
     cors({
       origin: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
     })
   )
@@ -50,7 +50,7 @@ const app = new Elysia()
   .use(editaisRoutes)
   .use(oportunidadesRoutes)
   .use(perfilRoutes)
-  .use(favoritosRoutes)
+  .use(participacoesRoutes)
   .use(alertasRoutes)
   .use(chatRoutes)
 

@@ -162,3 +162,34 @@ auth.users
 - Ativar **Row Level Security (RLS)** em todas as tabelas. Política padrão: usuário acessa apenas seus próprios registros (`user_id = auth.uid()`).
 - Criar trigger `set_updated_at` para atualizar `updated_at` automaticamente em `mei_profile`, `participacoes` e `documentos`.
 - O Supabase Auth gerencia senha, email e sessão — não armazenar tokens na aplicação.
+
+---
+
+## Notas operacionais
+
+### GRANTs obrigatórios ao criar tabelas via SQL Editor
+
+Tabelas criadas pelo SQL Editor do Supabase **não recebem GRANTs automaticamente** — apenas as criadas pelo Table Editor recebem. Sem os GRANTs, o backend recebe `permission denied for table` (PostgreSQL error 42501) mesmo com a chave `service_role`.
+
+Após criar as tabelas, executar no SQL Editor:
+
+```sql
+GRANT ALL ON TABLE public.mei_profile       TO service_role, authenticated;
+GRANT ALL ON TABLE public.saved_searches    TO service_role, authenticated;
+GRANT ALL ON TABLE public.participacoes     TO service_role, authenticated;
+GRANT ALL ON TABLE public.checklist_itens   TO service_role, authenticated;
+GRANT ALL ON TABLE public.documentos        TO service_role, authenticated;
+GRANT ALL ON TABLE public.alertas           TO service_role, authenticated;
+```
+
+### UNIQUE constraint em `participacoes`
+
+A constraint que impede um MEI de adicionar o mesmo edital duas vezes não é criada automaticamente. Executar:
+
+```sql
+ALTER TABLE participacoes
+  ADD CONSTRAINT participacoes_user_licitacao_unique
+  UNIQUE (user_id, licitacao_id);
+```
+
+Sem essa constraint, `POST /participacoes` com o mesmo `licitacao_id` insere duplicatas em vez de retornar 409.
