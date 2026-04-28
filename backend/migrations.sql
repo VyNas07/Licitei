@@ -1,36 +1,26 @@
 -- ============================================================
--- Licitei — Migrations Supabase
--- Execute no SQL Editor do Supabase: https://supabase.com/dashboard
+-- Licitei — Referência de Schema Supabase
+-- As tabelas abaixo foram criadas diretamente no Supabase Dashboard.
+-- Este arquivo serve como documentação — NÃO executar novamente.
+-- Schema completo em: docs/supabase-schema.md
 -- ============================================================
 
--- Perfis dos MEIs
-CREATE TABLE IF NOT EXISTS perfis_mei (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_usuario       UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  nome_responsavel TEXT NOT NULL,
-  cnpj             TEXT NOT NULL,
-  cnaes            TEXT[] DEFAULT '{}',
-  plano            TEXT DEFAULT 'iniciante' CHECK (plano IN ('iniciante', 'pro')),
-  created_at       TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(id_usuario),
-  UNIQUE(cnpj)
-);
+-- mei_profile: perfil 1:1 com auth.users
+-- user_id, nome_fantasia, cnpj, cnae (text), ramo_atuacao, uf, created_at, updated_at
 
--- RLS: usuário só vê seu próprio perfil
-ALTER TABLE perfis_mei ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "perfil_proprio" ON perfis_mei
-  FOR ALL USING (auth.uid() = id_usuario);
+-- saved_searches: buscas salvas pelo MEI
+-- user_id, termo_busca, filtros (jsonb), created_at
 
--- Favoritos
-CREATE TABLE IF NOT EXISTS favoritos (
-  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id               UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  numero_controle_pncp  TEXT NOT NULL,
-  created_at            TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, numero_controle_pncp)
-);
+-- participacoes: editais que o MEI está acompanhando (alimenta RF05)
+-- user_id, licitacao_id (numeroControlePNCP), status, objeto_compra,
+-- orgao_nome, valor_estimado, data_encerramento, created_at, updated_at
+-- status enum: acompanhando | proposta_enviada | venceu | perdeu | desistiu
 
--- RLS: usuário só vê seus próprios favoritos
-ALTER TABLE favoritos ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "favoritos_proprios" ON favoritos
-  FOR ALL USING (auth.uid() = user_id);
+-- checklist_itens: itens do checklist de habilitação (Sprint 2)
+-- participacao_id, user_id, descricao, concluido, created_at
+
+-- documentos: metadados de documentos do MEI (Sprint 2)
+-- user_id, participacao_id, nome, tipo, url, status, validade, created_at, updated_at
+
+-- alertas: configurações de notificação por prazo (Sprint 2)
+-- user_id, participacao_id, tipo, prazo, antecedencia_horas, notificado, created_at
