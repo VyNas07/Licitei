@@ -33,8 +33,6 @@ export default function TelaDetalheEdital() {
   const [loading, setLoading] = useState(true);
   const [edital, setEdital] = useState<DetalheEdital | null>(null);
 
-  const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
   useEffect(() => {
     let mounted = true;
 
@@ -42,12 +40,7 @@ export default function TelaDetalheEdital() {
       try {
         setLoading(true);
 
-        if (!API_URL) {
-          console.error("API_URL não definida");
-          return;
-        }
-
-        const response = await api.get(`${API_URL}/editais/${editalId}`);
+        const response = await api.get(`/editais/${editalId}`);
 
         if (mounted) {
           setEdital(response.data);
