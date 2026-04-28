@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-// Reuso de componentes
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { DocumentItem } from '../../src/components/editais/DocumentItem';
 
@@ -39,7 +38,6 @@ export default function DocumentsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={estilos.containerInterno}>
-          {/* Botão de Ação: Enviar Novo */}
           <TouchableOpacity style={estilos.botaoUploadPrincipal} activeOpacity={0.9}>
             <View style={estilos.circuloIcone}>
               <Ionicons name="cloud-upload" size={20} color="#FFF" />
@@ -52,7 +50,6 @@ export default function DocumentsScreen() {
             <Text style={estilos.textoContagem}>{listaDocumentos.length} no total</Text>
           </View>
 
-          {/* Listagem Reutilizando o DocumentItem */}
           {listaDocumentos.map((item, index) => (
             <DocumentItem 
               key={index}
@@ -63,7 +60,6 @@ export default function DocumentsScreen() {
           ))}
         </View>
 
-        {/* Card Informativo Inferior */}
         <View style={estilos.cartaoInformativo}>
           <Ionicons name="shield-checkmark" size={20} color="#0F172A" />
           <Text style={estilos.textoInformativo}>
@@ -88,7 +84,7 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10, // Efeito de sobreposição no header
+    marginTop: 10, 
     elevation: 8,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },

@@ -11,7 +11,6 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-// Reaproveitando seus componentes existentes
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { ResumoCard } from '../../src/components/auth/ResumoCard'; 
 import { EditalCard } from '../../src/components/editais/EditalCard';
@@ -19,7 +18,6 @@ import { EditalCard } from '../../src/components/editais/EditalCard';
 export default function TelaDisputas() {
   const navegador = useRouter();
 
-  // Dados baseados no seu mock original (RESUMO_PARTICIPACOES)
   const resumo = [
     { 
       icone: 'create-outline' as const, 
@@ -45,7 +43,6 @@ export default function TelaDisputas() {
     <SafeAreaView style={estilos.recipiente}>
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
       
-      {/* Reuso do cabeçalho azul com título e subtítulo */}
       <AuthHeader 
         titulo="Histórico de Participações" 
         subtitulo="Acompanhe o andamento dos seus editais" 
@@ -56,7 +53,6 @@ export default function TelaDisputas() {
         contentContainerStyle={estilos.conteudoRolagem}
         showsVerticalScrollIndicator={false}
       >
-        {/* Grid de Resumo com os ResumoCards que você já criou */}
         <View style={estilos.secaoResumo}>
           {resumo.map((item) => (
             <ResumoCard 
@@ -69,7 +65,6 @@ export default function TelaDisputas() {
           ))}
         </View>
 
-        {/* Lista de Disputas Ativas */}
         <View style={estilos.secaoLista}>
           <View style={estilos.cabecalhoLista}>
             <Text style={estilos.tituloSecao}>Minhas participações</Text>
@@ -78,7 +73,6 @@ export default function TelaDisputas() {
             </TouchableOpacity>
           </View>
 
-          {/* Reutilizando o EditalCard para os itens da lista */}
           <EditalCard 
             onPress={() => navegador.push('/edital/2024-05')}
             item={{
@@ -93,7 +87,6 @@ export default function TelaDisputas() {
           />
         </View>
 
-        {/* Card de Incentivo para voltar ao início */}
         <View style={estilos.cartaoIncentivo}>
           <Text style={estilos.tituloIncentivo}>Quer ver mais oportunidades?</Text>
           <Text style={estilos.descIncentivo}>
@@ -122,13 +115,13 @@ const estilos = StyleSheet.create({
     backgroundColor: '#F8FAFC' 
   },
   conteudoRolagem: { 
-    paddingBottom: 110 // Espaço para não cobrir o conteúdo pelo rodapé
+    paddingBottom: 110 
   },
   secaoResumo: { 
     flexDirection: 'row', 
     gap: 10, 
     paddingHorizontal: 20, 
-    marginTop: 10, // Efeito de sobreposição no header azul
+    marginTop: 10,
   },
   secaoLista: { 
     marginTop: 32, 

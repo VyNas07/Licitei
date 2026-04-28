@@ -9,7 +9,6 @@ interface PropriedadesFaturamento {
 export function RevenueCard({ valorAtual, valorTeto }: PropriedadesFaturamento) {
   const percentual = Math.min(100, (valorAtual / valorTeto) * 100);
   
-  // Lógica de cores baseada na proximidade do teto
   const corProgresso = percentual > 80 ? '#EF4444' : percentual > 60 ? '#F59E0B' : '#22C55E';
 
   const formatarMoeda = (valor: number) => {

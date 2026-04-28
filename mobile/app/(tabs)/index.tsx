@@ -21,7 +21,6 @@ export default function HomeUsuario() {
     <SafeAreaView style={estilos.areaSegura}>
       <StatusBar barStyle="light-content" />
       
-      {/* Cabeçalho Navy */}
       <View style={estilos.cabecalho}>
         <View style={estilos.linhaTopo}>
           <View>
@@ -50,7 +49,6 @@ export default function HomeUsuario() {
         contentContainerStyle={estilos.conteudoRolagem}
         showsVerticalScrollIndicator={false}
       >
-        {/* Banner PRO */}
         <TouchableOpacity style={estilos.bannerPro} activeOpacity={0.9}>
           <View style={estilos.proInfo}>
             <View style={estilos.proIcone}>
@@ -64,7 +62,6 @@ export default function HomeUsuario() {
           <Ionicons name="arrow-forward" size={18} color="#FFF" />
         </TouchableOpacity>
 
-        {/* Setores */}
         <View style={estilos.secao}>
           <View style={estilos.cabecalhoSecao}>
             <Text style={estilos.tituloSecao}>Setores</Text>

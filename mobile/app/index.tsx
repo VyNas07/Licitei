@@ -11,7 +11,6 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-// Importação dos componentes organizados nas pastas
 import { FeatureCard } from '../src/components/landing/FeatureCard';
 import { PlanCard } from '../src/components/landing/PlanCard';
 import { CtaBox } from '../src/components/landing/CtaBox';
@@ -31,7 +30,6 @@ export default function Landing() {
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         
-        {/* --- HERO SECTION --- */}
         <View style={styles.heroSection}>
           <View style={styles.heroTopBar}>
             <View style={styles.logoContainer}>
@@ -88,7 +86,6 @@ export default function Landing() {
           </View>
         </View>
 
-        {/* --- PREVIEW CARD --- */}
         <View style={styles.previewSection}>
           <View style={styles.previewCard}>
             <View style={styles.previewHeader}>
@@ -119,7 +116,6 @@ export default function Landing() {
           </View>
         </View>
 
-        {/* --- COMO FUNCIONA --- */}
         <View style={styles.section}>
           <Text style={styles.sectionOverline}>COMO FUNCIONA</Text>
           <Text style={styles.sectionTitle}>Vencemos a complexidade dos editais por você</Text>
@@ -162,10 +158,8 @@ export default function Landing() {
           />
         </View>
 
-        {/* --- CTA FINAL --- */}
         <CtaBox onPress={() => router.push('/(auth)/cadastro')} />
 
-        {/* --- FOOTER --- */}
         <Footer />
 
       </ScrollView>
@@ -177,7 +171,6 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#0F172A' },
   scrollContent: { backgroundColor: '#F8FAFC', paddingBottom: 0, flexGrow: 1 },
 
-  // Hero Section
   heroSection: { backgroundColor: '#0F172A', borderBottomLeftRadius: 32, borderBottomRightRadius: 32, paddingHorizontal: 20, paddingTop: 40, paddingBottom: 40 },
   heroTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
   logoContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -198,7 +191,6 @@ const styles = StyleSheet.create({
   trustBadgeItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   trustBadgeText: { color: 'rgba(255,255,255,0.6)', fontSize: 11 },
 
-  // Preview Card
   previewSection: { paddingHorizontal: 20, marginTop: -20, zIndex: 10 },
   previewCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5, borderWidth: 1, borderColor: '#E2E8F0', marginTop: 30 },
   previewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
@@ -213,7 +205,6 @@ const styles = StyleSheet.create({
   checkItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   checkText: { fontSize: 12, color: '#334155' },
 
-  // Sections Globais
   section: { paddingHorizontal: 20, marginTop: 32 },
   sectionOverline: { fontSize: 11, fontWeight: 'bold', color: '#64748B', letterSpacing: 1 },
   sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#0F172A', marginTop: 4, letterSpacing: -0.5 },

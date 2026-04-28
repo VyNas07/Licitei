@@ -15,10 +15,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../src/services/supabase';
 
-// Importação do Footer
 import { Footer } from '../../src/components/landing/Footer';
 
-// Função para aplicar máscara de CNPJ
 function formatCnpj(v: string) {
   const d = v.replace(/\D/g, "").slice(0, 14);
   return d
@@ -82,7 +80,6 @@ export default function Cadastro() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         
-        {/* Cabeçalho Azul */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={16} color="#E2E8F0" />
@@ -100,7 +97,6 @@ export default function Cadastro() {
           <Text style={styles.subtitle}>Comece a vender para o governo em poucos minutos.</Text>
         </View>
 
-        {/* Card Branco com Formulário */}
         <View style={styles.cardWrapper}>
           <View style={styles.card}>
             

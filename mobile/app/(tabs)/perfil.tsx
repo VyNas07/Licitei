@@ -12,7 +12,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-// Reuso de componentes organizados
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { RevenueCard } from '../../src/components/perfil/RevenueCard';
 
@@ -41,7 +40,6 @@ export default function TelaPerfil() {
       >
         <View style={estilos.areaConteudo}>
           
-          {/* Cartão de Identidade do Usuário */}
           <View style={estilos.cartaoIdentidade}>
             <View style={estilos.topoPerfil}>
               <View style={estilos.avatar}>
@@ -69,7 +67,6 @@ export default function TelaPerfil() {
             </View>
           </View>
 
-          {/* Listagem de CNAEs */}
           <View style={estilos.secaoCnae}>
             <Text style={estilos.tituloSecao}>CNAEs vinculados</Text>
             {cnaes.map((item) => (
@@ -82,10 +79,8 @@ export default function TelaPerfil() {
             ))}
           </View>
 
-          {/* Componente de Faturamento Reutilizável */}
           <RevenueCard valorAtual={52000} valorTeto={81000} />
 
-          {/* Botões de Configuração e Saída */}
           <View style={estilos.containerMenu}>
             <TouchableOpacity style={estilos.itemMenu}>
               <Ionicons name="shield-outline" size={20} color="#0F172A" />
