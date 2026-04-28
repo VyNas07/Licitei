@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../src/services/supabase';
+import api from '../../src/services/api';
 
 // Importação do Footer
 import { Footer } from '../../src/components/landing/Footer';
@@ -32,22 +33,20 @@ export default function Cadastro() {
   const router = useRouter();
   const [nome, setNome] = useState('');
   const [cnpj, setCnpj] = useState('');
+  const [uf, setUf] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleCadastro() {
-    if (!email || !senha || !nome || !cnpj) {
+    if (!email || !senha || !nome || !cnpj || !uf) {
       Alert.alert('Atenção', 'Por favor, preencha todos os campos.');
       return;
     }
 
     setLoading(true);
-    
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password: senha,
-    });
+
+    const { error: authError } = await supabase.auth.signUp({ email, password: senha });
 
     if (authError) {
       Alert.alert('Erro ao criar conta', authError.message);
@@ -55,24 +54,18 @@ export default function Cadastro() {
       return;
     }
 
-    if (authData.user) {
-      const { error: profileError } = await supabase
-        .from('perfis_mei') 
-        .insert([
-          { 
-            id_usuario: authData.user.id, 
-            nome_responsavel: nome, 
-            cnpj: cnpj.replace(/\D/g, "") 
-          }
-        ]);
-        
-      if (profileError) {
-         console.warn("Erro ao salvar perfil, mas usuário criado:", profileError);
-      }
+    try {
+      await api.put('/perfil', {
+        nome_fantasia: nome,
+        cnpj,
+        uf: uf.toUpperCase(),
+      });
+    } catch (err) {
+      console.warn('Perfil não criado, mas usuário cadastrado:', err);
     }
 
     setLoading(false);
-    router.replace('/(tabs)'); 
+    router.replace('/(tabs)');
   }
 
   return (
@@ -119,7 +112,7 @@ export default function Cadastro() {
 
             <View style={styles.form}>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nome do responsável</Text>
+                <Text style={styles.label}>Nome do negócio (Nome Fantasia)</Text>
                 <View style={styles.inputWrapper}>
                   <Ionicons name="person-outline" size={18} color="#94A3B8" style={styles.inputIcon} />
                   <TextInput
@@ -148,6 +141,21 @@ export default function Cadastro() {
                   <Text style={styles.infoText}>
                     Seu CNPJ é obrigatório para cruzarmos os códigos CNAE com os editais e mostrarmos só o que combina com seu negócio.
                   </Text>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Estado (UF)</Text>
+                <View style={styles.inputWrapper}>
+                  <Ionicons name="location-outline" size={18} color="#94A3B8" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Ex: PE"
+                    maxLength={2}
+                    autoCapitalize="characters"
+                    value={uf}
+                    onChangeText={setUf}
+                  />
                 </View>
               </View>
 

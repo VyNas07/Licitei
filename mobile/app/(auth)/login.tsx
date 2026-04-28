@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  SafeAreaView, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
   StatusBar,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+
+import { supabase } from '../../src/services/supabase';
 
 // Componentes
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
@@ -18,19 +21,31 @@ import { GovbrButton } from '../../src/components/auth/GovbrButton';
 import { Divider } from '../../src/components/auth/Divider';
 import { Input } from '../../src/components/ui/Input';
 import { Button } from '../../src/components/ui/Button';
-import { Footer } from '../../src/components/landing/Footer'; // Importação do Footer
+import { Footer } from '../../src/components/landing/Footer';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    router.push('/(tabs)');
+  const handleLogin = async () => {
+    if (!email || !senha) {
+      Alert.alert('Atenção', 'Preencha e-mail e senha.');
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+    setLoading(false);
+    if (error) {
+      Alert.alert('Erro ao entrar', error.message);
+      return;
+    }
+    router.replace('/(tabs)');
   };
 
   const handleGovbr = () => {
-    router.push('/(tabs)');
+    Alert.alert('Em breve', 'Login via Gov.br estará disponível em breve.');
   };
 
   return (
@@ -73,7 +88,7 @@ export default function LoginScreen() {
                 onChangeText={setSenha}
               />
 
-              <Button texto="Entrar" onPress={handleLogin} />
+              <Button texto={loading ? 'Entrando...' : 'Entrar'} onPress={handleLogin} disabled={loading} />
 
               <View style={estilos.containerCadastro}>
                 <Text style={estilos.textoNaoTemConta}>Ainda não tem conta? </Text>
