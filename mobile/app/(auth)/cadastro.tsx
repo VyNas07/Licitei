@@ -21,7 +21,7 @@ import { Footer } from '../../src/components/landing/Footer';
 
 // Função para aplicar máscara de CNPJ
 function formatCnpj(v: string) {
-  const d = v.replace(/\D/g, "").slice(0, 14);
+  const d = v.replaceAll(/\D/g, "").slice(0, 14);
   return d
     .replace(/^(\d{2})(\d)/, "$1.$2")
     .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")

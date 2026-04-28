@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../src/services/supabase';
 
@@ -28,9 +29,13 @@ export default function RootLayout() {
     const inAuth = segments[0] === '(auth)';
     if (!session && inTabs) router.replace('/(auth)/login');
     if (session && inAuth) router.replace('/(tabs)');
-  }, [session, loading, segments]);
+  }, [session, loading, segments, router]);
 
   if (loading) return null;
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <SafeAreaProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </SafeAreaProvider>
+  );
 }
