@@ -34,6 +34,8 @@ Verifica se o servidor e o MongoDB estão no ar. Não requer autenticação.
 
 Listagem paginada de licitações com filtros livres.
 
+Por padrão, retorna apenas editais com `data_encerramento_proposta >= hoje` ou sem data definida (editais vencidos são ocultados). Resultados ordenados por prazo mais próximo primeiro; editais sem data ficam no fim.
+
 #### Query params
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
@@ -79,7 +81,7 @@ Detalhe completo de uma licitação pelo `numero_controle_pncp`.
 
 | Parâmetro | Descrição |
 | --- | --- |
-| `id` | `numero_controle_pncp` do edital |
+| `id` | `numero_controle_pncp` do edital, **URL-encoded** (o campo contém `/` literais). O backend decodifica internamente. Ex: `08637373000180-1-000082%2F2026` |
 
 #### Resposta 200
 

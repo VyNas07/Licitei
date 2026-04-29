@@ -16,7 +16,12 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
         const limitNum = Math.min(50, Math.max(1, Number(limit)))
         const skip = (pageNum - 1) * limitNum
 
-        const filter: Filter<Document> = {}
+        const filter: Filter<Document> = {
+          $or: [
+            { data_encerramento_proposta: { $gte: new Date() } },
+            { data_encerramento_proposta: null },
+          ],
+        }
 
         if (uf) filter['uf'] = uf.toUpperCase()
         if (situacao) filter['situacao_compra_nome'] = { $regex: situacao, $options: 'i' }
@@ -30,25 +35,16 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
         }
 
         const collection = await getCollection()
+        const nullsSentinel = new Date('9999-12-31T00:00:00.000Z')
         const [data, total] = await Promise.all([
-          collection
-            .find(filter)
-            .sort({ data_encerramento_proposta: 1 })
-            .skip(skip)
-            .limit(limitNum)
-            .project({
-              _id: 0,
-              numero_controle_pncp: 1,
-              objeto_compra: 1,
-              orgao_razao_social: 1,
-              valor_total_estimado: 1,
-              uf: 1,
-              municipio: 1,
-              data_encerramento_proposta: 1,
-              situacao_compra_nome: 1,
-              modalidade_nome: 1,
-            })
-            .toArray(),
+          collection.aggregate([
+            { $match: filter },
+            { $addFields: { _sort_data: { $ifNull: ['$data_encerramento_proposta', nullsSentinel] } } },
+            { $sort: { _sort_data: 1 } },
+            { $skip: skip },
+            { $limit: limitNum },
+            { $project: { _id: 0, _sort_data: 0, _extraido_em: 0, _fonte: 0 } },
+          ]).toArray(),
           collection.countDocuments(filter),
         ])
 
@@ -81,7 +77,7 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
     try {
       const collection = await getCollection()
       const edital = await collection.findOne(
-        { numero_controle_pncp: params.id },
+        { numero_controle_pncp: decodeURIComponent(params.id) },
         { projection: { _id: 0, _extraido_em: 0, _fonte: 0 } }
       )
 
