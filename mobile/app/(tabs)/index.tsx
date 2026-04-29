@@ -41,7 +41,11 @@ export default function EditaisScreen() {
         params: { page: novaPagina, limit: LIMIT, q: termo || undefined },
       });
       const novos: Edital[] = data.data ?? [];
-      setEditais((prev: Edital[]) => substituir ? novos : [...prev, ...novos]);
+      setEditais((prev: Edital[]) => {
+        if (substituir) return novos;
+        const ids = new Set(prev.map(e => e.numero_controle_pncp));
+        return [...prev, ...novos.filter(e => !ids.has(e.numero_controle_pncp))];
+      });
       setHasMore(novaPagina < (data.pages ?? 1));
       setPage(novaPagina);
     } catch (err) {
@@ -75,7 +79,7 @@ export default function EditaisScreen() {
   const renderItem = useCallback(({ item }: { item: Edital }) => (
     <EditalCard
       item={item}
-      onPress={() => router.push(`/edital/${item.numero_controle_pncp}`)}
+      onPress={() => router.push(`/edital/${encodeURIComponent(item.numero_controle_pncp)}`)}
     />
   ), [router]);
 

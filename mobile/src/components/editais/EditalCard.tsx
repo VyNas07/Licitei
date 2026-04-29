@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { formatarData } from '../../utils/formatarData';
 
 interface EditalCardProps {
   item: {
@@ -21,7 +22,7 @@ export function EditalCard({ item, onPress }: EditalCardProps) {
     currency: 'BRL' 
   }).format(item.valor_total_estimado);
 
-  const dataFim = new Date(item.data_encerramento_proposta).toLocaleDateString('pt-BR');
+  const dataFim = formatarData(item.data_encerramento_proposta);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
