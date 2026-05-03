@@ -1,14 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+import iconeDocumento from '../../../assets/images/Icone_documento.png';
 
 export function Footer() {
   return (
     <View style={estilos.areaRodape}>
-      {/* Logo e Breve Descrição */}
       <View style={estilos.containerLogo}>
         <View style={estilos.fundoIconeLogo}>
-          <Ionicons name="sparkles" size={14} color="#FFF" />
+          <Image 
+            source={iconeDocumento} 
+            style={{ width: 14, height: 14 }} 
+            resizeMode="contain"
+          />
         </View>
         <Text style={estilos.textoLogo}>Licitei</Text>
       </View>
@@ -23,9 +28,6 @@ export function Footer() {
         </TouchableOpacity>
         <TouchableOpacity style={estilos.botaoSocial}>
           <Ionicons name="logo-linkedin" size={20} color="#64748B" />
-        </TouchableOpacity>
-        <TouchableOpacity style={estilos.botaoSocial}>
-          <Ionicons name="logo-github" size={20} color="#64748B" />
         </TouchableOpacity>
       </View>
 

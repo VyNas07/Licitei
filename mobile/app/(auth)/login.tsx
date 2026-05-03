@@ -19,17 +19,19 @@ import { Input } from '../../src/components/ui/Input';
 import { Button } from '../../src/components/ui/Button';
 import { Footer } from '../../src/components/landing/Footer'; 
 
+
+
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
   const handleLogin = () => {
-    router.push('/(tabs)');
+    router.push('/(tabs)/home');
   };
 
   const handleGovbr = () => {
-    router.push('/(tabs)');
+    router.push('/(tabs)/home');
   };
 
   return (

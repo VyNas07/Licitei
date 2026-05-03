@@ -70,7 +70,7 @@ export default function Cadastro() {
     }
 
     setLoading(false);
-    router.replace('/(tabs)'); 
+    router.replace('/(tabs)/home'); 
   }
 
   return (
