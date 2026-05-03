@@ -14,7 +14,6 @@ export default function TabLayout() {
         tabBarLabelStyle: estilos.labelTab,
       }}
     >
-      {/* 1. Início */}
       <Tabs.Screen
         name="index"
         options={{
@@ -27,7 +26,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 2. Disputas */}
       <Tabs.Screen
         name="disputas"
         options={{
@@ -40,7 +38,13 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 3. Documentos */}
+      <Tabs.Screen
+        name="alertas"
+        options={{
+          href: null,
+        }}
+      />
+
       <Tabs.Screen
         name="documentos" 
         options={{
@@ -53,7 +57,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 4. Perfil */}
       <Tabs.Screen
         name="perfil"
         options={{
@@ -74,8 +77,8 @@ const estilos = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
-    height: Platform.OS === 'ios' ? 70 : 70,
-    paddingBottom: Platform.OS === 'ios' ? 10 : 10,
+    height: 70,
+    paddingBottom: 10,
     paddingTop: 10,
   },
   labelTab: {

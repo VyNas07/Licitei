@@ -1,59 +1,67 @@
 import React from 'react';
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface SectorCardProps {
-  icone: keyof typeof Ionicons.glyphMap;
+  icone: any;
   nome: string;
-  descricao: string;
-  quantidade: number;
-  aoPressionar: () => void;
+  qtd: number;
 }
 
-export function SectorCard({ icone, nome, descricao, quantidade, aoPressionar }: SectorCardProps) {
+export function SectorCard({ icone, nome, qtd }: SectorCardProps) {
   return (
-    <TouchableOpacity style={estilos.cartaoSetor} onPress={aoPressionar} activeOpacity={0.7}>
-      <View style={estilos.containerIcone}>
-        <Ionicons name={icone} size={24} color="#0F172A" />
+    <View style={estilos.cartao}>
+      <View style={estilos.fundoIcone}>
+        <Ionicons name={icone} size={20} color="#0F172A" />
       </View>
-      <View style={estilos.conteudoTexto}>
-        <Text style={estilos.tituloSetor}>{nome}</Text>
-        <Text style={estilos.descricaoSetor} numberOfLines={1}>{descricao}</Text>
+      
+      <View style={estilos.textos}>
+        <Text style={estilos.nome}>{nome}</Text>
+        <Text style={estilos.subtitulo}>Elétrica, hidráulica, refrigeração e mais</Text>
       </View>
-      <View style={estilos.badgeQuantidade}>
-        <Text style={estilos.textoQuantidade}>{quantidade}</Text>
+      
+      {/* Badge de Quantidade - Estilo igual à foto f0fb9b */}
+      <View style={estilos.badgeQtd}>
+        <Text style={estilos.textoQtd}>{qtd}</Text>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
 const estilos = StyleSheet.create({
-  cartaoSetor: { 
+  cartao: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     backgroundColor: '#FFF', 
     padding: 16, 
-    borderRadius: 20, 
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0'
+    borderRadius: 24, 
+    marginBottom: 12, 
+    borderWidth: 1, 
+    borderColor: '#E2E8F0' 
   },
-  containerIcone: { 
+  fundoIcone: { 
     width: 48, 
     height: 48, 
-    borderRadius: 12, 
+    borderRadius: 14, 
     backgroundColor: '#F1F5F9', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    marginRight: 16 
+  },
+  textos: { flex: 1 },
+  nome: { fontSize: 16, fontWeight: 'bold', color: '#0F172A' },
+  subtitulo: { fontSize: 12, color: '#64748B', marginTop: 4 },
+  badgeQtd: { 
+    backgroundColor: '#E0F2FE', 
+    width: 28, 
+    height: 28, 
+    borderRadius: 14, 
     alignItems: 'center', 
     justifyContent: 'center' 
   },
-  conteudoTexto: { flex: 1, marginLeft: 16 },
-  tituloSetor: { fontSize: 14, fontWeight: 'bold', color: '#0F172A' },
-  descricaoSetor: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  badgeQuantidade: { 
-    backgroundColor: '#F1F5F9', 
-    paddingHorizontal: 10, 
-    paddingVertical: 4, 
-    borderRadius: 12 
-  },
-  textoQuantidade: { fontSize: 12, fontWeight: 'bold', color: '#0F172A' }
+  textoQtd: { 
+    fontSize: 12, 
+    fontWeight: 'bold', 
+    color: '#0F172A' 
+  }
 });
