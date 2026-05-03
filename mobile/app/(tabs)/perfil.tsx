@@ -14,15 +14,11 @@ import { useRouter } from 'expo-router';
 
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { RevenueCard } from '../../src/components/perfil/RevenueCard';
+import { PERFIL_MOCK, MEI_TETO } from '../../src/lib/mock-data';
 
 export default function TelaPerfil() {
   const navegador = useRouter();
   const [cnpj, setCnpj] = useState('45.123.890/0001-22');
-
-  const cnaes = [
-    { codigo: '4321-5/00', descricao: 'Instalação e manutenção elétrica' },
-    { codigo: '4322-3/01', descricao: 'Sistemas de ar-condicionado' },
-  ];
 
   return (
     <SafeAreaView style={estilos.recipientePrincipal}>
@@ -47,8 +43,8 @@ export default function TelaPerfil() {
                 <Text style={estilos.letrasAvatar}>YQ</Text>
               </View>
               <View style={estilos.textosUsuario}>
-                <Text style={estilos.nomeDono}>Ylson Queiroz</Text>
-                <Text style={estilos.nomeEmpresa}>YLSON QUEIROZ LTDA</Text>
+                <Text style={estilos.nomeDono}>{PERFIL_MOCK.nome}</Text>
+                <Text style={estilos.nomeEmpresa}>{PERFIL_MOCK.empresa}</Text>
               </View>
             </View>
 
@@ -69,18 +65,21 @@ export default function TelaPerfil() {
           </View>
 
           <View style={estilos.secaoCnae}>
-            <Text style={estilos.tituloSecao}>CNAEs vinculados</Text>
-            {cnaes.map((item) => (
+            <Text style={estilos.tituloSecao}>CNAEs vinculados ao meu CNPJ</Text>
+            {PERFIL_MOCK.cnaes.map((item) => (
               <View key={item.codigo} style={estilos.itemCnae}>
                 <View style={estilos.badgeCnae}>
                   <Text style={estilos.textoCnae}>{item.codigo}</Text>
                 </View>
-                <Text style={estilos.descricaoCnae} numberOfLines={1}>{item.descricao}</Text>
+                <Text style={estilos.descricaoCnae} numberOfLines={1}>{item.nome}</Text>
               </View>
             ))}
           </View>
 
-          <RevenueCard valorAtual={52000} valorTeto={81000} />
+          <RevenueCard 
+            valorAtual={PERFIL_MOCK.faturamentoAcumulado} 
+            valorTeto={MEI_TETO} 
+          />
 
           <View style={estilos.containerMenu}>
             <TouchableOpacity style={estilos.itemMenu}>
@@ -91,7 +90,7 @@ export default function TelaPerfil() {
             
             <TouchableOpacity 
               style={estilos.itemMenu}
-              onPress={() => navegador.replace('/(auth)/login')}
+              onPress={() => navegador.replace('/')} 
             >
               <Ionicons name="log-out-outline" size={20} color="#EF4444" />
               <Text style={[estilos.textoMenu, { color: '#EF4444' }]}>Sair da conta</Text>
@@ -113,7 +112,7 @@ const estilos = StyleSheet.create({
   topoPerfil: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   avatar: { width: 52, height: 52, borderRadius: 16, backgroundColor: '#0F172A', alignItems: 'center', justifyContent: 'center' },
   letrasAvatar: { color: '#FFF', fontWeight: 'bold', fontSize: 18 },
-  textosUsuario: { marginLeft: 15 },
+  textosUsuario: { marginLeft: 15, flex: 1 },
   nomeDono: { fontSize: 16, fontWeight: 'bold', color: '#0F172A' },
   nomeEmpresa: { fontSize: 12, color: '#64748B', marginTop: 2 },
   rotuloCNPJ: { fontSize: 11, fontWeight: 'bold', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 8 },

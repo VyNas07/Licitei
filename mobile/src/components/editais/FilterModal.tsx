@@ -12,6 +12,7 @@ import {
   Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { PERFIL_MOCK } from '../../lib/mock-data'; // Importando seu perfil real[cite: 1]
 
 interface Props {
   visivel: boolean;
@@ -39,7 +40,9 @@ export function FilterModal({ visivel, fechar, filtrosAtuais, aplicar }: Props) 
 
   const ufsPrincipais = ['Todas', 'PE', 'SP', 'RJ', 'MG', 'BA'];
   const todosEstados = ['AC', 'AL', 'AP', 'AM', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'PA', 'PB', 'PR', 'PI', 'RN', 'RS', 'RO', 'RR', 'SC', 'SE', 'TO'];
-  const cnaesSugeridos = ['4321-5/00', '9529-1/99', '8121-4/00'];
+  
+  // Pegando as CNAEs dinamicamente do seu mock[cite: 1]
+  const cnaesDoPerfil = PERFIL_MOCK.cnaes.map(c => c.codigo);
 
   useEffect(() => {
     if (uf !== 'Todas' && municipio.length >= 1) {
@@ -172,7 +175,7 @@ export function FilterModal({ visivel, fechar, filtrosAtuais, aplicar }: Props) 
                 <View style={estilos.containerInput}>
                   <TextInput
                     style={estilos.inputCnae}
-                    placeholder="Ex: 4321-5/00"
+                    placeholder="Selecione uma atividade abaixo"
                     placeholderTextColor="#94A3B8"
                     value={cnae}
                     onChangeText={setCnae}
@@ -181,15 +184,23 @@ export function FilterModal({ visivel, fechar, filtrosAtuais, aplicar }: Props) 
                 </View>
 
                 <View style={estilos.gradeSugestoes}>
-                  {cnaesSugeridos.map(item => (
+                  {cnaesDoPerfil.map(item => (
                     <TouchableOpacity
                       key={item}
-                      style={estilos.chipSugestao}
+                      style={[estilos.chipSugestao, cnae === item && { backgroundColor: '#0F172A' }]}
                       onPress={() => setCnae(item)}
                     >
-                      <Text style={estilos.textoCnaeSugestao}>{item}</Text>
+                      <Text style={[estilos.textoCnaeSugestao, cnae === item && { color: '#FFF' }]}>{item}</Text>
                     </TouchableOpacity>
                   ))}
+                  {cnae !== '' && (
+                    <TouchableOpacity
+                      style={[estilos.chipSugestao, { backgroundColor: '#F1F5F9' }]}
+                      onPress={() => setCnae('')}
+                    >
+                      <Text style={[estilos.textoCnaeSugestao, { color: '#64748B' }]}>Limpar</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
             </ScrollView>
@@ -230,7 +241,7 @@ const estilos = StyleSheet.create({
   itemSugestao: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   textoSugestao: { fontSize: 14, color: '#0F172A' },
   inputCnae: { fontSize: 15, color: '#0F172A', fontWeight: 'bold', height: '100%' },
-  gradeSugestoes: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  gradeSugestoes: { flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' },
   chipSugestao: { backgroundColor: '#E0F2FE', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   textoCnaeSugestao: { fontSize: 11, fontWeight: 'bold', color: '#0369A1' },
   opcaoValor: { padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 8 },

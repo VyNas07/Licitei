@@ -2,59 +2,71 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-interface Props {
+interface DocumentItemProps {
   nome: string;
   status: 'valido' | 'vencendo' | 'pendente';
   validade: string;
 }
 
-export function DocumentItem({ nome, status, validade }: Props) {
-  const configurarStatus = () => {
+export const DocumentItem = ({ nome, status, validade }: DocumentItemProps) => {
+  const getConfig = () => {
     switch (status) {
       case 'valido':
-        return { icone: 'checkmark-circle' as const, cor: '#16A34A', fundo: '#DCFCE7' };
+        return { cor: '#10B981', fundo: '#F0FDF4', icone: 'checkmark-circle' };
       case 'vencendo':
-        return { icone: 'alert-circle' as const, cor: '#D97706', fundo: '#FEF3C7' };
-      default:
-        return { icone: 'document-text' as const, cor: '#64748B', fundo: '#F1F5F9' };
+        return { cor: '#F59E0B', fundo: '#FFFBEB', icone: 'alert-circle' };
+      case 'pendente':
+        return { cor: '#64748B', fundo: '#F1F5F9', icone: 'document-text' };
     }
   };
 
-  const config = configurarStatus();
+  const config = getConfig();
 
   return (
-    <View style={estilos.cartaoDocumento}>
-      <View style={[estilos.containerIcone, { backgroundColor: config.fundo }]}>
-        <Ionicons name={config.icone} size={22} color={config.cor} />
+    <View style={estilos.container}>
+      <View style={[estilos.iconeFundo, { backgroundColor: config.fundo }]}>
+        <Ionicons name={config.icone as any} size={20} color={config.cor} />
       </View>
-      <View style={estilos.areaTexto}>
-        <Text style={estilos.nomeArquivo}>{nome}</Text>
-        <Text style={estilos.textoValidade}>{validade}</Text>
+      
+      <View style={estilos.textosContainer}>
+        <Text style={estilos.nomeDocumento}>{nome}</Text>
+        <Text style={estilos.validadeDocumento}>{validade}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+
     </View>
   );
-}
+};
 
 const estilos = StyleSheet.create({
-  cartaoDocumento: {
+  container: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 10,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  containerIcone: {
+  iconeFundo: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  areaTexto: { flex: 1, marginLeft: 16 },
-  nomeArquivo: { fontSize: 14, fontWeight: 'bold', color: '#0F172A' },
-  textoValidade: { fontSize: 12, color: '#64748B', marginTop: 2 },
+  textosContainer: {
+    flex: 1,
+    marginLeft: 14,
+  },
+  nomeDocumento: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  validadeDocumento: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
 });

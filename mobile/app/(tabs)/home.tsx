@@ -16,79 +16,93 @@ import { SectorCard } from '../../src/components/editais/SectorCard';
 import { EditalCard } from '../../src/components/editais/EditalCard';
 import { CategoryModal } from '../../src/components/editais/CategoryModal';
 import { FilterModal } from '../../src/components/editais/FilterModal';
+import { EDITAS_MOCK, PERFIL_MOCK } from '../../src/lib/mock-data'; // Fontes de dados[cite: 1, 2]
 
 const TODAS_CATEGORIAS = [
-  { id: '1', icone: 'construct' as const, nome: 'Manutenção', qtd: 14 },
-  { id: '2', icone: 'restaurant' as const, nome: 'Alimentos', qtd: 9 },
-  { id: '3', icone: 'hammer' as const, nome: 'Obras', qtd: 5 },
-  { id: '4', icone: 'medkit' as const, nome: 'Saúde', qtd: 22 },
-  { id: '5', icone: 'desktop' as const, nome: 'Tecnologia', qtd: 7 },
-  { id: '6', icone: 'car' as const, nome: 'Veículos', qtd: 3 },
+  { id: '1', icone: 'construct' as const, nome: 'Tecnologia', cnae: '6201-5/00', descricao: 'Softwares e serviços de TI' },
+  { id: '2', icone: 'restaurant' as const, nome: 'Consultoria', cnae: '6202-3/00', descricao: 'Consultoria em tecnologia' },
+  { id: '3', icone: 'medkit' as const, nome: 'Saúde', cnae: '8650-0/99', descricao: 'Atividades na área de saúde' },
+  { id: '4', icone: 'hammer' as const, nome: 'Obras', cnae: '4321-5/00', descricao: 'Construção e reformas' },
+  { id: '5', icone: 'desktop' as const, nome: 'Treinamento', cnae: '8599-6/04', descricao: 'Cursos e capacitação' },
+  { id: '6', icone: 'car' as const, nome: 'Segurança', cnae: '8020-0/01', descricao: 'Monitoramento e sistemas' },
 ];
-
-const MOCK_EDITAIS = Array.from({ length: 12 }).map((_, i) => ({
-  id: String(i + 1),
-  catId: String((i % 6) + 1),
-  objeto: i % 3 === 0 ? `Serviços de TI #${i}` : `Manutenção Predial #${i}`,
-  orgao: i % 2 === 0 ? 'Prefeitura de Recife' : 'Câmara Municipal',
-  valor: 15000 + (i * 5000),
-  uf: i % 3 === 0 ? 'PE' : 'SP',
-  cnae: "4321-5/00"
-}));
 
 export default function HomeUsuario() {
   const router = useRouter();
   
-  const [busca, setBusca] = useState(''); // Estado para o campo de busca
+  const [busca, setBusca] = useState(''); 
   const [selecionadas, setSelecionadas] = useState<string[]>([]);
-  const [filtrosAvancados, setFiltrosAvancados] = useState({ uf: 'Todas', municipio: '', valor: 'Todos', cnae: '' });
+  const [filtrosAvancados, setFiltrosAvancados] = useState({ 
+    uf: 'Todas', 
+    municipio: '', 
+    valor: 'Todos', 
+    cnae: '' 
+  });
   const [modalCategorias, setModalCategorias] = useState(false);
   const [modalFiltros, setModalFiltros] = useState(false);
   
   const [pagina, setPagina] = useState(1);
   const ITENS_POR_PAGINA = 5;
 
-  const contagensDinamicas = useMemo(() => {
-    const base: Record<string, number> = { '1': 14, '2': 9, '3': 5, '4': 22, '5': 7, '6': 3 };
-    if (filtrosAvancados.uf !== 'Todas') {
-       return Object.fromEntries(Object.entries(base).map(([k, v]) => [k, Math.floor(v * 0.5)]));
-    }
-    return base;
-  }, [filtrosAvancados.uf]);
-
-  const alternarCategoria = (id: string) => {
-    setPagina(1);
-    setSelecionadas(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
+  // Função auxiliar para validar faixas de valor[cite: 2]
+  const validaFaixaValor = (valorEdital: number, faixaSelecionada: string) => {
+    if (faixaSelecionada === 'Todos') return true;
+    if (faixaSelecionada === 'Até R$ 80 mil (exclusivo MEI)') return valorEdital <= 80000;
+    if (faixaSelecionada === 'R$ 80 mil – R$ 200 mil') return valorEdital > 80000 && valorEdital <= 200000;
+    if (faixaSelecionada === 'Acima de R$ 200 mil') return valorEdital > 200000;
+    return true;
   };
+
+  // 1. Contagens dinâmicas para os Setores[cite: 2]
+  const contagensDinamicas = useMemo(() => {
+    const stats: Record<string, number> = {};
+    TODAS_CATEGORIAS.forEach(cat => stats[cat.id] = 0);
+
+    EDITAS_MOCK.forEach(edital => {
+      const termo = busca.toLowerCase();
+      const matchBusca = busca === '' || edital.objeto.toLowerCase().includes(termo) || edital.orgao.toLowerCase().includes(termo);
+      const matchUF = filtrosAvancados.uf === 'Todas' || edital.uf === filtrosAvancados.uf;
+      const matchMun = filtrosAvancados.municipio === '' || (edital.municipio?.toLowerCase().includes(filtrosAvancados.municipio.toLowerCase()));
+      const matchValor = validaFaixaValor(edital.valor, filtrosAvancados.valor);
+      const matchCnaeFiltro = filtrosAvancados.cnae === '' || edital.cnaeAlvo === filtrosAvancados.cnae;
+
+      if (matchBusca && matchUF && matchMun && matchValor && matchCnaeFiltro) {
+        const catRelacionada = TODAS_CATEGORIAS.find(cat => cat.cnae === edital.cnaeAlvo);
+        if (catRelacionada) stats[catRelacionada.id] += 1;
+      }
+    });
+    return stats;
+  }, [busca, filtrosAvancados]);
+
+  // 2. Filtragem da lista principal de cards[cite: 2]
+  const editaisFiltrados = useMemo(() => {
+    return EDITAS_MOCK.filter(e => {
+      const termo = busca.toLowerCase();
+      const matchBusca = busca === '' || e.objeto.toLowerCase().includes(termo) || e.orgao.toLowerCase().includes(termo);
+      const matchUF = filtrosAvancados.uf === 'Todas' || e.uf === filtrosAvancados.uf;
+      const matchMun = filtrosAvancados.municipio === '' || (e.municipio?.toLowerCase().includes(filtrosAvancados.municipio.toLowerCase()));
+      const matchValor = validaFaixaValor(e.valor, filtrosAvancados.valor);
+      const matchCnaeFiltro = filtrosAvancados.cnae === '' || e.cnaeAlvo === filtrosAvancados.cnae;
+      
+      // Filtro por categoria (Setores)[cite: 2]
+      const cnaesDasCategorias = TODAS_CATEGORIAS
+        .filter(cat => selecionadas.includes(cat.id))
+        .map(cat => cat.cnae);
+      const matchCategoria = selecionadas.length === 0 || cnaesDasCategorias.includes(e.cnaeAlvo);
+
+      return matchBusca && matchUF && matchMun && matchValor && matchCnaeFiltro && matchCategoria;
+    });
+  }, [selecionadas, filtrosAvancados, busca]);
+
+  const totalPaginas = Math.ceil(editaisFiltrados.length / ITENS_POR_PAGINA);
+  const editaisExibidos = editaisFiltrados.slice((pagina - 1) * ITENS_POR_PAGINA, pagina * ITENS_POR_PAGINA);
 
   const limparTudo = () => {
     setSelecionadas([]);
     setPagina(1);
     setBusca('');
+    setFiltrosAvancados({ uf: 'Todas', municipio: '', valor: 'Todos', cnae: '' });
   };
-
-  const editaisFiltrados = useMemo(() => {
-    return MOCK_EDITAIS.filter(e => {
-      const termo = busca.toLowerCase();
-      const matchBusca = busca === '' || 
-                         e.objeto.toLowerCase().includes(termo) || 
-                         e.orgao.toLowerCase().includes(termo) ||
-                         (e.cnae && e.cnae.includes(termo));
-
-      const matchCategoria = selecionadas.length === 0 || selecionadas.includes(e.catId);
-      const matchUF = filtrosAvancados.uf === 'Todas' || e.uf === filtrosAvancados.uf;
-      
-      return matchBusca && matchCategoria && matchUF;
-    });
-  }, [selecionadas, filtrosAvancados, busca]);
-
-  const totalPaginas = Math.ceil(editaisFiltrados.length / ITENS_POR_PAGINA);
-  const editaisExibidos = editaisFiltrados.slice(
-    (pagina - 1) * ITENS_POR_PAGINA, 
-    pagina * ITENS_POR_PAGINA
-  );
 
   return (
     <SafeAreaView style={estilos.areaSegura}>
@@ -100,10 +114,7 @@ export default function HomeUsuario() {
             <Text style={estilos.saudacao}>Olá, Ylson</Text>
             <Text style={estilos.tituloPagina}>Boas oportunidades hoje</Text>
           </View>
-          <TouchableOpacity 
-            style={estilos.botaoNotificacao} 
-            onPress={() => router.push('/alertas')}
-          >
+          <TouchableOpacity style={estilos.botaoNotificacao} onPress={() => router.push('/alertas')}>
             <Ionicons name="notifications-outline" size={22} color="#FFF" />
             <View style={estilos.pontoNotificacao} />
           </TouchableOpacity>
@@ -114,35 +125,22 @@ export default function HomeUsuario() {
             <Ionicons name="search-outline" size={18} color="#94A3B8" />
             <TextInput 
               style={estilos.inputReal}
-              placeholder="Buscar editais, órgãos, CNAE..."
+              placeholder="Buscar editais..."
               placeholderTextColor="#94A3B8"
               value={busca}
               onChangeText={(t) => { setBusca(t); setPagina(1); }}
             />
           </View>
-          <TouchableOpacity 
-            style={estilos.botaoFiltroAvancado}
-            onPress={() => setModalFiltros(true)}
-          >
+          <TouchableOpacity style={estilos.botaoFiltroAvancado} onPress={() => setModalFiltros(true)}>
             <Ionicons name="options-outline" size={22} color="#0F172A" />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView 
-        style={estilos.rolagem} 
-        contentContainerStyle={estilos.conteudoRolagem}
-        showsVerticalScrollIndicator={false}
-      >
-        <TouchableOpacity 
-          style={estilos.bannerPro} 
-          activeOpacity={0.9}
-          onPress={() => router.push('/planos')}
-        >
+      <ScrollView style={estilos.rolagem} contentContainerStyle={estilos.conteudoRolagem} showsVerticalScrollIndicator={false}>
+        <TouchableOpacity style={estilos.bannerPro} activeOpacity={0.9} onPress={() => router.push('/planos')}>
           <View style={estilos.proConteudoEsquerda}>
-            <View style={estilos.proIconeContainer}>
-              <Ionicons name="ribbon-outline" size={20} color="#FFF" />
-            </View>
+            <View style={estilos.proIconeContainer}><Ionicons name="ribbon-outline" size={20} color="#FFF" /></View>
             <View>
               <Text style={estilos.proTitulo}>Upgrade para PRO</Text>
               <Text style={estilos.proSubtitulo}>Editais ilimitados + checklist automático</Text>
@@ -152,19 +150,12 @@ export default function HomeUsuario() {
         </TouchableOpacity>
 
         <View style={estilos.secao}>
-          <View style={estilos.cabecalhoSecao}>
-            <Text style={estilos.tituloSecao}>Setores</Text>
-          </View>
-
+          <View style={estilos.cabecalhoSecao}><Text style={estilos.tituloSecao}>Setores</Text></View>
           <View style={estilos.gradeBotoesAcao}>
-            <TouchableOpacity 
-              style={estilos.btnAcaoSelecionar} 
-              onPress={() => setModalCategorias(true)}
-            >
+            <TouchableOpacity style={estilos.btnAcaoSelecionar} onPress={() => setModalCategorias(true)}>
               <Text style={estilos.textoBtnAcao}>Selecionar categorias</Text>
             </TouchableOpacity>
-
-            {selecionadas.length > 0 && (
+            {(selecionadas.length > 0 || busca !== '' || filtrosAvancados.uf !== 'Todas' || filtrosAvancados.cnae !== '' || filtrosAvancados.valor !== 'Todos') && (
               <TouchableOpacity style={estilos.btnAcaoLimpar} onPress={limparTudo}>
                 <Text style={estilos.textoBtnAcao}>Limpar Filtros</Text>
               </TouchableOpacity>
@@ -174,12 +165,7 @@ export default function HomeUsuario() {
           {selecionadas.length > 0 && (
             <View style={estilos.listaSelecionados}>
               {TODAS_CATEGORIAS.filter(c => selecionadas.includes(c.id)).map(s => (
-                <SectorCard 
-                  key={s.id} 
-                  icone={s.icone}
-                  nome={s.nome}
-                  qtd={contagensDinamicas[s.id] || 0}
-                />
+                <SectorCard key={s.id} icone={s.icone} nome={s.nome} qtd={contagensDinamicas[s.id]} />
               ))}
             </View>
           )}
@@ -190,60 +176,33 @@ export default function HomeUsuario() {
             <Text style={estilos.tituloSecao}>Resultados Recentes</Text>
             <Text style={estilos.contador}>{editaisFiltrados.length} encontrados</Text>
           </View>
-
           {editaisExibidos.map(edital => (
-            <EditalCard 
-              key={edital.id}
-              onPress={() => {}}
-              item={{
-                numero_controle_pncp: `ID #${edital.id}`,
-                objeto_compra: edital.objeto,
-                orgao_razao_social: edital.orgao,
-                valor_total_estimado: edital.valor,
-                uf: edital.uf,
-                municipio: 'Recife',
-                data_encerramento_proposta: '2026-05-20'
-              }}
-            />
+            <EditalCard key={edital.id} onPress={() => router.push(`/edital/${edital.id}`)} item={edital} />
           ))}
-
           {totalPaginas > 1 && (
             <View style={estilos.paginacaoContainer}>
-              <TouchableOpacity 
-                disabled={pagina === 1}
-                onPress={() => setPagina(p => p - 1)}
-                style={[estilos.btnPag, pagina === 1 && { opacity: 0.3 }]}
-              >
-                <Ionicons name="chevron-back" size={20} color="#0F172A" />
-              </TouchableOpacity>
-              
+              <TouchableOpacity disabled={pagina === 1} onPress={() => setPagina(p => p - 1)} style={[estilos.btnPag, pagina === 1 && { opacity: 0.3 }]}><Ionicons name="chevron-back" size={20} color="#0F172A" /></TouchableOpacity>
               <Text style={estilos.textoPagina}>Página {pagina} de {totalPaginas}</Text>
-
-              <TouchableOpacity 
-                disabled={pagina === totalPaginas}
-                onPress={() => setPagina(p => p + 1)}
-                style={[estilos.btnPag, pagina === totalPaginas && { opacity: 0.3 }]}
-              >
-                <Ionicons name="chevron-forward" size={20} color="#0F172A" />
-              </TouchableOpacity>
+              <TouchableOpacity disabled={pagina === totalPaginas} onPress={() => setPagina(p => p + 1)} style={[estilos.btnPag, pagina === totalPaginas && { opacity: 0.3 }]}><Ionicons name="chevron-forward" size={20} color="#0F172A" /></TouchableOpacity>
             </View>
           )}
         </View>
       </ScrollView>
 
       <CategoryModal 
-        visivel={modalCategorias}
-        fechar={() => setModalCategorias(false)}
-        categorias={TODAS_CATEGORIAS}
-        selecionadas={selecionadas}
-        alternarSelecao={alternarCategoria}
+        visivel={modalCategorias} 
+        fechar={() => setModalCategorias(false)} 
+        categorias={TODAS_CATEGORIAS} 
+        selecionadas={selecionadas} 
+        alternarSelecao={(id) => { setPagina(1); setSelecionadas(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]); }}
+        contagens={contagensDinamicas}
       />
-
+      
       <FilterModal 
-        visivel={modalFiltros}
-        fechar={() => setModalFiltros(false)}
-        filtrosAtuais={filtrosAvancados}
-        aplicar={setFiltrosAvancados}
+        visivel={modalFiltros} 
+        fechar={() => setModalFiltros(false)} 
+        filtrosAtuais={filtrosAvancados} 
+        aplicar={(f) => { setFiltrosAvancados(f); setPagina(1); }} 
       />
     </SafeAreaView>
   );
@@ -259,9 +218,7 @@ const estilos = StyleSheet.create({
   pontoNotificacao: { position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFB800', borderWidth: 2, borderColor: '#0F172A' },
   containerBusca: { flexDirection: 'row', gap: 10 },
   barraBusca: { flex: 1, height: 48, backgroundColor: '#FFF', borderRadius: 15, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15 },
-  
   inputReal: { flex: 1, marginLeft: 10, fontSize: 14, color: '#0F172A', height: '100%' },
-
   botaoFiltroAvancado: { width: 48, height: 48, backgroundColor: '#FFF', borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   rolagem: { flex: 1, backgroundColor: '#F8FAFC' },
   conteudoRolagem: { paddingBottom: 40, paddingTop: 10 },

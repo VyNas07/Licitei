@@ -12,16 +12,16 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { DocumentItem } from '../../src/components/editais/DocumentItem';
+// Importa a lista oficial de documentos que você possui
+import { MEUS_DOCUMENTOS_CADASTRADOS } from '../../src/lib/mock-data';
 
 export default function DocumentsScreen() {
-  const listaDocumentos = [
-    { nome: "Certidão Negativa Federal", status: "valido" as const, validade: "Vence em 45 dias" },
-    { nome: "Certidão Negativa Estadual", status: "valido" as const, validade: "Vence em 90 dias" },
-    { nome: "Certidão Negativa Municipal", status: "vencendo" as const, validade: "Vence em 7 dias" },
-    { nome: "Certidão FGTS", status: "valido" as const, validade: "Vence em 30 dias" },
-    { nome: "Declaração de ME/EPP", status: "valido" as const, validade: "Atualizada" },
-    { nome: "Atestado de Capacidade Técnica", status: "pendente" as const, validade: "Não enviado" },
-  ];
+  // Mapeia os documentos cadastrados para o formato visual da tela[cite: 7]
+  const listaExibicao = MEUS_DOCUMENTOS_CADASTRADOS.map(nome => ({
+    nome,
+    status: "valido" as const,
+    validade: "Vencimento em dia"
+  }));
 
   return (
     <SafeAreaView style={estilos.recipientePrincipal}>
@@ -48,10 +48,10 @@ export default function DocumentsScreen() {
 
           <View style={estilos.cabecalhoSecao}>
             <Text style={estilos.tituloSecao}>Meus documentos</Text>
-            <Text style={estilos.textoContagem}>{listaDocumentos.length} no total</Text>
+            <Text style={estilos.textoContagem}>{listaExibicao.length} no total</Text>
           </View>
 
-          {listaDocumentos.map((item, index) => (
+          {listaExibicao.map((item, index) => (
             <DocumentItem 
               key={index}
               nome={item.nome}
@@ -59,6 +59,13 @@ export default function DocumentsScreen() {
               validade={item.validade}
             />
           ))}
+
+          {/* Exemplo de documento pendente que não está na lista oficial para teste[cite: 5, 7] */}
+          <DocumentItem 
+            nome="Portfólio de Apps"
+            status="pendente"
+            validade="Não enviado"
+          />
         </View>
 
         <View style={estilos.cartaoInformativo}>

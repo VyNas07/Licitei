@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   ScrollView, 
   View, 
@@ -14,27 +14,34 @@ import { Ionicons } from '@expo/vector-icons';
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { ResumoCard } from '../../src/components/auth/ResumoCard'; 
 import { EditalCard } from '../../src/components/editais/EditalCard';
+import { EDITAS_MOCK } from '../../src/lib/mock-data'; // Importando a fonte da verdade[cite: 1, 2]
 
 export default function TelaDisputas() {
   const navegador = useRouter();
 
+  // Filtra editais marcados como participando
+  const minhasParticipacoes = useMemo(() => {
+    return EDITAS_MOCK.filter(e => e.participando === true);
+  }, [EDITAS_MOCK]);
+
+  // Resumo dinâmico baseado na lista de participações
   const resumo = [
     { 
       icone: 'create-outline' as const, 
       rotulo: 'Em preparação', 
-      valor: 3, 
+      valor: 0, // Poderia ser filtrado por editais salvos mas não enviados
       estilo: { backgroundColor: '#F1F5F9', color: '#0F172A' } 
     },
     { 
       icone: 'send-outline' as const, 
       rotulo: 'Submetidas', 
-      valor: 12, 
+      valor: minhasParticipacoes.length, 
       estilo: { backgroundColor: '#FEF3C7', color: '#D97706' } 
     },
     { 
       icone: 'checkmark-circle-outline' as const, 
       rotulo: 'Finalizadas', 
-      valor: 45, 
+      valor: 0, 
       estilo: { backgroundColor: '#DCFCE7', color: '#16A34A' } 
     },
   ];
@@ -44,8 +51,8 @@ export default function TelaDisputas() {
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
       
       <AuthHeader 
-        titulo="Histórico de Participações" 
-        subtitulo="Acompanhe o andamento dos seus editais" 
+        titulo="Minhas Disputas" 
+        subtitulo="Acompanhe o andamento das suas participações" 
         exibirVoltar={false}
       />
 
@@ -54,6 +61,7 @@ export default function TelaDisputas() {
         contentContainerStyle={estilos.conteudoRolagem}
         showsVerticalScrollIndicator={false}
       >
+        {/* Cards de Resumo */}
         <View style={estilos.secaoResumo}>
           {resumo.map((item) => (
             <ResumoCard 
@@ -66,6 +74,7 @@ export default function TelaDisputas() {
           ))}
         </View>
 
+        {/* Lista de Editais Participando */}
         <View style={estilos.secaoLista}>
           <View style={estilos.cabecalhoLista}>
             <Text style={estilos.tituloSecao}>Minhas participações</Text>
@@ -74,24 +83,29 @@ export default function TelaDisputas() {
             </TouchableOpacity>
           </View>
 
-          <EditalCard 
-            onPress={() => navegador.push('/edital/2024-05')}
-            item={{
-              numero_controle_pncp: '2024-05',
-              objeto_compra: 'Serviço de buffet para eventos corporativos e coquetéis',
-              orgao_razao_social: 'Câmara Municipal de Recife',
-              valor_total_estimado: 15200.00,
-              uf: 'PE',
-              municipio: 'Recife',
-              data_encerramento_proposta: 'Finalizado em 12/04'
-            }}
-          />
+          {minhasParticipacoes.length === 0 ? (
+            <View style={estilos.emptyState}>
+              <Ionicons name="document-text-outline" size={48} color="#CBD5E1" />
+              <Text style={estilos.emptyText}>
+                Nenhum edital submetido ainda.
+              </Text>
+            </View>
+          ) : (
+            minhasParticipacoes.map((edital) => (
+              <EditalCard 
+                key={edital.id}
+                onPress={() => navegador.push(`/edital/${edital.id}`)}
+                item={edital}
+              />
+            ))
+          )}
         </View>
 
+        {/* Card de Incentivo */}
         <View style={estilos.cartaoIncentivo}>
           <Text style={estilos.tituloIncentivo}>Quer ver mais oportunidades?</Text>
           <Text style={estilos.descIncentivo}>
-            Volte ao painel inicial para descobrir novos editais publicados no PNCP.
+            Volte ao painel inicial para descobrir novos editais compatíveis com seu CNAE.
           </Text>
           <TouchableOpacity 
             style={estilos.botaoExplorar}
@@ -114,7 +128,31 @@ const estilos = StyleSheet.create({
   secaoLista: { marginTop: 32, paddingHorizontal: 20 },
   cabecalhoLista: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   tituloSecao: { fontSize: 16, fontWeight: 'bold', color: '#0F172A' },
-  cartaoIncentivo: { marginHorizontal: 20, marginTop: 24, backgroundColor: '#F1F5F9', borderRadius: 24, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(15, 23, 42, 0.1)' },
+  emptyState: { 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    paddingVertical: 40,
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F1F5F9'
+  },
+  emptyText: { 
+    color: '#64748B', 
+    fontSize: 14, 
+    marginTop: 12,
+    textAlign: 'center' 
+  },
+  cartaoIncentivo: { 
+    marginHorizontal: 20, 
+    marginTop: 24, 
+    backgroundColor: '#F1F5F9', 
+    borderRadius: 24, 
+    padding: 24, 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: 'rgba(15, 23, 42, 0.1)' 
+  },
   tituloIncentivo: { fontSize: 14, fontWeight: 'bold', color: '#0F172A', textAlign: 'center' },
   descIncentivo: { fontSize: 12, color: '#64748B', textAlign: 'center', marginTop: 6, marginBottom: 16, lineHeight: 18 },
   botaoExplorar: { backgroundColor: '#0F172A', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 16 },

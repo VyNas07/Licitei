@@ -15,7 +15,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Início',
           tabBarIcon: ({ color, focused }) => (
@@ -40,6 +40,13 @@ export default function TabLayout() {
 
       <Tabs.Screen
         name="alertas"
+        options={{
+          href: null, 
+        }}
+      />
+
+      <Tabs.Screen
+        name="planos"
         options={{
           href: null,
         }}
