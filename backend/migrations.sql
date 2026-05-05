@@ -1,26 +1,87 @@
 -- ============================================================
--- Licitei — Referência de Schema Supabase
--- As tabelas abaixo foram criadas diretamente no Supabase Dashboard.
--- Este arquivo serve como documentação — NÃO executar novamente.
--- Schema completo em: docs/supabase-schema.md
+-- Licitei — Migrações Supabase
+-- Executar no SQL Editor do Supabase Dashboard
 -- ============================================================
 
--- mei_profile: perfil 1:1 com auth.users
--- user_id, nome_fantasia, cnpj, cnae (text), ramo_atuacao, uf, created_at, updated_at
+-- --------------------------------------------------------
+-- 1. mei_profile — perfil 1:1 com auth.users
+-- --------------------------------------------------------
+create table if not exists public.mei_profile (
+  user_id     uuid primary key references auth.users(id) on delete cascade,
+  nome_fantasia text,
+  cnpj        text,
+  cnae        text,
+  ramo_atuacao text,
+  uf          char(2),
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
 
--- saved_searches: buscas salvas pelo MEI
--- user_id, termo_busca, filtros (jsonb), created_at
+alter table public.mei_profile enable row level security;
 
--- participacoes: editais que o MEI está acompanhando (alimenta RF05)
--- user_id, licitacao_id (numeroControlePNCP), status, objeto_compra,
--- orgao_nome, valor_estimado, data_encerramento, created_at, updated_at
--- status enum: acompanhando | proposta_enviada | venceu | perdeu | desistiu
+create policy "Usuário lê próprio perfil"
+  on public.mei_profile for select
+  using (auth.uid() = user_id);
 
--- checklist_itens: itens do checklist de habilitação (Sprint 2)
--- participacao_id, user_id, descricao, concluido, created_at
+create policy "Usuário cria próprio perfil"
+  on public.mei_profile for insert
+  with check (auth.uid() = user_id);
 
--- documentos: metadados de documentos do MEI (Sprint 2)
--- user_id, participacao_id, nome, tipo, url, status, validade, created_at, updated_at
+create policy "Usuário atualiza próprio perfil"
+  on public.mei_profile for update
+  using (auth.uid() = user_id);
 
--- alertas: configurações de notificação por prazo (Sprint 2)
--- user_id, participacao_id, tipo, prazo, antecedencia_horas, notificado, created_at
+-- --------------------------------------------------------
+-- 2. participacoes — editais acompanhados pelo MEI
+-- --------------------------------------------------------
+create table if not exists public.participacoes (
+  id                uuid primary key default gen_random_uuid(),
+  user_id           uuid not null references auth.users(id) on delete cascade,
+  licitacao_id      text not null,
+  status            text not null default 'acompanhando'
+                      check (status in ('acompanhando','proposta_enviada','venceu','perdeu','desistiu')),
+  objeto_compra     text,
+  orgao_nome        text,
+  valor_estimado    numeric,
+  data_encerramento timestamptz,
+  created_at        timestamptz default now(),
+  updated_at        timestamptz default now(),
+  unique (user_id, licitacao_id)
+);
+
+alter table public.participacoes enable row level security;
+
+create policy "Usuário lê próprias participações"
+  on public.participacoes for select
+  using (auth.uid() = user_id);
+
+create policy "Usuário cria participação"
+  on public.participacoes for insert
+  with check (auth.uid() = user_id);
+
+create policy "Usuário atualiza participação"
+  on public.participacoes for update
+  using (auth.uid() = user_id);
+
+create policy "Usuário deleta participação"
+  on public.participacoes for delete
+  using (auth.uid() = user_id);
+
+-- --------------------------------------------------------
+-- 3. Trigger para atualizar updated_at automaticamente
+-- --------------------------------------------------------
+create or replace function public.set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger trg_mei_profile_updated_at
+  before update on public.mei_profile
+  for each row execute function public.set_updated_at();
+
+create trigger trg_participacoes_updated_at
+  before update on public.participacoes
+  for each row execute function public.set_updated_at();
