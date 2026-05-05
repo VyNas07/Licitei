@@ -26,3 +26,8 @@ Thumbs.db
 *.db
 data/
 logs/
+temp/
+
+# Exceção: dados de referência estáticos do MCP (não são gerados em runtime)
+!mcp/data/
+!mcp/data/cnae.json
