@@ -1,50 +1,64 @@
-import React, { useMemo } from 'react';
-import { 
-  ScrollView, 
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
-  StatusBar, 
-  TouchableOpacity 
+import React, { useEffect, useState, useMemo } from 'react';
+import {
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
-import { ResumoCard } from '../../src/components/auth/ResumoCard'; 
+import { ResumoCard } from '../../src/components/auth/ResumoCard';
 import { EditalCard } from '../../src/components/editais/EditalCard';
-import { EDITAS_MOCK } from '../../src/lib/mock-data'; // Importando a fonte da verdade[cite: 1, 2]
+import api from '../../src/services/api';
+
+interface Participacao {
+  id: string;
+  licitacao_id: string;
+  status: 'acompanhando' | 'proposta_enviada' | 'venceu' | 'perdeu' | 'desistiu';
+  objeto_compra: string;
+  orgao_nome: string;
+  valor_estimado: number;
+  data_encerramento: string;
+}
 
 export default function TelaDisputas() {
   const navegador = useRouter();
+  const [participacoes, setParticipacoes] = useState<Participacao[]>([]);
+  const [carregando, setCarregando] = useState(true);
 
-  // Filtra editais marcados como participando
-  const minhasParticipacoes = useMemo(() => {
-    return EDITAS_MOCK.filter(e => e.participando === true);
-  }, [EDITAS_MOCK]);
+  useEffect(() => {
+    api.get('/participacoes')
+      .then(({ data }) => setParticipacoes(data.data ?? []))
+      .catch(() => setParticipacoes([]))
+      .finally(() => setCarregando(false));
+  }, []);
 
-  // Resumo dinâmico baseado na lista de participações
-  const resumo = [
-    { 
-      icone: 'create-outline' as const, 
-      rotulo: 'Em preparação', 
-      valor: 0, // Poderia ser filtrado por editais salvos mas não enviados
-      estilo: { backgroundColor: '#F1F5F9', color: '#0F172A' } 
+  const resumo = useMemo(() => [
+    {
+      icone: 'create-outline' as const,
+      rotulo: 'Acompanhando',
+      valor: participacoes.filter(p => p.status === 'acompanhando').length,
+      estilo: { backgroundColor: '#F1F5F9', color: '#0F172A' },
     },
-    { 
-      icone: 'send-outline' as const, 
-      rotulo: 'Submetidas', 
-      valor: minhasParticipacoes.length, 
-      estilo: { backgroundColor: '#FEF3C7', color: '#D97706' } 
+    {
+      icone: 'send-outline' as const,
+      rotulo: 'Proposta enviada',
+      valor: participacoes.filter(p => p.status === 'proposta_enviada').length,
+      estilo: { backgroundColor: '#FEF3C7', color: '#D97706' },
     },
-    { 
-      icone: 'checkmark-circle-outline' as const, 
-      rotulo: 'Finalizadas', 
-      valor: 0, 
-      estilo: { backgroundColor: '#DCFCE7', color: '#16A34A' } 
+    {
+      icone: 'checkmark-circle-outline' as const,
+      rotulo: 'Finalizadas',
+      valor: participacoes.filter(p => ['venceu', 'perdeu', 'desistiu'].includes(p.status)).length,
+      estilo: { backgroundColor: '#DCFCE7', color: '#16A34A' },
     },
-  ];
+  ], [participacoes]);
 
   return (
     <SafeAreaView style={estilos.recipiente}>
@@ -83,22 +97,27 @@ export default function TelaDisputas() {
             </TouchableOpacity>
           </View>
 
-          {minhasParticipacoes.length === 0 ? (
+          {carregando ? (
+            <ActivityIndicator size="large" color="#0F172A" style={{ marginTop: 40 }} />
+          ) : participacoes.length === 0 ? (
             <View style={estilos.emptyState}>
               <Ionicons name="document-text-outline" size={48} color="#CBD5E1" />
-              <Text style={estilos.emptyText}>
-                Nenhum edital submetido ainda.
-              </Text>
+              <Text style={estilos.emptyText}>Nenhuma participação ainda.</Text>
             </View>
-          ) : (
-            minhasParticipacoes.map((edital) => (
-              <EditalCard 
-                key={edital.id}
-                onPress={() => navegador.push(`/edital/${edital.id}`)}
-                item={edital}
-              />
-            ))
-          )}
+          ) : participacoes.map((p) => (
+            <EditalCard
+              key={p.id}
+              onPress={() => navegador.push(`/edital/${p.licitacao_id}`)}
+              item={{
+                id: p.licitacao_id,
+                objeto: p.objeto_compra,
+                orgao: p.orgao_nome,
+                valor: p.valor_estimado,
+                dataLimite: p.data_encerramento,
+                modalidade: p.status,
+              }}
+            />
+          ))}
         </View>
 
         {/* Card de Incentivo */}

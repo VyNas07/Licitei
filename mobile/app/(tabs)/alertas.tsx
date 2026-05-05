@@ -1,20 +1,69 @@
-import React from 'react';
-import { ScrollView, View, Text, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, View, Text, StyleSheet, SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { Calendar } from '../../src/components/alertas/Calendar';
 import { NotificationItem } from '../../src/components/alertas/NotificationItem';
+import api from '../../src/services/api';
+
+type TipoAlerta = 'prazo' | 'preferencia' | 'documento';
+
+interface AlertaUI {
+  id: string;
+  tipo: TipoAlerta;
+  titulo: string;
+  descricao: string;
+  data: string;
+  licitacao_id?: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapAlerta(alerta: any, index: number): AlertaUI {
+  if (alerta.tipo === 'prazo_curto') {
+    return {
+      id: String(index),
+      tipo: 'prazo',
+      titulo: `Prazo curto: ${alerta.dias_restantes} dia(s)`,
+      descricao: alerta.mensagem,
+      data: `${alerta.dias_restantes}d restantes`,
+      licitacao_id: alerta.licitacao_id,
+    };
+  }
+  if (alerta.tipo === 'teto_mei') {
+    return {
+      id: String(index),
+      tipo: 'documento',
+      titulo: alerta.urgente ? 'Teto MEI atingido!' : 'Atenção: teto MEI próximo',
+      descricao: alerta.mensagem,
+      data: 'Agora',
+    };
+  }
+  return {
+    id: String(index),
+    tipo: 'preferencia',
+    titulo: 'Novo edital compatível',
+    descricao: alerta.mensagem ?? alerta.edital?.objeto_compra ?? '',
+    data: 'Recente',
+    licitacao_id: alerta.edital?.numero_controle_pncp,
+  };
+}
 
 export default function AlertasScreen() {
   const router = useRouter();
-  
-  const datasComAlerta = [10, 15, 22];
-  const alertas = [
-    { id: '1', tipo: 'prazo' as const, titulo: 'Fim do prazo: Edital 2024-05', descricao: 'Envie sua proposta para a Prefeitura de Recife até as 18h.', data: 'Hoje' },
-    { id: '2', tipo: 'preferencia' as const, titulo: 'Cota Reservada MEI', descricao: 'Nova oportunidade com 25% de cota exclusiva para pequenos negócios.', data: 'Ontem' },
-    { id: '3', tipo: 'documento' as const, titulo: 'Certidão Vencendo', descricao: 'Sua Certidão Municipal vence em 7 dias. Atualize agora.', data: 'Há 2 dias' },
-  ];
+  const [alertas, setAlertas] = useState<AlertaUI[]>([]);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    api.get('/alertas')
+      .then(({ data }) => setAlertas((data.data ?? []).map(mapAlerta)))
+      .catch(() => setAlertas([]))
+      .finally(() => setCarregando(false));
+  }, []);
+
+  const datasComAlerta: number[] = alertas
+    .filter(a => a.tipo === 'prazo')
+    .map(() => new Date().getDate());
 
   return (
     <SafeAreaView style={estilos.recipiente}>
@@ -38,11 +87,18 @@ export default function AlertasScreen() {
 
           <View style={estilos.secaoNotificacoes}>
             <Text style={estilos.tituloSecao}>Notificações</Text>
-            {alertas.map((alerta) => (
-              <NotificationItem 
+            {carregando ? (
+              <ActivityIndicator size="large" color="#0F172A" style={{ marginTop: 20 }} />
+            ) : alertas.length === 0 ? (
+              <Text style={{ color: '#64748B', textAlign: 'center', marginTop: 20 }}>Nenhum alerta no momento.</Text>
+            ) : alertas.map((alerta) => (
+              <NotificationItem
                 key={alerta.id}
-                {...alerta}
-                onPress={() => alerta.tipo === 'prazo' && router.push('/edital/1')}
+                tipo={alerta.tipo}
+                titulo={alerta.titulo}
+                descricao={alerta.descricao}
+                data={alerta.data}
+                onPress={alerta.licitacao_id ? () => router.push(`/edital/${alerta.licitacao_id}`) : undefined}
               />
             ))}
           </View>

@@ -1,13 +1,14 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  ScrollView, 
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
-  StatusBar, 
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import {
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
   TouchableOpacity,
-  TextInput 
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,83 +17,124 @@ import { SectorCard } from '../../src/components/editais/SectorCard';
 import { EditalCard } from '../../src/components/editais/EditalCard';
 import { CategoryModal } from '../../src/components/editais/CategoryModal';
 import { FilterModal } from '../../src/components/editais/FilterModal';
-import { EDITAS_MOCK, PERFIL_MOCK } from '../../src/lib/mock-data'; // Fontes de dados[cite: 1, 2]
+import api from '../../src/services/api';
+
+interface EditalAPI {
+  numero_controle_pncp: string;
+  objeto_compra: string;
+  orgao_razao_social: string;
+  valor_total_estimado: number;
+  modalidade_nome: string;
+  uf: string;
+  municipio?: string;
+  data_encerramento_proposta: string;
+}
+
+interface EditalCard {
+  id: string;
+  objeto: string;
+  orgao: string;
+  valor: number;
+  dataLimite: string;
+  modalidade: string;
+  uf: string;
+  municipio?: string;
+  match: 'Alta' | 'Média' | 'Baixa';
+}
+
+function mapEdital(e: EditalAPI): EditalCard {
+  const match = e.valor_total_estimado <= 40000 ? 'Alta' : e.valor_total_estimado <= 80000 ? 'Média' : 'Baixa';
+  return {
+    id: e.numero_controle_pncp,
+    objeto: e.objeto_compra,
+    orgao: e.orgao_razao_social,
+    valor: e.valor_total_estimado,
+    dataLimite: e.data_encerramento_proposta,
+    modalidade: e.modalidade_nome,
+    uf: e.uf,
+    municipio: e.municipio,
+    match,
+  };
+}
 
 const TODAS_CATEGORIAS = [
-  { id: '1', icone: 'construct' as const, nome: 'Tecnologia', cnae: '6201-5/00', descricao: 'Softwares e serviços de TI' },
-  { id: '2', icone: 'restaurant' as const, nome: 'Consultoria', cnae: '6202-3/00', descricao: 'Consultoria em tecnologia' },
-  { id: '3', icone: 'medkit' as const, nome: 'Saúde', cnae: '8650-0/99', descricao: 'Atividades na área de saúde' },
-  { id: '4', icone: 'hammer' as const, nome: 'Obras', cnae: '4321-5/00', descricao: 'Construção e reformas' },
-  { id: '5', icone: 'desktop' as const, nome: 'Treinamento', cnae: '8599-6/04', descricao: 'Cursos e capacitação' },
-  { id: '6', icone: 'car' as const, nome: 'Segurança', cnae: '8020-0/01', descricao: 'Monitoramento e sistemas' },
+  { id: '1', icone: 'construct' as const, nome: 'Tecnologia', descricao: 'Softwares e serviços de TI' },
+  { id: '2', icone: 'restaurant' as const, nome: 'Consultoria', descricao: 'Consultoria em tecnologia' },
+  { id: '3', icone: 'medkit' as const, nome: 'Saúde', descricao: 'Atividades na área de saúde' },
+  { id: '4', icone: 'hammer' as const, nome: 'Obras', descricao: 'Construção e reformas' },
+  { id: '5', icone: 'desktop' as const, nome: 'Treinamento', descricao: 'Cursos e capacitação' },
+  { id: '6', icone: 'car' as const, nome: 'Segurança', descricao: 'Monitoramento e sistemas' },
 ];
 
 export default function HomeUsuario() {
   const router = useRouter();
-  
-  const [busca, setBusca] = useState(''); 
+
+  const [editais, setEditais] = useState<EditalCard[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [busca, setBusca] = useState('');
   const [selecionadas, setSelecionadas] = useState<string[]>([]);
-  const [filtrosAvancados, setFiltrosAvancados] = useState({ 
-    uf: 'Todas', 
-    municipio: '', 
-    valor: 'Todos', 
-    cnae: '' 
+  const [filtrosAvancados, setFiltrosAvancados] = useState({
+    uf: 'Todas',
+    municipio: '',
+    valor: 'Todos',
+    cnae: '',
   });
   const [modalCategorias, setModalCategorias] = useState(false);
   const [modalFiltros, setModalFiltros] = useState(false);
-  
   const [pagina, setPagina] = useState(1);
   const ITENS_POR_PAGINA = 5;
 
-  // Função auxiliar para validar faixas de valor[cite: 2]
-  const validaFaixaValor = (valorEdital: number, faixaSelecionada: string) => {
-    if (faixaSelecionada === 'Todos') return true;
-    if (faixaSelecionada === 'Até R$ 80 mil (exclusivo MEI)') return valorEdital <= 80000;
-    if (faixaSelecionada === 'R$ 80 mil – R$ 200 mil') return valorEdital > 80000 && valorEdital <= 200000;
-    if (faixaSelecionada === 'Acima de R$ 200 mil') return valorEdital > 200000;
+  const buscarOportunidades = useCallback(async () => {
+    setCarregando(true);
+    try {
+      const params: Record<string, string> = { limit: '50' };
+      if (filtrosAvancados.uf !== 'Todas') params.uf = filtrosAvancados.uf;
+      if (filtrosAvancados.valor === 'Até R$ 80 mil (exclusivo MEI)') params.valor_max = '80000';
+      const { data } = await api.get('/oportunidades', { params });
+      setEditais((data.data ?? []).map(mapEdital));
+    } catch {
+      setEditais([]);
+    } finally {
+      setCarregando(false);
+    }
+  }, [filtrosAvancados.uf, filtrosAvancados.valor]);
+
+  useEffect(() => { buscarOportunidades(); }, [buscarOportunidades]);
+
+  const validaFaixaValor = (valor: number, faixa: string) => {
+    if (faixa === 'Todos') return true;
+    if (faixa === 'Até R$ 80 mil (exclusivo MEI)') return valor <= 80000;
+    if (faixa === 'R$ 80 mil – R$ 200 mil') return valor > 80000 && valor <= 200000;
+    if (faixa === 'Acima de R$ 200 mil') return valor > 200000;
     return true;
   };
 
-  // 1. Contagens dinâmicas para os Setores[cite: 2]
   const contagensDinamicas = useMemo(() => {
     const stats: Record<string, number> = {};
-    TODAS_CATEGORIAS.forEach(cat => stats[cat.id] = 0);
-
-    EDITAS_MOCK.forEach(edital => {
+    TODAS_CATEGORIAS.forEach(cat => { stats[cat.id] = 0; });
+    editais.forEach(e => {
       const termo = busca.toLowerCase();
-      const matchBusca = busca === '' || edital.objeto.toLowerCase().includes(termo) || edital.orgao.toLowerCase().includes(termo);
-      const matchUF = filtrosAvancados.uf === 'Todas' || edital.uf === filtrosAvancados.uf;
-      const matchMun = filtrosAvancados.municipio === '' || (edital.municipio?.toLowerCase().includes(filtrosAvancados.municipio.toLowerCase()));
-      const matchValor = validaFaixaValor(edital.valor, filtrosAvancados.valor);
-      const matchCnaeFiltro = filtrosAvancados.cnae === '' || edital.cnaeAlvo === filtrosAvancados.cnae;
-
-      if (matchBusca && matchUF && matchMun && matchValor && matchCnaeFiltro) {
-        const catRelacionada = TODAS_CATEGORIAS.find(cat => cat.cnae === edital.cnaeAlvo);
-        if (catRelacionada) stats[catRelacionada.id] += 1;
-      }
+      if (busca !== '' && !e.objeto.toLowerCase().includes(termo) && !e.orgao.toLowerCase().includes(termo)) return;
+      TODAS_CATEGORIAS.forEach(cat => {
+        if (e.objeto.toLowerCase().includes(cat.descricao.split(' ')[0].toLowerCase())) stats[cat.id] += 1;
+      });
     });
     return stats;
-  }, [busca, filtrosAvancados]);
+  }, [editais, busca]);
 
-  // 2. Filtragem da lista principal de cards[cite: 2]
   const editaisFiltrados = useMemo(() => {
-    return EDITAS_MOCK.filter(e => {
+    return editais.filter(e => {
       const termo = busca.toLowerCase();
       const matchBusca = busca === '' || e.objeto.toLowerCase().includes(termo) || e.orgao.toLowerCase().includes(termo);
-      const matchUF = filtrosAvancados.uf === 'Todas' || e.uf === filtrosAvancados.uf;
       const matchMun = filtrosAvancados.municipio === '' || (e.municipio?.toLowerCase().includes(filtrosAvancados.municipio.toLowerCase()));
       const matchValor = validaFaixaValor(e.valor, filtrosAvancados.valor);
-      const matchCnaeFiltro = filtrosAvancados.cnae === '' || e.cnaeAlvo === filtrosAvancados.cnae;
-      
-      // Filtro por categoria (Setores)[cite: 2]
-      const cnaesDasCategorias = TODAS_CATEGORIAS
-        .filter(cat => selecionadas.includes(cat.id))
-        .map(cat => cat.cnae);
-      const matchCategoria = selecionadas.length === 0 || cnaesDasCategorias.includes(e.cnaeAlvo);
-
-      return matchBusca && matchUF && matchMun && matchValor && matchCnaeFiltro && matchCategoria;
+      const matchCategoria = selecionadas.length === 0 || selecionadas.some(id => {
+        const cat = TODAS_CATEGORIAS.find(c => c.id === id);
+        return cat && e.objeto.toLowerCase().includes(cat.descricao.split(' ')[0].toLowerCase());
+      });
+      return matchBusca && matchMun && matchValor && matchCategoria;
     });
-  }, [selecionadas, filtrosAvancados, busca]);
+  }, [editais, selecionadas, filtrosAvancados, busca]);
 
   const totalPaginas = Math.ceil(editaisFiltrados.length / ITENS_POR_PAGINA);
   const editaisExibidos = editaisFiltrados.slice((pagina - 1) * ITENS_POR_PAGINA, pagina * ITENS_POR_PAGINA);
@@ -173,10 +215,12 @@ export default function HomeUsuario() {
 
         <View style={estilos.secao}>
           <View style={estilos.cabecalhoSecao}>
-            <Text style={estilos.tituloSecao}>Resultados Recentes</Text>
-            <Text style={estilos.contador}>{editaisFiltrados.length} encontrados</Text>
+            <Text style={estilos.tituloSecao}>Oportunidades para você</Text>
+            {!carregando && <Text style={estilos.contador}>{editaisFiltrados.length} encontrados</Text>}
           </View>
-          {editaisExibidos.map(edital => (
+          {carregando ? (
+            <ActivityIndicator size="large" color="#0F172A" style={{ marginTop: 40 }} />
+          ) : editaisExibidos.map(edital => (
             <EditalCard key={edital.id} onPress={() => router.push(`/edital/${edital.id}`)} item={edital} />
           ))}
           {totalPaginas > 1 && (
