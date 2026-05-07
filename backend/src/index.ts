@@ -11,6 +11,7 @@ import { perfilRoutes } from './routes/perfil'
 import { participacoesRoutes } from './routes/participacoes'
 import { alertasRoutes } from './routes/alertas'
 import { chatRoutes } from './routes/chat'
+import { savedSearchesRoutes } from './routes/savedSearches'
 
 const app = new Elysia()
   // CORS — permite requisições do app mobile (Expo)
@@ -53,6 +54,7 @@ const app = new Elysia()
   .use(participacoesRoutes)
   .use(alertasRoutes)
   .use(chatRoutes)
+  .use(savedSearchesRoutes)
 
   .listen(config.port)
 

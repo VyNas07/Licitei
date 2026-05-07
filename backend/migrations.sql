@@ -32,7 +32,34 @@ create policy "Usuário atualiza próprio perfil"
   using (auth.uid() = user_id);
 
 -- --------------------------------------------------------
--- 2. participacoes — editais acompanhados pelo MEI
+-- 2. saved_searches — buscas salvas pelo MEI
+-- --------------------------------------------------------
+create table if not exists public.saved_searches (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references auth.users(id) on delete cascade,
+  termo_busca  text not null,
+  filtros      jsonb,
+  created_at   timestamptz default now()
+);
+
+alter table public.saved_searches enable row level security;
+
+create policy "Usuário lê próprias buscas salvas"
+  on public.saved_searches for select
+  using (auth.uid() = user_id);
+
+create policy "Usuário cria busca salva"
+  on public.saved_searches for insert
+  with check (auth.uid() = user_id);
+
+create policy "Usuário deleta busca salva"
+  on public.saved_searches for delete
+  using (auth.uid() = user_id);
+
+grant all on table public.saved_searches to service_role, authenticated;
+
+-- --------------------------------------------------------
+-- 3. participacoes — editais acompanhados pelo MEI
 -- --------------------------------------------------------
 create table if not exists public.participacoes (
   id                uuid primary key default gen_random_uuid(),
