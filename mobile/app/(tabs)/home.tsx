@@ -221,7 +221,7 @@ export default function HomeUsuario() {
           {carregando ? (
             <ActivityIndicator size="large" color="#0F172A" style={{ marginTop: 40 }} />
           ) : editaisExibidos.map(edital => (
-            <EditalCard key={edital.id} onPress={() => router.push(`/edital/${edital.id}`)} item={edital} />
+            <EditalCard key={edital.id} onPress={() => router.push({ pathname: '/edital/[id]', params: { id: edital.id } })} item={edital} />
           ))}
           {totalPaginas > 1 && (
             <View style={estilos.paginacaoContainer}>

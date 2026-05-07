@@ -8,9 +8,10 @@ interface Props {
   categorias: any[];
   selecionadas: string[];
   alternarSelecao: (id: string) => void;
+  contagens?: Record<string, number>;
 }
 
-export function CategoryModal({ visivel, fechar, categorias, selecionadas, alternarSelecao }: Props) {
+export function CategoryModal({ visivel, fechar, categorias, selecionadas, alternarSelecao, contagens }: Props) {
   return (
     <Modal visible={visivel} transparent animationType="fade">
       <Pressable style={estilos.fundo} onPress={fechar}>
@@ -34,7 +35,7 @@ export function CategoryModal({ visivel, fechar, categorias, selecionadas, alter
                     <Ionicons name={cat.icone} size={20} color={estaAtivo ? "#FFF" : "#0F172A"} />
                   </View>
                   <Text style={[estilos.itemNome, estaAtivo && estilos.textoAtivo]}>{cat.nome}</Text>
-                  <Text style={estilos.itemQtd}>{cat.qtd} editais</Text>
+                  <Text style={estilos.itemQtd}>{contagens?.[cat.id] ?? 0} editais</Text>
                   <Ionicons name={estaAtivo ? "checkbox" : "square-outline"} size={20} color={estaAtivo ? "#0F172A" : "#CBD5E1"} />
                 </TouchableOpacity>
               );

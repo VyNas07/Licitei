@@ -107,7 +107,7 @@ export default function TelaDisputas() {
           ) : participacoes.map((p) => (
             <EditalCard
               key={p.id}
-              onPress={() => navegador.push(`/edital/${p.licitacao_id}`)}
+              onPress={() => navegador.push({ pathname: '/edital/[id]', params: { id: p.licitacao_id } })}
               item={{
                 id: p.licitacao_id,
                 objeto: p.objeto_compra,
@@ -128,7 +128,7 @@ export default function TelaDisputas() {
           </Text>
           <TouchableOpacity 
             style={estilos.botaoExplorar}
-            onPress={() => navegador.replace('/(tabs)')}
+            onPress={() => navegador.replace('/(tabs)/home')}
           >
             <Text style={estilos.textoBotaoExplorar}>Explorar editais</Text>
           </TouchableOpacity>
