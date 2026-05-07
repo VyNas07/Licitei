@@ -23,9 +23,10 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
           ],
         }
 
+        const escapeRegex = (str: string) => str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
         if (uf) filter['uf'] = uf.toUpperCase()
-        if (situacao) filter['situacao_compra_nome'] = { $regex: situacao, $options: 'i' }
-        if (q) filter['objeto_compra'] = { $regex: q, $options: 'i' }
+        if (situacao) filter['situacao_compra_nome'] = { $regex: escapeRegex(situacao), $options: 'i' }
+        if (q) filter['objeto_compra'] = { $regex: escapeRegex(q), $options: 'i' }
 
         if (valor_min || valor_max) {
           const valorFilter: Record<string, number> = {}
@@ -54,9 +55,9 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
           page: pageNum,
           pages: Math.ceil(total / limitNum),
         }
-      } catch (err) {
+      } catch {
         set.status = 500
-        return { error: 'Erro ao buscar editais', details: String(err) }
+        return { error: 'Erro ao buscar editais' }
       }
     },
     {
@@ -87,8 +88,8 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
       }
 
       return edital
-    } catch (err) {
+    } catch {
       set.status = 500
-      return { error: 'Erro ao buscar edital', details: String(err) }
+      return { error: 'Erro ao buscar edital' }
     }
   })

@@ -48,7 +48,8 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
         filter['data_encerramento_proposta'] = { $gte: new Date() }
 
         if (keywords.length > 0) {
-          filter['objeto_compra'] = { $regex: keywords.slice(0, 10).join('|'), $options: 'i' }
+          const escapeRegex = (str: string) => str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
+          filter['objeto_compra'] = { $regex: keywords.slice(0, 10).map(escapeRegex).join('|'), $options: 'i' }
         }
 
         const collection = await getCollection()
@@ -81,9 +82,9 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
           pages: Math.ceil(total / limitNum),
           keywords_usados: keywords.slice(0, 10),
         }
-      } catch (err) {
+      } catch {
         set.status = 500
-        return { error: 'Erro ao buscar oportunidades', details: String(err) }
+        return { error: 'Erro ao buscar oportunidades' }
       }
     },
     {
