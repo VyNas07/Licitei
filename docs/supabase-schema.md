@@ -1,7 +1,7 @@
 # Supabase Schema
 
-> **Status: definido — 23/04/2026**
-> Aprovado por Vyktor. Referência para Pedro e Yuri iniciarem o backend.
+> **Status: atualizado — 07/05/2026**
+> Aprovado por Vyktor. Referência para o backend e para operações manuais no Supabase.
 
 A tabela `auth.users` é gerenciada automaticamente pelo Supabase Auth.
 Todas as tabelas abaixo referenciam `auth.users(id)` via `user_id`.
@@ -129,7 +129,7 @@ Configurações de notificação por prazo. Alimenta RF04.
 
 ## Relações
 
-```
+```text
 auth.users
   ├── mei_profile          (1:1)
   ├── saved_searches        (1:N)
@@ -182,9 +182,11 @@ GRANT ALL ON TABLE public.documentos        TO service_role, authenticated;
 GRANT ALL ON TABLE public.alertas           TO service_role, authenticated;
 ```
 
+> `saved_searches` foi criada no Sprint 1 (PR #3). GRANT verificado e confirmado em 07/05/2026 — backend acessa a tabela sem erro 42501.
+
 ### UNIQUE constraint em `participacoes`
 
-A constraint que impede um MEI de adicionar o mesmo edital duas vezes não é criada automaticamente. Executar:
+A constraint que impede um MEI de adicionar o mesmo edital duas vezes está presente no Supabase — confirmada em 07/05/2026. Se precisar recriar o banco do zero:
 
 ```sql
 ALTER TABLE participacoes
@@ -192,4 +194,11 @@ ALTER TABLE participacoes
   UNIQUE (user_id, licitacao_id);
 ```
 
-Sem essa constraint, `POST /participacoes` com o mesmo `licitacao_id` insere duplicatas em vez de retornar 409.
+### Tipo do campo `uf` em `mei_profile`
+
+O campo estava como `character(1)` no Supabase — identificado e corrigido para `character(2)` em 07/05/2026. Se precisar recriar o banco do zero, garantir que a coluna seja criada como `character(2)` ou executar após a criação:
+
+```sql
+ALTER TABLE public.mei_profile
+  ALTER COLUMN uf TYPE character(2);
+```

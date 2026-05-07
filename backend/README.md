@@ -87,6 +87,9 @@ O token JWT é obtido pelo app mobile via Supabase Auth.
 | `PATCH` | `/participacoes/:id` | Atualizar status de uma participação |
 | `DELETE` | `/participacoes/:id` | Remover participação |
 | `GET` | `/alertas` | Alertas automáticos: teto MEI, prazos e novos editais |
+| `GET` | `/saved-searches` | Lista buscas salvas do MEI |
+| `POST` | `/saved-searches` | Salvar uma nova busca |
+| `DELETE` | `/saved-searches/:id` | Remover busca salva |
 | `POST` | `/chat` | Proxy para o assistente de IA (MCP — Sprint 2) |
 
 Documentação completa de payloads e exemplos em [`docs/api-contract.md`](../docs/api-contract.md).
@@ -112,10 +115,10 @@ backend/
 │   │   ├── perfil.ts
 │   │   ├── participacoes.ts
 │   │   ├── alertas.ts
+│   │   ├── savedSearches.ts
 │   │   └── chat.ts
 │   └── services/
 │       └── brasilapi.ts      # Consulta CNAE a partir do CNPJ
-├── migrations.sql            # Referência do schema Supabase (não executar)
 ├── .env.example
 ├── package.json
 └── tsconfig.json
