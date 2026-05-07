@@ -111,6 +111,30 @@ python -m src.etl.pipeline
 
 Os logs são exibidos no console e salvos em `logs/pipeline_<data>.log`.
 
+### Execução com Orquestração Prefect
+
+O arquivo `orchestrate_prefect.py` expõe o mesmo pipeline com monitoramento visual via UI do Prefect, retentativas automáticas e agendamento.
+
+**Execução única (com UI local):**
+
+```bash
+# Terminal 1 — sobe o servidor Prefect
+prefect server start
+
+# Terminal 2 — executa o flow uma vez
+python orchestrate_prefect.py
+```
+
+Acesse `http://localhost:4200` para visualizar o grafo de execução com as 4 etapas: `extrair → transformar → validar_qualidade → carregar`.
+
+**Agendamento automático diário (6h UTC):**
+
+```bash
+python orchestrate_prefect.py --serve
+```
+
+O flow será registrado como deployment `pipeline-pncp-diario` e executado automaticamente pelo scheduler do Prefect.
+
 ---
 
 ## Tecnologias
@@ -126,12 +150,28 @@ Os logs são exibidos no console e salvos em `logs/pipeline_<data>.log`.
 | [MongoDB Atlas](https://www.mongodb.com/atlas) | Banco de dados principal (nuvem) |
 | [Streamlit](https://streamlit.io) | Dashboard interativo (diferencial) |
 | [Plotly](https://plotly.com/python/) | Gráficos interativos no dashboard (diferencial) |
+| [Prefect](https://www.prefect.io) | Orquestração do pipeline com UI, retentativas e agendamento (diferencial) |
 
 ---
 
 ## SQLite — Persistência Local (diferencial)
 
 O pipeline suporta uma segunda camada de persistência em SQLite, ativada ao definir `SQLITE_DB_PATH` no `.env`. Os dados são gravados na tabela `contratacoes` com `INSERT OR REPLACE`, garantindo deduplicação mesmo em execuções repetidas.
+
+## Orquestração Prefect (diferencial)
+
+O arquivo `orchestrate_prefect.py` implementa o pipeline com orquestração via [Prefect](https://www.prefect.io), expondo cada etapa como uma task monitorável na UI.
+
+| Task | Retries | O que faz |
+| --- | --- | --- |
+| `extrair` | 3x / 30s | Chama `PNCPExtractor.extrair_publicacoes()` |
+| `transformar` | — | Chama `PNCPTransformer.transformar()` |
+| `validar_qualidade` | — | Valida ≥ 70% de `objeto_compra` preenchido e ≥ 70% de `valor_total_estimado > 0` |
+| `carregar` | — | Chama `PNCPLoader.carregar_mongo()` e `carregar_sqlite()` se configurado |
+
+O flow `pipeline-pncp` aceita parâmetros `data_inicial`, `data_final` e `uf` para execuções manuais pontuais sem alterar o `.env`. Testado com dados reais: 962 registros extraídos, 628 inseridos e 334 atualizados no MongoDB em execução única.
+
+---
 
 ## Dashboard Streamlit (diferencial)
 
@@ -149,14 +189,15 @@ streamlit run dashboard/app.py
 etl/
 ├── src/
 │   └── etl/
-│       ├── extractor.py   # PNCPExtractor — extração com paginação e retry
-│       ├── transformer.py # PNCPTransformer — normalização de campos e tipos
-│       ├── loader.py      # PNCPLoader — carga no MongoDB e SQLite
-│       └── pipeline.py    # Orquestrador ETL
+│       ├── extractor.py          # PNCPExtractor — extração com paginação e retry
+│       ├── transformer.py        # PNCPTransformer — normalização de campos e tipos
+│       ├── loader.py             # PNCPLoader — carga no MongoDB e SQLite
+│       └── pipeline.py           # Orquestrador ETL (execução direta)
+├── orchestrate_prefect.py        # Orquestração Prefect com UI, retries e agendamento
 ├── dashboard/
-│   └── app.py             # Painel Streamlit (diferencial)
+│   └── app.py                    # Painel Streamlit (diferencial)
 ├── docs/
-│   └── architecture.md    # Documentação técnica de arquitetura
+│   └── architecture.md           # Documentação técnica de arquitetura
 ├── tests/
 ├── .env.example
 ├── requirements.txt

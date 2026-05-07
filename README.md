@@ -74,9 +74,9 @@ Escolha o track em que vai trabalhar e siga o README correspondente:
 | --- | --- |
 | ETL (extração e carga de dados) | [etl/README.md](etl/README.md) |
 | Data Science (análises e modelos) | [data-science/README.md](data-science/README.md) *(em breve)* |
-| Backend (API REST) | [backend/README.md](backend/README.md) *(em breve)* |
+| Backend (API REST) | [backend/README.md](backend/README.md) |
 | Mobile (app React Native) | [mobile/README.md](mobile/README.md) *(em breve)* |
-| MCP / IA (assistente LLM) | [mcp/README.md](mcp/README.md) *(em breve)* |
+| MCP / IA (assistente LLM) | [mcp/README.md](mcp/README.md) |
 | Infra (deploy e CI/CD) | [infra/README.md](infra/README.md) *(em breve)* |
 
 ---
