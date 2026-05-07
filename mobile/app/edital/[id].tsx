@@ -1,37 +1,39 @@
 import React, { useState, useRef } from "react";
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  StyleSheet,
   StatusBar,
   Modal,
-  Animated
+  Animated,
+  ActivityIndicator,
+  Alert
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { 
-  ArrowLeft, 
-  AlertTriangle, 
-  Calendar, 
-  FileCheck2, 
-  Building2, 
-  Target, 
-  CheckCircle2, 
+import {
+  ArrowLeft,
+  AlertTriangle,
+  Calendar,
+  FileCheck2,
+  Building2,
+  Target,
+  CheckCircle2,
   Circle,
   Lock
 } from "lucide-react-native";
-import { 
-  getEdital, 
-  formatBRL, 
-  formatDate, 
-  MEI_TETO, 
-  MEI_EXCLUSIVO_TETO, 
+import {
+  getEdital,
+  formatBRL,
+  formatDate,
+  MEI_TETO,
+  MEI_EXCLUSIVO_TETO,
   PERFIL_MOCK,
-  participarEdital,
-  MEUS_DOCUMENTOS_CADASTRADOS 
+  MEUS_DOCUMENTOS_CADASTRADOS
 } from "../../src/lib/mock-data";
+import api from "../../src/services/api";
 
 export default function EditalDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -40,6 +42,8 @@ export default function EditalDetailScreen() {
   
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [showSuccess, setShowSuccess] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [jaParticipando, setJaParticipando] = useState(edital?.participando ?? false);
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   if (!edital) {
@@ -64,22 +68,35 @@ export default function EditalDetailScreen() {
 
   const total = edital.documentos.length;
   const done = edital.documentos.filter((d) => checked[d.id]).length;
-  const podeParticipar = done === total && total > 0 && !edital.participando;
+  const podeParticipar = done === total && total > 0 && !jaParticipando;
 
-  const handleParticipar = () => {
-    participarEdital(edital.id);
-    setShowSuccess(true);
-    
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      tension: 50,
-      useNativeDriver: true,
-    }).start();
+  const handleParticipar = async () => {
+    setSalvando(true);
+    try {
+      await api.post('/participacoes', { licitacao_id: id });
+      setJaParticipando(true);
+      setShowSuccess(true);
 
-    setTimeout(() => {
-      setShowSuccess(false);
-      router.replace("/disputas");
-    }, 2000);
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        useNativeDriver: true,
+      }).start();
+
+      setTimeout(() => {
+        setShowSuccess(false);
+        router.replace("/(tabs)/disputas");
+      }, 2000);
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        setJaParticipando(true);
+        Alert.alert("Aviso", "Você já está acompanhando este edital.");
+      } else {
+        Alert.alert("Erro", "Não foi possível registrar sua participação. Tente novamente.");
+      }
+    } finally {
+      setSalvando(false);
+    }
   };
 
   const projetadoAno = PERFIL_MOCK.faturamentoAcumulado + edital.valor;
@@ -199,15 +216,19 @@ export default function EditalDetailScreen() {
             </View>
           )}
 
-          {!edital.participando && (
-            <TouchableOpacity 
-              style={[styles.actionButton, !podeParticipar && styles.actionButtonDisabled]}
+          {!jaParticipando && (
+            <TouchableOpacity
+              style={[styles.actionButton, (!podeParticipar || salvando) && styles.actionButtonDisabled]}
               onPress={handleParticipar}
-              disabled={!podeParticipar}
+              disabled={!podeParticipar || salvando}
             >
-              <Text style={styles.actionButtonText}>
-                {podeParticipar ? "Quero participar desta disputa" : "Complete os documentos"}
-              </Text>
+              {salvando ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.actionButtonText}>
+                  {podeParticipar ? "Acompanhar edital" : "Complete os documentos"}
+                </Text>
+              )}
             </TouchableOpacity>
           )}
         </View>

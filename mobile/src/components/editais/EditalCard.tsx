@@ -58,7 +58,11 @@ export const EditalCard = ({ onPress, item }: EditalCardProps) => {
         
         <View style={styles.valorContainer}>
           <Text style={styles.valor}>{formatCurrency(item.valor)}</Text>
-          <Text style={styles.data}>até 27 de abr. de 2026</Text>
+          {item.dataLimite && (
+            <Text style={styles.data}>
+              até {new Date(item.dataLimite).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </Text>
+          )}
         </View>
       </View>
     </TouchableOpacity>
