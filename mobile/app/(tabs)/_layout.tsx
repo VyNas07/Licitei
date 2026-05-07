@@ -1,16 +1,25 @@
-import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#0F172A',
         tabBarInactiveTintColor: '#94A3B8',
-        tabBarStyle: estilos.barraTab,
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#E2E8F0',
+          height: 70 + insets.bottom,
+          paddingBottom: 10 + insets.bottom,
+          paddingTop: 10,
+        },
         tabBarLabelStyle: estilos.labelTab,
       }}
     >
@@ -80,14 +89,6 @@ export default function TabLayout() {
 }
 
 const estilos = StyleSheet.create({
-  barraTab: {
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    height: 70,
-    paddingBottom: 10,
-    paddingTop: 10,
-  },
   labelTab: {
     fontSize: 11,
     fontWeight: '600',

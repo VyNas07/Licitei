@@ -1,23 +1,22 @@
-import React, { useState } from 'react';
-import { 
-  ScrollView, 
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
-  StatusBar, 
+import { useState } from 'react';
+import {
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  StatusBar,
   TouchableOpacity,
-  TextInput 
+  TextInput
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { RevenueCard } from '../../src/components/perfil/RevenueCard';
 import { PERFIL_MOCK, MEI_TETO } from '../../src/lib/mock-data';
+import { supabase } from '../../src/services/supabase';
 
 export default function TelaPerfil() {
-  const navegador = useRouter();
   const [cnpj, setCnpj] = useState('45.123.890/0001-22');
 
   return (
@@ -88,9 +87,9 @@ export default function TelaPerfil() {
               <Ionicons name="chevron-forward" size={16} color="#CBD5E1" />
             </TouchableOpacity>
             
-            <TouchableOpacity 
+            <TouchableOpacity
               style={estilos.itemMenu}
-              onPress={() => navegador.replace('/')} 
+              onPress={() => supabase.auth.signOut()}
             >
               <Ionicons name="log-out-outline" size={20} color="#EF4444" />
               <Text style={[estilos.textoMenu, { color: '#EF4444' }]}>Sair da conta</Text>
