@@ -44,10 +44,17 @@ export default function Cadastro() {
 
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signUp({ email, password: senha });
+    const { error: authError } = await supabase.auth.signUp({
+      email: email.trim(),
+      password: senha,
+    });
 
     if (authError) {
-      Alert.alert('Erro ao criar conta', authError.message);
+      const msg =
+        authError.status === 429
+          ? 'Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.'
+          : authError.message;
+      Alert.alert('Erro ao criar conta', msg);
       setLoading(false);
       return;
     }

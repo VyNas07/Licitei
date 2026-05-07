@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  SafeAreaView, 
+import { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
   StatusBar,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
@@ -17,21 +18,35 @@ import { GovbrButton } from '../../src/components/auth/GovbrButton';
 import { Divider } from '../../src/components/auth/Divider';
 import { Input } from '../../src/components/ui/Input';
 import { Button } from '../../src/components/ui/Button';
-import { Footer } from '../../src/components/landing/Footer'; 
-
-
+import { Footer } from '../../src/components/landing/Footer';
+import { supabase } from '../../src/services/supabase';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [carregando, setCarregando] = useState(false);
 
-  const handleLogin = () => {
-    router.push('/(tabs)/home');
+  const handleLogin = async () => {
+    if (!email.trim() || !senha.trim()) {
+      Alert.alert('Campos obrigatórios', 'Preencha e-mail e senha.');
+      return;
+    }
+    try {
+      setCarregando(true);
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha });
+      if (error) throw error;
+      // redirecionamento feito pelo onAuthStateChange em _layout.tsx
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Verifique suas credenciais e tente novamente.';
+      Alert.alert('Erro ao entrar', msg);
+    } finally {
+      setCarregando(false);
+    }
   };
 
   const handleGovbr = () => {
-    router.push('/(tabs)/home');
+    Alert.alert('Em breve', 'Login via Gov.br estará disponível em breve.');
   };
 
   return (
@@ -74,7 +89,7 @@ export default function LoginScreen() {
                 onChangeText={setSenha}
               />
 
-              <Button texto="Entrar" onPress={handleLogin} />
+              <Button texto={carregando ? 'Entrando...' : 'Entrar'} onPress={handleLogin} disabled={carregando} />
 
               <View style={estilos.containerCadastro}>
                 <Text style={estilos.textoNaoTemConta}>Ainda não tem conta? </Text>
