@@ -1,25 +1,25 @@
 # Guia de Integração Backend ↔ Mobile
 
-> Branch: `feature/backend-dev`  
-> Mobile: `feature/mobile-dev`
-
 ---
 
 ## Supabase — Tabelas necessárias
 
 ### `mei_profile`
+
 | Coluna | Tipo | Notas |
-|--------|------|-------|
-| `user_id` | uuid (PK) | FK para `auth.users` |
+| --- | --- | --- |
+| `id` | uuid (PK) | `gen_random_uuid()` |
+| `user_id` | uuid | FK para `auth.users`, único |
 | `nome_fantasia` | text | |
-| `cnpj` | text | 14 dígitos, sem máscara |
-| `uf` | text | 2 letras maiúsculas |
+| `cnpj` | text | 14 dígitos, sem máscara, único |
+| `uf` | char(2) | 2 letras maiúsculas |
 | `cnae` | text | preenchido automaticamente via BrasilAPI no `PUT /perfil` |
 | `ramo_atuacao` | text | preenchido automaticamente via BrasilAPI no `PUT /perfil` |
 
 ### `participacoes`
+
 | Coluna | Tipo | Notas |
-|--------|------|-------|
+| --- | --- | --- |
 | `id` | uuid (PK) | |
 | `user_id` | uuid | FK para `auth.users` |
 | `licitacao_id` | text | `numero_controle_pncp` do MongoDB |
@@ -32,14 +32,26 @@
 
 **Status válidos:** `acompanhando`, `proposta_enviada`, `venceu`, `perdeu`, `desistiu`
 
+### `saved_searches`
+
+| Coluna | Tipo | Notas |
+| --- | --- | --- |
+| `id` | uuid (PK) | |
+| `user_id` | uuid | FK para `auth.users` |
+| `termo_busca` | text | ex: "limpeza", "TI" |
+| `filtros` | jsonb | opcional — `{ "uf": "PE", "valor_min": 0, "valor_max": 50000 }` |
+| `created_at` | timestamptz | default `now()` |
+
 ---
 
 ## Endpoints e shapes esperados pelo mobile
 
 ### `GET /oportunidades`
+
 **Query params suportados:** `page`, `limit`, `uf`, `valor_max`
 
 **Resposta esperada:**
+
 ```json
 {
   "data": [
@@ -62,7 +74,9 @@
 ```
 
 ### `GET /alertas`
+
 **Resposta esperada:**
+
 ```json
 {
   "data": [
@@ -75,7 +89,9 @@
 ```
 
 ### `GET /participacoes`
+
 **Resposta esperada:**
+
 ```json
 {
   "data": [
@@ -94,19 +110,25 @@
 ```
 
 ### `POST /participacoes`
+
 **Body:**
+
 ```json
 { "licitacao_id": "numero_controle_pncp_do_edital" }
 ```
 
 ### `PATCH /participacoes/:id`
+
 **Body:**
+
 ```json
 { "status": "proposta_enviada" }
 ```
 
 ### `GET /perfil`
+
 **Resposta esperada:**
+
 ```json
 {
   "user_id": "uuid",
@@ -119,7 +141,9 @@
 ```
 
 ### `PUT /perfil`
+
 **Body:**
+
 ```json
 {
   "nome_fantasia": "string",
@@ -129,13 +153,44 @@
 }
 ```
 
+### `GET /saved-searches`
+
+**Resposta esperada:**
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "user_id": "uuid",
+      "termo_busca": "limpeza",
+      "filtros": { "uf": "PE", "valor_max": 50000 },
+      "created_at": "2026-05-01T10:00:00Z"
+    }
+  ]
+}
+```
+
+### `POST /saved-searches`
+
+**Body:**
+
+```json
+{ "termo_busca": "limpeza", "filtros": { "uf": "PE", "valor_min": 0, "valor_max": 50000 } }
+```
+
+Retorna `201` com o registro criado. Retorna `409` se `termo_busca` já foi salvo anteriormente.
+
+### `DELETE /saved-searches/:id`
+
+Retorna `{ "message": "Pesquisa salva removida com sucesso" }` em sucesso. Retorna `404` se não encontrado.
+
 ---
 
 ## Pendências no backend
 
-- [ ] Adicionar parâmetro `q` (busca por texto) em `GET /oportunidades` — hoje só `/editais` suporta
-- [ ] Confirmar que as tabelas do Supabase existem com os schemas acima
-- [ ] Garantir RLS (Row Level Security) nas tabelas `mei_profile` e `participacoes` filtrando por `user_id`
+- [x] Confirmar que as tabelas do Supabase existem com os schemas acima — verificado em 07/05/2026
+- [x] Garantir RLS (Row Level Security) nas tabelas — confirmado em 07/05/2026
 - [ ] Endpoint `POST /chat` — mobile ainda não consome, mas deve estar funcionando
 
 ---

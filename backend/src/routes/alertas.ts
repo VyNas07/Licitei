@@ -73,11 +73,12 @@ async function alertasNovosEditais(perfil: Perfil): Promise<Record<string, unkno
 
   if (keywords.length === 0) return []
 
+  const escapeRegex = (str: string) => str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
   const collection = await getCollection()
   const limite48h = new Date(Date.now() - 48 * 60 * 60 * 1000)
   const filter: Filter<Document> = {
     _extraido_em: { $gte: limite48h },
-    objeto_compra: { $regex: keywords.slice(0, 8).join('|'), $options: 'i' },
+    objeto_compra: { $regex: keywords.slice(0, 8).map(escapeRegex).join('|'), $options: 'i' },
     valor_total_estimado: { $lte: TETO_MEI },
   }
 
@@ -127,8 +128,8 @@ export const alertasRoutes = new Elysia({ prefix: '/alertas' })
       }
 
       return { data: alertas, total: alertas.length }
-    } catch (err) {
+    } catch {
       set.status = 500
-      return { error: 'Erro ao gerar alertas', details: String(err) }
+      return { error: 'Erro ao gerar alertas' }
     }
   })

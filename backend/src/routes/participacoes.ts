@@ -20,13 +20,13 @@ export const participacoesRoutes = new Elysia({ prefix: '/participacoes' })
 
       if (error) {
         set.status = 500
-        return { error: 'Erro ao buscar participações', details: error.message }
+        return { error: 'Erro ao buscar participações' }
       }
 
       return { data: data ?? [] }
-    } catch (err) {
+    } catch {
       set.status = 500
-      return { error: 'Erro interno', details: String(err) }
+      return { error: 'Erro interno' }
     }
   })
 
@@ -52,8 +52,8 @@ export const participacoesRoutes = new Elysia({ prefix: '/participacoes' })
             user_id: userId,
             licitacao_id: body.licitacao_id,
             status: 'acompanhando',
-            objeto_compra: edital['objeto_compra'] as string ?? null,
-            orgao_nome: edital['orgao_razao_social'] as string ?? null,
+            objeto_compra: (edital['objeto_compra'] as string) ?? 'Não informado',
+            orgao_nome: (edital['orgao_razao_social'] as string) ?? 'Não informado',
             valor_estimado: edital['valor_total_estimado'] as number ?? null,
             data_encerramento: edital['data_encerramento_proposta'] ?? null,
           })
@@ -66,14 +66,14 @@ export const participacoesRoutes = new Elysia({ prefix: '/participacoes' })
             return { error: 'Edital já está nas participações' }
           }
           set.status = 500
-          return { error: 'Erro ao criar participação', details: error.message }
+          return { error: 'Erro ao criar participação' }
         }
 
         set.status = 201
         return data
-      } catch (err) {
+      } catch {
         set.status = 500
-        return { error: 'Erro interno', details: String(err) }
+        return { error: 'Erro interno' }
       }
     },
     {
@@ -92,7 +92,7 @@ export const participacoesRoutes = new Elysia({ prefix: '/participacoes' })
         return { error: `Status inválido. Use: ${STATUS_VALIDOS.join(', ')}` }
       }
 
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from('participacoes')
         .update({ status: body.status })
         .eq('id', params.id)
@@ -100,9 +100,13 @@ export const participacoesRoutes = new Elysia({ prefix: '/participacoes' })
         .select()
         .single()
 
-      if (error || count === 0) {
-        set.status = 404
-        return { error: 'Participação não encontrada' }
+      if (error) {
+        if (error.code === 'PGRST116') {
+          set.status = 404
+          return { error: 'Participação não encontrada' }
+        }
+        set.status = 500
+        return { error: 'Erro ao atualizar participação' }
       }
 
       return data
@@ -124,7 +128,7 @@ export const participacoesRoutes = new Elysia({ prefix: '/participacoes' })
 
     if (error) {
       set.status = 500
-      return { error: 'Erro ao remover participação', details: error.message }
+      return { error: 'Erro ao remover participação' }
     }
 
     if (count === 0) {

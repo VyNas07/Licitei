@@ -62,15 +62,13 @@ export const perfilRoutes = new Elysia({ prefix: '/perfil' })
         .single()
 
       if (error) {
-        // Campo obrigatório ausente (NOT NULL violation)
         if (error.code === '23502') {
-          const campo = error.message.split('"')[1] ?? 'campo obrigatório'
           set.status = 400
-          return { error: `Campo obrigatório ausente: ${campo}` }
+          return { error: 'Campo obrigatório ausente no perfil' }
         }
 
         set.status = 500
-        return { error: 'Erro ao atualizar perfil', details: error.message }
+        return { error: 'Erro ao atualizar perfil' }
       }
 
       return data

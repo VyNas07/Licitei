@@ -16,13 +16,13 @@ export const savedSearchesRoutes = new Elysia({ prefix: '/saved-searches' })
 
       if (error) {
         set.status = 500
-        return { error: 'Erro ao buscar pesquisas salvas', details: error.message }
+        return { error: 'Erro ao buscar pesquisas salvas' }
       }
 
       return { data: data ?? [] }
-    } catch (err) {
+    } catch {
       set.status = 500
-      return { error: 'Erro interno', details: String(err) }
+      return { error: 'Erro interno' }
     }
   })
 
@@ -42,15 +42,19 @@ export const savedSearchesRoutes = new Elysia({ prefix: '/saved-searches' })
           .single()
 
         if (error) {
+          if (error.code === '23505') {
+            set.status = 409
+            return { error: 'Busca já salva anteriormente' }
+          }
           set.status = 500
-          return { error: 'Erro ao salvar pesquisa', details: error.message }
+          return { error: 'Erro ao salvar pesquisa' }
         }
 
         set.status = 201
         return data
-      } catch (err) {
+      } catch {
         set.status = 500
-        return { error: 'Erro interno', details: String(err) }
+        return { error: 'Erro interno' }
       }
     },
     {
@@ -78,7 +82,7 @@ export const savedSearchesRoutes = new Elysia({ prefix: '/saved-searches' })
 
       if (error) {
         set.status = 500
-        return { error: 'Erro ao remover pesquisa salva', details: error.message }
+        return { error: 'Erro ao remover pesquisa salva' }
       }
 
       if (count === 0) {
@@ -87,8 +91,8 @@ export const savedSearchesRoutes = new Elysia({ prefix: '/saved-searches' })
       }
 
       return { message: 'Pesquisa salva removida com sucesso' }
-    } catch (err) {
+    } catch {
       set.status = 500
-      return { error: 'Erro interno', details: String(err) }
+      return { error: 'Erro interno' }
     }
   })
