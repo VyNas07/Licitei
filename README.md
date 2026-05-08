@@ -41,10 +41,10 @@ flowchart LR
 | Track | Descrição | Stack | Responsável |
 | --- | --- | --- | --- |
 | Track 1 — Dados | ETL, engenharia de dados e análises | Python, MongoDB Atlas, Supabase | Vyktor |
-| Track 2 — Mobile & Backend | App mobile e API REST | React Native, Elysia, TypeScript | Pedro, Yuri, Ylson |
-| Track 3 — IA & MCP | Assistente inteligente via LLM | FastMCP, Python, HTTP + SSE | Vyktor, Thaíssa |
+| Track 2 — Mobile & Backend | App mobile e API REST | React Native, Elysia, TypeScript | Pedro, Yuri, Ylson, Júlia, Thaíssa |
+| Track 3 — IA & MCP | Assistente inteligente via LLM | FastMCP, Python, HTTP + SSE | Vyktor |
 | Track 4 — Segurança | Revisão transversal de segurança | — | Mariana |
-| Track 5 — Negócios | Monetização, métricas e UX | — | Ylson |
+| Track 5 — Negócios | Monetização, métricas e UX | — | Ylson, Pierre |
 
 ---
 
@@ -75,7 +75,7 @@ Escolha o track em que vai trabalhar e siga o README correspondente:
 | ETL (extração e carga de dados) | [etl/README.md](etl/README.md) |
 | Data Science (análises e modelos) | [data-science/README.md](data-science/README.md) *(em breve)* |
 | Backend (API REST) | [backend/README.md](backend/README.md) |
-| Mobile (app React Native) | [mobile/README.md](mobile/README.md) *(em breve)* |
+| Mobile (app React Native) | [mobile/README.md](mobile/README.md) |
 | MCP / IA (assistente LLM) | [mcp/README.md](mcp/README.md) |
 | Infra (deploy e CI/CD) | [infra/README.md](infra/README.md) *(em breve)* |
 
@@ -97,12 +97,13 @@ Escolha o track em que vai trabalhar e siga o README correspondente:
 | Membro | Papel | Contato |
 | --- | --- | --- |
 | Vyktor Fellype Pereira do Nascimento | Porta-Voz · Gerente de Projeto | [LinkedIn](https://www.linkedin.com/in/vyktor-nascimento/) |
-| Pierre Costa Santiago de Oliveira Neto | Guardião dos Dados | — |
+| Pierre Costa Santiago de Oliveira Neto | Guardião dos Dados · Track 5 — Negócios | — |
 | Mariana Ferreira Wanderley | Track 4 — Segurança | — |
 | Pedro Diniz Bim Vasconcelos e Silva | Track 2 — Backend | — |
-| Thaíssa Fernandes Siqueira Silva | Track 3 — IA & MCP | — |
+| Thaíssa Fernandes Siqueira Silva | Track 2 — Artefatos | — |
 | Ylson dos Santos Queiroz Filho | Track 2 — Mobile · Track 5 — Negócios | — |
 | Yuri Ricardo Albuquerque de França | Track 2 — Mobile | — |
+| Júlia Veríssimo | Track 2 — Artefatos Mobile | — |
 
 ---
 

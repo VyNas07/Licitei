@@ -346,6 +346,79 @@ Tipos de alerta:
 
 ---
 
+## GET /saved_searches
+
+Lista as buscas salvas do MEI autenticado, em ordem cronológica decrescente.
+
+#### Resposta 200
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "user_id": "uuid",
+      "termo_busca": "limpeza",
+      "filtros": { "uf": "PE", "valor_max": 50000 },
+      "created_at": "2026-04-25T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+## POST /saved_searches
+
+Salva uma busca para o MEI autenticado.
+
+#### Body
+
+```json
+{
+  "termo_busca": "limpeza",
+  "filtros": { "uf": "PE", "valor_max": 50000 }
+}
+```
+
+`termo_busca` é obrigatório. `filtros` é opcional.
+
+#### Resposta 201
+
+Busca salva criada (mesmo formato de um item do GET /saved_searches).
+
+#### Resposta 400
+
+```json
+{ "error": "termo_busca é obrigatório" }
+```
+
+---
+
+## DELETE /saved_searches/:id
+
+Remove uma busca salva do MEI.
+
+#### Path params
+
+| Parâmetro | Descrição |
+| --- | --- |
+| `id` | UUID da busca salva |
+
+#### Resposta 200
+
+```json
+{ "message": "Busca removida com sucesso" }
+```
+
+#### Resposta 404
+
+```json
+{ "error": "Busca não encontrada" }
+```
+
+---
+
 ## POST /chat
 
 Encaminha uma query em linguagem natural para o assistente de IA (servidor MCP — Track 3).

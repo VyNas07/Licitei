@@ -1,50 +1,105 @@
-# Welcome to your Expo app 👋
+# Licitei — App Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App React Native do Licitei. Permite que MEIs consultem licitações públicas, acompanhem editais e gerenciem participações — integrado ao backend Elysia e ao Supabase Auth.
 
-## Get started
+---
 
-1. Install dependencies
+## Stack
 
-   ```bash
-   npm install
-   ```
+| Tecnologia | Papel |
+| --- | --- |
+| React Native + Expo | Framework mobile |
+| Expo Router v6 | Roteamento baseado em arquivos |
+| Supabase JS | Autenticação (Auth) |
+| Axios | Chamadas ao backend REST |
+| TypeScript | Tipagem estática |
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## Pré-requisitos
 
-In the output, you'll find options to open the app in a
+- Node.js 18+
+- Expo Go instalado no dispositivo físico (Android ou iOS)
+- Backend rodando localmente (`cd backend && bun dev`)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Setup
 
 ```bash
-npm run reset-project
+cd mobile
+npm install
+cp .env.example .env   # preencher EXPO_PUBLIC_API_URL
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Escaneie o QR code com o Expo Go para abrir no dispositivo.
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
+## Variáveis de ambiente (`mobile/.env`)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+| Variável | Obrigatória | Descrição |
+| --- | --- | --- |
+| `EXPO_PUBLIC_API_URL` | Sim | URL base do backend. Em dispositivo físico, usar o IP LAN da máquina (não `localhost`). Ex: `http://192.168.1.10:3000` |
 
-## Join the community
+Para descobrir o IP LAN no Windows: `ipconfig` → "Endereço IPv4".
 
-Join our community of developers creating universal apps.
+---
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Estrutura de telas
+
+```text
+app/
+├── index.tsx                  # Landing page (sem auth)
+├── _layout.tsx                # Root layout + auth guard
+├── (auth)/
+│   ├── login.tsx              # Login com Supabase
+│   └── cadastro.tsx           # Cadastro com Supabase + perfil MEI
+├── (tabs)/
+│   ├── home.tsx               # Listagem de editais com filtros e paginação
+│   ├── disputas.tsx           # Participações do MEI
+│   ├── documentos.tsx         # Gestão de documentos (Sprint 2)
+│   ├── perfil.tsx             # Perfil do MEI + logout
+│   ├── alertas.tsx            # Alertas de prazo (Sprint 2, oculto na tab bar)
+│   └── planos.tsx             # Planos PRO (Sprint 3, oculto na tab bar)
+└── edital/
+    └── [id].tsx               # Detalhe do edital + botão "Acompanhar"
+```
+
+---
+
+## Arquitetura de autenticação
+
+O `_layout.tsx` raiz observa a sessão via `supabase.auth.onAuthStateChange`. Quando a sessão muda:
+
+- Usuário **sem sessão** tentando acessar `/(tabs)/*` → redireciona para `/(auth)/login`
+- Usuário **com sessão** na landing page ou em `/(auth)/*` → redireciona para `/(tabs)/home`
+
+Todas as chamadas ao backend incluem o JWT do Supabase automaticamente via interceptor Axios em `src/services/api.ts`.
+
+---
+
+## Fluxo principal (Milestone 1)
+
+```text
+Landing → Login/Cadastro → Home (editais)
+                               ↓
+                         Detalhe do edital
+                               ↓
+                     "Acompanhar edital" → Disputas
+```
+
+---
+
+## Componentes principais
+
+| Caminho | Descrição |
+| --- | --- |
+| `src/services/api.ts` | Instância Axios com interceptor JWT |
+| `src/services/supabase.ts` | Cliente Supabase configurado |
+| `src/components/editais/EditalCard.tsx` | Card de edital reutilizável |
+| `src/components/editais/FilterModal.tsx` | Modal de filtros avançados |
+| `src/components/editais/CategoryModal.tsx` | Modal de categorias/setores |
+| `src/components/auth/AuthHeader.tsx` | Header padrão das telas autenticadas |
+| `src/components/perfil/RevenueCard.tsx` | Card de faturamento MEI |
