@@ -16,12 +16,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../src/services/supabase';
 import api from '../../src/services/api';
 
-// Importação do Footer
 import { Footer } from '../../src/components/landing/Footer';
 
-// Função para aplicar máscara de CNPJ
 function formatCnpj(v: string) {
-  const d = v.replaceAll(/\D/g, "").slice(0, 14);
+  const d = v.replace(/\D/g, "").slice(0, 14);
   return d
     .replace(/^(\d{2})(\d)/, "$1.$2")
     .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
@@ -46,10 +44,17 @@ export default function Cadastro() {
 
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signUp({ email, password: senha });
+    const { error: authError } = await supabase.auth.signUp({
+      email: email.trim(),
+      password: senha,
+    });
 
     if (authError) {
-      Alert.alert('Erro ao criar conta', authError.message);
+      const msg =
+        authError.status === 429
+          ? 'Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.'
+          : authError.message;
+      Alert.alert('Erro ao criar conta', msg);
       setLoading(false);
       return;
     }
@@ -65,7 +70,7 @@ export default function Cadastro() {
     }
 
     setLoading(false);
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/home');
   }
 
   return (
@@ -75,7 +80,6 @@ export default function Cadastro() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         
-        {/* Cabeçalho Azul */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={16} color="#E2E8F0" />
@@ -93,7 +97,6 @@ export default function Cadastro() {
           <Text style={styles.subtitle}>Comece a vender para o governo em poucos minutos.</Text>
         </View>
 
-        {/* Card Branco com Formulário */}
         <View style={styles.cardWrapper}>
           <View style={styles.card}>
             
@@ -112,7 +115,7 @@ export default function Cadastro() {
 
             <View style={styles.form}>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nome do negócio (Nome Fantasia)</Text>
+                <Text style={styles.label}>Nome do responsável</Text>
                 <View style={styles.inputWrapper}>
                   <Ionicons name="person-outline" size={18} color="#94A3B8" style={styles.inputIcon} />
                   <TextInput
@@ -150,7 +153,7 @@ export default function Cadastro() {
                   <Ionicons name="location-outline" size={18} color="#94A3B8" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
-                    placeholder="Ex: PE"
+                    placeholder="Ex: SP"
                     maxLength={2}
                     autoCapitalize="characters"
                     value={uf}

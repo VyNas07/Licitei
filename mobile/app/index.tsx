@@ -1,21 +1,24 @@
 import React from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StatusBar,
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  SafeAreaView,
+  Image,
+  StatusBar
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-// Importação dos componentes organizados nas pastas
 import { FeatureCard } from '../src/components/landing/FeatureCard';
 import { PlanCard } from '../src/components/landing/PlanCard';
 import { CtaBox } from '../src/components/landing/CtaBox';
 import { Footer } from '../src/components/landing/Footer';
+import { formatBRL } from '../src/lib/mock-data';
+
+import iconeDocumento from '../assets/images/Icone_documento.png';
 
 export default function Landing() {
   const router = useRouter();
@@ -31,12 +34,15 @@ export default function Landing() {
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         
-        {/* --- HERO SECTION --- */}
         <View style={styles.heroSection}>
           <View style={styles.heroTopBar}>
             <View style={styles.logoContainer}>
               <View style={styles.logoIconBg}>
-                <Ionicons name="sparkles" size={16} color="#FFF" />
+                <Image 
+                  source={iconeDocumento} 
+                  style={{ width: 22, height: 22 }} 
+                  resizeMode="contain"
+                />
               </View>
               <Text style={styles.logoText}>Licitei</Text>
             </View>
@@ -88,13 +94,12 @@ export default function Landing() {
           </View>
         </View>
 
-        {/* --- PREVIEW CARD --- */}
         <View style={styles.previewSection}>
           <View style={styles.previewCard}>
             <View style={styles.previewHeader}>
               <View>
-                <Text style={styles.previewOverline}>EDITAL</Text>
-                <Text style={styles.previewTitle}>Manutenção elétrica · Campinas</Text>
+                <Text style={styles.previewOverline}>EXEMPLO DE EDITAL NO RECIFE</Text>
+                <Text style={styles.previewTitle}>Desenvolvimento de App Mobile</Text>
               </View>
               <View style={styles.successBadge}>
                 <Text style={styles.successBadgeText}>Alta</Text>
@@ -103,13 +108,13 @@ export default function Landing() {
             
             <View style={styles.previewValueBox}>
               <Text style={styles.previewValueLabel}>VALOR ESTIMADO</Text>
-              <Text style={styles.previewValueText}>R$ 38.500</Text>
+              <Text style={styles.previewValueText}>{formatBRL(15000)}</Text>
             </View>
 
             <View style={styles.previewChecks}>
               <View style={styles.checkItem}>
                 <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                <Text style={styles.checkText}>CNAE compatível</Text>
+                <Text style={styles.checkText}>CNAE compatível (6201-5/00)</Text>
               </View>
               <View style={styles.checkItem}>
                 <Ionicons name="checkmark-circle" size={14} color="#10B981" />
@@ -119,7 +124,6 @@ export default function Landing() {
           </View>
         </View>
 
-        {/* --- COMO FUNCIONA --- */}
         <View style={styles.section}>
           <Text style={styles.sectionOverline}>COMO FUNCIONA</Text>
           <Text style={styles.sectionTitle}>Vencemos a complexidade dos editais por você</Text>
@@ -136,7 +140,6 @@ export default function Landing() {
           </View>
         </View>
 
-        {/* --- PLANOS --- */}
         <View style={styles.section}>
           <Text style={styles.sectionOverline}>PLANOS</Text>
           <Text style={styles.sectionTitle}>Escolha o plano ideal para o seu momento</Text>
@@ -162,10 +165,8 @@ export default function Landing() {
           />
         </View>
 
-        {/* --- CTA FINAL --- */}
         <CtaBox onPress={() => router.push('/(auth)/cadastro')} />
 
-        {/* --- FOOTER --- */}
         <Footer />
 
       </ScrollView>
@@ -176,8 +177,6 @@ export default function Landing() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#0F172A' },
   scrollContent: { backgroundColor: '#F8FAFC', paddingBottom: 0, flexGrow: 1 },
-
-  // Hero Section
   heroSection: { backgroundColor: '#0F172A', borderBottomLeftRadius: 32, borderBottomRightRadius: 32, paddingHorizontal: 20, paddingTop: 40, paddingBottom: 40 },
   heroTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
   logoContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -197,8 +196,6 @@ const styles = StyleSheet.create({
   trustBadges: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 24 },
   trustBadgeItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   trustBadgeText: { color: 'rgba(255,255,255,0.6)', fontSize: 11 },
-
-  // Preview Card
   previewSection: { paddingHorizontal: 20, marginTop: -20, zIndex: 10 },
   previewCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5, borderWidth: 1, borderColor: '#E2E8F0', marginTop: 30 },
   previewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
@@ -212,8 +209,6 @@ const styles = StyleSheet.create({
   previewChecks: { gap: 6 },
   checkItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   checkText: { fontSize: 12, color: '#334155' },
-
-  // Sections Globais
   section: { paddingHorizontal: 20, marginTop: 32 },
   sectionOverline: { fontSize: 11, fontWeight: 'bold', color: '#64748B', letterSpacing: 1 },
   sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#0F172A', marginTop: 4, letterSpacing: -0.5 },
