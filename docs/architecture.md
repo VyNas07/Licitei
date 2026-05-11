@@ -39,7 +39,11 @@ flowchart LR
 
 | Camada | Tecnologia | Responsabilidade |
 | --- | --- | --- |
-| Extração | Python · `requests` | Paginação completa da API PNCP com retry e backoff exponencial |
+| Extração (ETL batch) | Python · `requests` | Paginação completa da API PNCP com retry e backoff exponencial |
+| Ingestão (DataOps) | Kafka (KRaft) · `kafka-python` | Producer publica editais no tópico `editais_raw`; consumer consome em micro-batches |
+| Bronze | Apache Parquet · PyArrow | Dado bruto imutável, particionado por data de extração — base para reprocessamento |
+| Silver | Apache Iceberg · PyIceberg | Dado limpo, tipado, deduplicado — ACID e time travel *(Sprint 3)* |
+| Gold | MongoDB Atlas | KPIs agregados prontos para o app: por UF, CNAE, prazo e elegibilidade *(Sprint 3)* |
 | Transformação | Python · `pandas` | Normalização de campos, cast de tipos, descarte de registros inválidos |
 | Carga documental | MongoDB Atlas | Armazenamento dos editais para consultas flexíveis e full-text |
 | Dados do usuário | Supabase (Postgres) | Perfis MEI, participações, documentos e alertas — escritos pelo backend |
@@ -55,8 +59,14 @@ flowchart LR
 
 ```text
 API PNCP
-  └─► ETL (extractor → transformer → loader)
-        └─► MongoDB Atlas         — editais brutos normalizados
+  ├─► ETL batch (extractor → transformer → loader)
+  │     └─► MongoDB Atlas         — editais normalizados (consulta direta pelo backend)
+  │
+  └─► DataOps pipeline
+        └─► Kafka (editais_raw)
+              └─► Bronze (Parquet, particionado por data) — dado raw imutável
+                    └─► Silver (PyIceberg — Sprint 3)     — dado limpo + time travel
+                          └─► Gold (MongoDB Atlas — Sprint 3) — KPIs para o app
 
 MongoDB Atlas
   ├─► Backend Elysia (API REST)   — consultas de editais

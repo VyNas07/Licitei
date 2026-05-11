@@ -40,7 +40,8 @@ flowchart LR
 
 | Track | Descrição | Stack | Responsável |
 | --- | --- | --- | --- |
-| Track 1 — Dados | ETL, engenharia de dados e análises | Python, MongoDB Atlas, Supabase | Vyktor |
+| Track 1 — Dados | ETL batch + engenharia de dados | Python, MongoDB Atlas, Supabase | Vyktor |
+| Track 1B — DataOps | Pipeline Kafka + arquitetura Medallion | Kafka, PyArrow, Pydantic, Prefect | Vyktor |
 | Track 2 — Mobile & Backend | App mobile e API REST | React Native, Elysia, TypeScript | Pedro, Yuri, Ylson, Júlia, Thaíssa |
 | Track 3 — IA & MCP | Assistente inteligente via LLM | FastMCP, Python, HTTP + SSE | Vyktor |
 | Track 4 — Segurança | Revisão transversal de segurança | — | Mariana |
@@ -52,7 +53,8 @@ flowchart LR
 
 ```text
 licitei/
-├── etl/              # Track 1 — ETL e engenharia de dados
+├── etl/              # Track 1 — ETL batch (extração e carga no MongoDB)
+├── dataops/          # Track 1B — pipeline Kafka + arquitetura Medallion
 ├── data-science/     # Track 1 — análises exploratórias e modelos
 ├── mcp/              # Track 3 — servidor FastMCP + LLM
 ├── backend/          # Track 2 — API REST (Elysia)
@@ -73,6 +75,7 @@ Escolha o track em que vai trabalhar e siga o README correspondente:
 | Subprojeto | README |
 | --- | --- |
 | ETL (extração e carga de dados) | [etl/README.md](etl/README.md) |
+| DataOps (Kafka + Medallion) | [dataops/README.md](dataops/README.md) |
 | Data Science (análises e modelos) | [data-science/README.md](data-science/README.md) *(em breve)* |
 | Backend (API REST) | [backend/README.md](backend/README.md) |
 | Mobile (app React Native) | [mobile/README.md](mobile/README.md) |
