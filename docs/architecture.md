@@ -22,7 +22,6 @@ flowchart LR
     A[Dados do Governo] --> B[API PNCP]
     B --> C[ETL]
     C --> E[(MongoDB Atlas)]
-    E --> F[Data Science]
     E --> G[MCP / FastMCP]
     E --> I[Backend - Elysia]
     G --> H{LLM - Groq}
@@ -43,7 +42,6 @@ flowchart LR
 | Transformação | Python · `pandas` | Normalização de campos, cast de tipos, descarte de registros inválidos |
 | Carga documental | MongoDB Atlas | Armazenamento dos editais para consultas flexíveis e full-text |
 | Dados do usuário | Supabase (Postgres) | Perfis MEI, participações, documentos e alertas — escritos pelo backend |
-| Análise | Python · scikit-learn | Modelos exploratórios e matching por ramo de atividade |
 | Servidor MCP | FastMCP · Python | Tools expostas ao LLM: busca, resumo, documentos necessários |
 | LLM | Groq llama-3.3-70b-versatile (prod) · qwen2.5:7b Ollama (dev) | Interpretação de linguagem natural, geração de respostas |
 | Backend | Elysia · TypeScript | API REST com autenticação JWT, integração MongoDB + Supabase + MCP |
