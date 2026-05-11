@@ -41,7 +41,10 @@ mcp/
     └── tools/
         ├── buscar_licitacoes.py    # busca por palavra-chave + filtros
         ├── detalhar_licitacao.py   # detalhe completo por ID PNCP
-        └── keywords_cnae.py        # retorna contexto CNAE para geração de keywords
+        ├── keywords_cnae.py        # retorna contexto CNAE para geração de keywords
+        ├── resumir_edital.py       # dados do edital para resumo em linguagem simples
+        ├── gerar_checklist.py      # dados do edital para checklist de habilitação
+        └── listar_documentos.py    # dados do edital para listagem de documentos
 ```
 
 ---
@@ -134,9 +137,12 @@ Segunda chamada com a mesma query retorna `"cache": true` sem chamar o LLM.
 | Tool | Parâmetros | Descrição | Status |
 | --- | --- | --- | --- |
 | `keywords_cnae` | `codigo_cnae` | Retorna descrição e atividades de uma subclasse CNAE (base IBGE) para o LLM derivar termos de busca | ✅ |
-| `gerar_checklist` | — | Gera checklist de habilitação a partir do edital | ⬜ |
-| `resumir_edital` | — | Resume o edital em linguagem simples | ⬜ |
-| `listar_documentos` | — | Lista documentos necessários para participar | ⬜ |
+| `gerar_checklist` | `numero_controle_pncp` | Retorna dados do edital para o LLM gerar checklist de habilitação | ✅ |
+| `resumir_edital` | `numero_controle_pncp` | Retorna dados do edital para o LLM resumir em linguagem simples para MEIs | ✅ |
+| `listar_documentos` | `numero_controle_pncp` | Retorna dados do edital para o LLM listar documentos necessários por categoria | ✅ |
+
+> Toda resposta baseada em uma licitação específica cita a fonte ao final no formato:
+> `Fonte: PNCP — [numero_controle_pncp] | [orgao_razao_social]`
 
 ---
 
