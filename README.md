@@ -22,18 +22,16 @@ O **Licitei** consome dados em tempo real da API pública do [PNCP (Portal Nacio
 flowchart LR
     A[Dados do Governo] --> B[API PNCP]
     B --> C[ETL]
-    C --> D[(SQL - Supabase)]
-    C --> E[(Atlas MongoDB)]
-    C --> F[Data Science]
-    C --> G[MCP / FastMCP]
-    G --> H{LLM}
-    D --> I[Backend - Elysia]
-    E --> I
-    F --> I
-    H --> I
-    H --> J[Frontend Mobile]
-    F --> J
-    I <--> J
+    C --> E[(MongoDB Atlas)]
+    E --> F[Data Science]
+    E --> G[MCP / FastMCP]
+    E --> I[Backend - Elysia]
+    G --> H{LLM - Groq}
+    H --> G
+    I <--> D[(Supabase - Postgres)]
+    I --> G
+    G --> I
+    I <--> J[App Mobile]
 ```
 
 ---
@@ -42,11 +40,12 @@ flowchart LR
 
 | Track | Descrição | Stack | Responsável |
 | --- | --- | --- | --- |
-| Track 1 — Dados | ETL, engenharia de dados e análises | Python, MongoDB Atlas, Supabase | Vyktor |
-| Track 2 — Mobile & Backend | App mobile e API REST | React Native, Elysia, TypeScript | Pedro, Yuri, Ylson |
-| Track 3 — IA & MCP | Assistente inteligente via LLM | FastMCP, Python, HTTP + SSE | Vyktor, Thaíssa |
+| Track 1 — Dados | ETL batch + engenharia de dados | Python, MongoDB Atlas, Supabase | Vyktor |
+| Track 1B — DataOps | Pipeline Kafka + arquitetura Medallion | Kafka, PyArrow, Pydantic, Prefect | Vyktor |
+| Track 2 — Mobile & Backend | App mobile e API REST | React Native, Elysia, TypeScript | Pedro, Yuri, Ylson, Júlia, Thaíssa |
+| Track 3 — IA & MCP | Assistente inteligente via LLM | FastMCP, Python, HTTP + SSE | Vyktor |
 | Track 4 — Segurança | Revisão transversal de segurança | — | Mariana |
-| Track 5 — Negócios | Monetização, métricas e UX | — | Ylson |
+| Track 5 — Negócios | Monetização, métricas e UX | — | Ylson, Pierre |
 
 ---
 
@@ -54,7 +53,8 @@ flowchart LR
 
 ```text
 licitei/
-├── etl/              # Track 1 — ETL e engenharia de dados
+├── etl/              # Track 1 — ETL batch (extração e carga no MongoDB)
+├── dataops/          # Track 1B — pipeline Kafka + arquitetura Medallion
 ├── data-science/     # Track 1 — análises exploratórias e modelos
 ├── mcp/              # Track 3 — servidor FastMCP + LLM
 ├── backend/          # Track 2 — API REST (Elysia)
@@ -75,10 +75,11 @@ Escolha o track em que vai trabalhar e siga o README correspondente:
 | Subprojeto | README |
 | --- | --- |
 | ETL (extração e carga de dados) | [etl/README.md](etl/README.md) |
+| DataOps (Kafka + Medallion) | [dataops/README.md](dataops/README.md) |
 | Data Science (análises e modelos) | [data-science/README.md](data-science/README.md) *(em breve)* |
-| Backend (API REST) | [backend/README.md](backend/README.md) *(em breve)* |
-| Mobile (app React Native) | [mobile/README.md](mobile/README.md) *(em breve)* |
-| MCP / IA (assistente LLM) | [mcp/README.md](mcp/README.md) *(em breve)* |
+| Backend (API REST) | [backend/README.md](backend/README.md) |
+| Mobile (app React Native) | [mobile/README.md](mobile/README.md) |
+| MCP / IA (assistente LLM) | [mcp/README.md](mcp/README.md) |
 | Infra (deploy e CI/CD) | [infra/README.md](infra/README.md) *(em breve)* |
 
 ---
@@ -99,12 +100,13 @@ Escolha o track em que vai trabalhar e siga o README correspondente:
 | Membro | Papel | Contato |
 | --- | --- | --- |
 | Vyktor Fellype Pereira do Nascimento | Porta-Voz · Gerente de Projeto | [LinkedIn](https://www.linkedin.com/in/vyktor-nascimento/) |
-| Pierre Costa Santiago de Oliveira Neto | Guardião dos Dados | — |
+| Pierre Costa Santiago de Oliveira Neto | Guardião dos Dados · Track 5 — Negócios | — |
 | Mariana Ferreira Wanderley | Track 4 — Segurança | — |
 | Pedro Diniz Bim Vasconcelos e Silva | Track 2 — Backend | — |
-| Thaíssa Fernandes Siqueira Silva | Track 3 — IA & MCP | — |
+| Thaíssa Fernandes Siqueira Silva | Track 2 — Artefatos | — |
 | Ylson dos Santos Queiroz Filho | Track 2 — Mobile · Track 5 — Negócios | — |
 | Yuri Ricardo Albuquerque de França | Track 2 — Mobile | — |
+| Júlia Veríssimo | Track 2 — Artefatos Mobile | — |
 
 ---
 

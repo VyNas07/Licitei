@@ -158,7 +158,15 @@ class PNCPExtractor:
         logger.info(f"Iniciando extração de {descricao} | params={params}")
 
         while True:
-            resultado = self._get_pagina(endpoint, params, pagina)
+            try:
+                resultado = self._get_pagina(endpoint, params, pagina)
+            except requests.HTTPError:
+                logger.warning(
+                    f"Página {pagina} ignorada após {self._MAX_TENTATIVAS} tentativas — "
+                    f"continuando extração"
+                )
+                pagina += 1
+                continue
 
             if resultado is None:
                 break
