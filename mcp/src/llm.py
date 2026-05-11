@@ -8,6 +8,8 @@ from loguru import logger
 from src.client import completions_com_retry
 from src.config import Config
 
+_DESC_ID_PNCP = "Identificador único da licitação no PNCP."
+
 _TOOLS_SCHEMA = [
     {
         "type": "function",
@@ -54,7 +56,7 @@ _TOOLS_SCHEMA = [
                 "properties": {
                     "numero_controle_pncp": {
                         "type": "string",
-                        "description": "Identificador único da licitação no PNCP.",
+                        "description": _DESC_ID_PNCP,
                     },
                 },
                 "required": ["numero_controle_pncp"],
@@ -82,6 +84,69 @@ _TOOLS_SCHEMA = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "resumir_edital",
+            "description": (
+                "Retorna os dados de uma licitação para que você possa gerar um resumo "
+                "em linguagem simples, acessível para MEIs. Use quando o usuário pedir "
+                "para resumir, explicar ou entender um edital específico."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "numero_controle_pncp": {
+                        "type": "string",
+                        "description": _DESC_ID_PNCP,
+                    },
+                },
+                "required": ["numero_controle_pncp"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "gerar_checklist",
+            "description": (
+                "Retorna os dados de uma licitação para que você possa gerar um checklist "
+                "de habilitação — lista de requisitos que o MEI precisa cumprir para participar. "
+                "Use quando o usuário pedir checklist, requisitos ou como participar de um edital."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "numero_controle_pncp": {
+                        "type": "string",
+                        "description": _DESC_ID_PNCP,
+                    },
+                },
+                "required": ["numero_controle_pncp"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "listar_documentos",
+            "description": (
+                "Retorna os dados de uma licitação para que você possa listar os documentos "
+                "necessários para participar. Use quando o usuário perguntar quais documentos "
+                "precisa reunir, levantar ou preparar para uma licitação específica."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "numero_controle_pncp": {
+                        "type": "string",
+                        "description": _DESC_ID_PNCP,
+                    },
+                },
+                "required": ["numero_controle_pncp"],
+            },
+        },
+    },
 ]
 
 _SYSTEM_PROMPT = (
@@ -90,7 +155,10 @@ _SYSTEM_PROMPT = (
     "Use as ferramentas disponíveis para buscar e detalhar licitações no banco de dados. "
     "Responda sempre em português, de forma clara e objetiva. "
     "Ao apresentar resultados, destaque o objeto da compra, o órgão responsável, "
-    "o valor estimado e o prazo de encerramento."
+    "o valor estimado e o prazo de encerramento. "
+    "Sempre que sua resposta se basear em dados de uma licitação específica, "
+    "cite a fonte ao final no formato: "
+    "'Fonte: PNCP — [numero_controle_pncp] | [orgao_razao_social]'."
 )
 
 

@@ -20,7 +20,10 @@ from src.config import carregar_config
 from src.llm import chat
 from src.tools.buscar_licitacoes import buscar_licitacoes as _buscar
 from src.tools.detalhar_licitacao import detalhar_licitacao as _detalhar
+from src.tools.gerar_checklist import gerar_checklist as _checklist
 from src.tools.keywords_cnae import keywords_cnae as _keywords_cnae
+from src.tools.listar_documentos import listar_documentos as _documentos
+from src.tools.resumir_edital import resumir_edital as _resumir
 
 # ---------------------------------------------------------------------------
 # Logger
@@ -65,6 +68,9 @@ _ferramentas = {
     "buscar_licitacoes": lambda **kw: _buscar(**kw, config=config),
     "detalhar_licitacao": lambda **kw: _detalhar(**kw, config=config),
     "keywords_cnae": lambda **kw: _keywords_cnae(**kw),
+    "resumir_edital": lambda **kw: _resumir(**kw, config=config),
+    "gerar_checklist": lambda **kw: _checklist(**kw, config=config),
+    "listar_documentos": lambda **kw: _documentos(**kw, config=config),
 }
 
 # ---------------------------------------------------------------------------
@@ -110,6 +116,36 @@ def keywords_cnae(codigo_cnae: str) -> dict:
         codigo_cnae: Código da subclasse CNAE do MEI (ex: "4751201").
     """
     return _keywords_cnae(codigo_cnae=codigo_cnae)
+
+
+@mcp.tool()
+def resumir_edital(numero_controle_pncp: str) -> dict:
+    """Retorna os dados de um edital para geração de resumo em linguagem simples.
+
+    Args:
+        numero_controle_pncp: Identificador único da licitação no PNCP.
+    """
+    return _resumir(numero_controle_pncp=numero_controle_pncp, config=config)
+
+
+@mcp.tool()
+def gerar_checklist(numero_controle_pncp: str) -> dict:
+    """Retorna os dados de um edital para geração de checklist de habilitação.
+
+    Args:
+        numero_controle_pncp: Identificador único da licitação no PNCP.
+    """
+    return _checklist(numero_controle_pncp=numero_controle_pncp, config=config)
+
+
+@mcp.tool()
+def listar_documentos(numero_controle_pncp: str) -> dict:
+    """Retorna os dados de um edital para listagem de documentos necessários.
+
+    Args:
+        numero_controle_pncp: Identificador único da licitação no PNCP.
+    """
+    return _documentos(numero_controle_pncp=numero_controle_pncp, config=config)
 
 
 # ---------------------------------------------------------------------------
