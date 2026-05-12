@@ -23,7 +23,6 @@ flowchart LR
     A[Dados do Governo] --> B[API PNCP]
     B --> C[ETL]
     C --> E[(MongoDB Atlas)]
-    E --> F[Data Science]
     E --> G[MCP / FastMCP]
     E --> I[Backend - Elysia]
     G --> H{LLM - Groq}
@@ -55,11 +54,9 @@ flowchart LR
 licitei/
 ├── etl/              # Track 1 — ETL batch (extração e carga no MongoDB)
 ├── dataops/          # Track 1B — pipeline Kafka + arquitetura Medallion
-├── data-science/     # Track 1 — análises exploratórias e modelos
 ├── mcp/              # Track 3 — servidor FastMCP + LLM
 ├── backend/          # Track 2 — API REST (Elysia)
 ├── mobile/           # Track 2 — app React Native
-├── infra/            # configurações de deploy e CI/CD
 ├── docs/             # documentação técnica geral
 └── tests/            # testes de integração entre tracks
 ```
@@ -76,11 +73,9 @@ Escolha o track em que vai trabalhar e siga o README correspondente:
 | --- | --- |
 | ETL (extração e carga de dados) | [etl/README.md](etl/README.md) |
 | DataOps (Kafka + Medallion) | [dataops/README.md](dataops/README.md) |
-| Data Science (análises e modelos) | [data-science/README.md](data-science/README.md) *(em breve)* |
 | Backend (API REST) | [backend/README.md](backend/README.md) |
 | Mobile (app React Native) | [mobile/README.md](mobile/README.md) |
 | MCP / IA (assistente LLM) | [mcp/README.md](mcp/README.md) |
-| Infra (deploy e CI/CD) | [infra/README.md](infra/README.md) *(em breve)* |
 
 ---
 
