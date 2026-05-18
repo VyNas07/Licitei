@@ -42,7 +42,7 @@ flowchart LR
 | Track 1 — Dados | ETL batch + engenharia de dados | Python, MongoDB Atlas, Supabase | Vyktor |
 | Track 1B — DataOps | Pipeline Kafka + arquitetura Medallion | Kafka, PyArrow, Pydantic, Prefect | Vyktor |
 | Track 2 — Mobile & Backend | App mobile e API REST | React Native, Elysia, TypeScript | Pedro, Yuri, Ylson, Júlia, Thaíssa |
-| Track 3 — IA & MCP | Assistente inteligente via LLM | FastMCP, Python, HTTP + SSE | Vyktor |
+| Track 3 — IA & MCP | Assistente inteligente via LLM | FastMCP, LangGraph, LangChain, Python, HTTP + SSE | Vyktor |
 | Track 4 — Segurança | Revisão transversal de segurança | — | Mariana |
 | Track 5 — Negócios | Monetização, métricas e UX | — | Ylson, Pierre |
 

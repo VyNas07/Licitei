@@ -1,9 +1,9 @@
 # Licitei — MCP (Track 3)
 
-Servidor MCP (Model Context Protocol) que expõe ferramentas de consulta a licitações públicas para uso por LLMs. Recebe queries em linguagem natural, orquestra chamadas ao MongoDB e devolve respostas via Groq (`llama-3.3-70b-versatile`), com fallback para Ollama local em desenvolvimento.
+Servidor MCP (Model Context Protocol) que expõe ferramentas de consulta a licitações públicas para uso por LLMs. Recebe queries em linguagem natural, orquestra chamadas ao MongoDB via um agente LangGraph e devolve respostas via Groq (`llama-3.3-70b-versatile`), com fallback para Ollama local em desenvolvimento. Memória de conversa por usuário persistida em SQLite.
 
 **Responsáveis:** Vyktor, Thaíssa
-**Stack:** Python · FastMCP · Groq · Ollama · MongoDB Atlas · Supabase
+**Stack:** Python · FastMCP · LangGraph · LangChain · Groq · Ollama · MongoDB Atlas · Supabase · SQLite
 
 ---
 
@@ -28,16 +28,16 @@ mcp/
 ├── requirements.txt
 ├── .env.example
 ├── data/
-│   └── cnae.json               # 1.332 subclasses CNAE (API IBGE — não editar manualmente)
+│   ├── cnae.json               # 1.332 subclasses CNAE (API IBGE — não editar manualmente)
+│   └── memoria.db              # SQLite — memória de conversa por usuário (gerado em runtime)
 ├── scripts/
 │   └── fetch_cnae.py           # regenera cnae.json via API IBGE quando necessário
 └── src/
     ├── server.py       # entrada principal — FastMCP + endpoint /chat
     ├── config.py       # carregamento e validação do .env
+    ├── agente.py       # agente LangGraph: criar_agente(), chat(), chat_stream()
     ├── db.py           # conexão MongoDB (context manager)
     ├── cache.py        # cache em memória com TTL
-    ├── client.py       # factory do cliente LLM com retry e fallback
-    ├── llm.py          # loop de agente: query → LLM → tools → resposta
     └── tools/
         ├── buscar_licitacoes.py    # busca por palavra-chave + filtros
         ├── detalhar_licitacao.py   # detalhe completo por ID PNCP
@@ -85,6 +85,7 @@ cp .env.example .env
 | `MCP_HOST` | Não | Padrão: `0.0.0.0` |
 | `MCP_PORT` | Não | Padrão: `8000` |
 | `CACHE_TTL` | Não | TTL do cache em segundos. Padrão: `3600` |
+| `SQLITE_MEMORIA_PATH` | Não | Caminho do arquivo SQLite de memória. Padrão: `data/memoria.db` |
 
 *Se `GROQ_API_KEY` não estiver definido, o servidor usa Ollama automaticamente como fallback.
 
@@ -99,16 +100,25 @@ python -m src.server
 
 O servidor expõe:
 - **MCP protocol** — `http://localhost:8000/sse` (para clientes MCP)
-- **POST /chat** — endpoint HTTP para integração com o backend
+- **POST /chat** — endpoint HTTP para integração com o backend (resposta completa)
+- **POST /chat/stream** — endpoint SSE com streaming de tokens (Sprint 3)
 
 ---
 
 ## Testando o endpoint /chat
 
+```powershell
+# PowerShell
+$body = '{"query": "licitacoes de limpeza em PE", "thread_id": "meu-usuario-1"}'
+Invoke-RestMethod -Method POST -Uri http://localhost:8000/chat `
+  -ContentType "application/json" -Body $body
+```
+
 ```bash
+# bash / curl
 curl -X POST http://localhost:8000/chat \
   -H "Content-Type: application/json" \
-  -d '{"query": "licitações de limpeza em PE"}'
+  -d '{"query": "licitacoes de limpeza em PE", "thread_id": "meu-usuario-1"}'
 ```
 
 Resposta esperada:
@@ -119,7 +129,9 @@ Resposta esperada:
 }
 ```
 
-Segunda chamada com a mesma query retorna `"cache": true` sem chamar o LLM.
+- `thread_id` é opcional: se omitido, o servidor gera um UUID aleatório por request.
+- Enviar o mesmo `thread_id` em requests seguintes mantém o contexto da conversa (memória por usuário via SQLite).
+- Segunda chamada com mesma combinação `thread_id` + `query` retorna `"cache": true` sem chamar o LLM.
 
 ---
 
@@ -152,7 +164,7 @@ Segunda chamada com a mesma query retorna `"cache": true` sem chamar o LLM.
 | --- | --- | --- | --- |
 | `llama-3.3-70b-versatile` | 30 | 1.000 | 12.000 |
 
-O servidor implementa retry com backoff exponencial (1s → 2s → 4s) em respostas 429, com fallback automático para Ollama após esgotar as tentativas.
+O LangGraph lida com retry nativo via LangChain. O fallback para Ollama é ativado automaticamente quando `GROQ_API_KEY` não está definido.
 
 ---
 
@@ -162,3 +174,4 @@ O servidor implementa retry com backoff exponencial (1s → 2s → 4s) em respos
 | --- | --- |
 | [ADR 001](../docs/adr/001-llm-provider.md) | Groq como provider LLM (free tier, sem cartão) |
 | [ADR 006](../docs/adr/006-mcp-transport.md) | HTTP + SSE como transporte MCP |
+| [ADR 008](../docs/adr/008-langgraph-agent.md) | Migração para agente LangGraph com memória por usuário |
