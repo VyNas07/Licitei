@@ -1,5 +1,6 @@
 """Agente LangGraph — substitui o loop manual de llm.py."""
 
+import json
 import sqlite3
 from typing import AsyncGenerator
 
@@ -59,7 +60,7 @@ def _criar_ferramentas(config: Config) -> list:
         uf: str | None = None,
         valor_max: float | None = None,
         limite: int = 10,
-    ) -> list[dict]:
+    ) -> str:
         """Busca licitações públicas por palavra-chave no objeto da compra.
 
         Use quando o usuário quiser encontrar licitações por ramo, serviço ou produto.
@@ -70,10 +71,11 @@ def _criar_ferramentas(config: Config) -> list:
             valor_max: Valor máximo estimado em reais. Opcional.
             limite: Quantidade máxima de resultados (padrão: 10, máximo: 50).
         """
-        return _buscar(termo=termo, uf=uf, valor_max=valor_max, limite=limite, config=config)
+        result = _buscar(termo=termo, uf=uf, valor_max=valor_max, limite=limite, config=config)
+        return json.dumps(result, ensure_ascii=False, default=str)
 
     @tool
-    def detalhar_licitacao(numero_controle_pncp: str) -> dict:
+    def detalhar_licitacao(numero_controle_pncp: str) -> str:
         """Retorna os detalhes completos de uma licitação pelo seu identificador PNCP.
 
         Use quando o usuário quiser informações detalhadas sobre uma licitação já encontrada.
@@ -81,10 +83,10 @@ def _criar_ferramentas(config: Config) -> list:
         Args:
             numero_controle_pncp: Identificador único da licitação no PNCP.
         """
-        return _detalhar(numero_controle_pncp=numero_controle_pncp, config=config)
+        return json.dumps(_detalhar(numero_controle_pncp=numero_controle_pncp, config=config), ensure_ascii=False, default=str)
 
     @tool
-    def keywords_cnae(codigo_cnae: str) -> dict:
+    def keywords_cnae(codigo_cnae: str) -> str:
         """Retorna descrição e atividades de uma subclasse CNAE para geração de keywords.
 
         Use quando o usuário informar o CNAE do seu negócio para encontrar
@@ -93,10 +95,10 @@ def _criar_ferramentas(config: Config) -> list:
         Args:
             codigo_cnae: Código da subclasse CNAE do MEI (ex: '4751201').
         """
-        return _keywords_cnae(codigo_cnae=codigo_cnae)
+        return json.dumps(_keywords_cnae(codigo_cnae=codigo_cnae), ensure_ascii=False, default=str)
 
     @tool
-    def resumir_edital(numero_controle_pncp: str) -> dict:
+    def resumir_edital(numero_controle_pncp: str) -> str:
         """Retorna dados de um edital para geração de resumo em linguagem simples.
 
         Use quando o usuário pedir para resumir, explicar ou entender um edital.
@@ -104,10 +106,10 @@ def _criar_ferramentas(config: Config) -> list:
         Args:
             numero_controle_pncp: Identificador único da licitação no PNCP.
         """
-        return _resumir(numero_controle_pncp=numero_controle_pncp, config=config)
+        return json.dumps(_resumir(numero_controle_pncp=numero_controle_pncp, config=config), ensure_ascii=False, default=str)
 
     @tool
-    def gerar_checklist(numero_controle_pncp: str) -> dict:
+    def gerar_checklist(numero_controle_pncp: str) -> str:
         """Retorna dados de um edital para geração de checklist de habilitação.
 
         Use quando o usuário pedir checklist, requisitos ou como participar de um edital.
@@ -115,10 +117,10 @@ def _criar_ferramentas(config: Config) -> list:
         Args:
             numero_controle_pncp: Identificador único da licitação no PNCP.
         """
-        return _checklist(numero_controle_pncp=numero_controle_pncp, config=config)
+        return json.dumps(_checklist(numero_controle_pncp=numero_controle_pncp, config=config), ensure_ascii=False, default=str)
 
     @tool
-    def listar_documentos(numero_controle_pncp: str) -> dict:
+    def listar_documentos(numero_controle_pncp: str) -> str:
         """Retorna dados de um edital para listagem dos documentos necessários.
 
         Use quando o usuário perguntar quais documentos precisa preparar para uma licitação.
@@ -126,7 +128,7 @@ def _criar_ferramentas(config: Config) -> list:
         Args:
             numero_controle_pncp: Identificador único da licitação no PNCP.
         """
-        return _listar(numero_controle_pncp=numero_controle_pncp, config=config)
+        return json.dumps(_listar(numero_controle_pncp=numero_controle_pncp, config=config), ensure_ascii=False, default=str)
 
     return [
         buscar_licitacoes,
