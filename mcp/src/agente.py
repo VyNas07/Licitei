@@ -36,7 +36,11 @@ def _criar_llm(config: Config):
     """Retorna ChatGroq em prod ou ChatOpenAI+Ollama como fallback."""
     if config.llm_provider == "groq" and config.groq_api_key:
         logger.debug(f"LLM provider: groq | modelo={config.llm_model}")
-        return ChatGroq(api_key=config.groq_api_key, model=config.llm_model)
+        return ChatGroq(
+            api_key=config.groq_api_key,
+            model=config.llm_model,
+            groq_api_base="https://api.groq.com",
+        )
 
     logger.warning("GROQ_API_KEY ausente — usando Ollama como fallback")
     return ChatOpenAI(
