@@ -195,6 +195,15 @@ export default function EditalDetailScreen() {
               )}
             </TouchableOpacity>
           )}
+
+          <TouchableOpacity
+            style={styles.checklistButton}
+            onPress={() => router.push(`/checklist/${encodeURIComponent(id as string)}`)}
+            activeOpacity={0.85}
+          >
+            <CheckCircle2 size={16} color="#0F172A" />
+            <Text style={styles.checklistButtonText}>Ver Checklist de Habilitação</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -337,6 +346,19 @@ const styles = StyleSheet.create({
   },
   actionButtonDisabled: { backgroundColor: "#94A3B8", elevation: 0 },
   actionButtonText: { color: "#FFFFFF", fontWeight: "bold", fontSize: 15 },
+  checklistButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 16,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: "#0F172A",
+    backgroundColor: "#FFF",
+  },
+  checklistButtonText: { color: "#0F172A", fontWeight: "bold", fontSize: 15 },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(15, 23, 42, 0.9)",

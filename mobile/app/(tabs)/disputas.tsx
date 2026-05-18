@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React from 'react';
 import {
   ScrollView,
   View,
@@ -15,50 +15,32 @@ import { Ionicons } from '@expo/vector-icons';
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { ResumoCard } from '../../src/components/auth/ResumoCard';
 import { EditalCard } from '../../src/components/editais/EditalCard';
-import api from '../../src/services/api';
-
-interface Participacao {
-  id: string;
-  licitacao_id: string;
-  status: 'acompanhando' | 'proposta_enviada' | 'venceu' | 'perdeu' | 'desistiu';
-  objeto_compra: string;
-  orgao_nome: string;
-  valor_estimado: number;
-  data_encerramento: string;
-}
+import { useParticipacoes } from '../../src/hooks/useParticipacoes';
 
 export default function TelaDisputas() {
   const navegador = useRouter();
-  const [participacoes, setParticipacoes] = useState<Participacao[]>([]);
-  const [carregando, setCarregando] = useState(true);
+  const { participacoes, carregando, resumo } = useParticipacoes();
 
-  useEffect(() => {
-    api.get('/participacoes')
-      .then(({ data }) => setParticipacoes(data.data ?? []))
-      .catch(() => setParticipacoes([]))
-      .finally(() => setCarregando(false));
-  }, []);
-
-  const resumo = useMemo(() => [
+  const resumoCards = [
     {
       icone: 'create-outline' as const,
       rotulo: 'Acompanhando',
-      valor: participacoes.filter(p => p.status === 'acompanhando').length,
+      valor: resumo.acompanhando,
       estilo: { backgroundColor: '#F1F5F9', color: '#0F172A' },
     },
     {
       icone: 'send-outline' as const,
       rotulo: 'Proposta enviada',
-      valor: participacoes.filter(p => p.status === 'proposta_enviada').length,
+      valor: resumo.proposta_enviada,
       estilo: { backgroundColor: '#FEF3C7', color: '#D97706' },
     },
     {
       icone: 'checkmark-circle-outline' as const,
       rotulo: 'Finalizadas',
-      valor: participacoes.filter(p => ['venceu', 'perdeu', 'desistiu'].includes(p.status)).length,
+      valor: resumo.finalizadas,
       estilo: { backgroundColor: '#DCFCE7', color: '#16A34A' },
     },
-  ], [participacoes]);
+  ];
 
   return (
     <SafeAreaView style={estilos.recipiente}>
@@ -77,7 +59,7 @@ export default function TelaDisputas() {
       >
         {/* Cards de Resumo */}
         <View style={estilos.secaoResumo}>
-          {resumo.map((item) => (
+          {resumoCards.map((item) => (
             <ResumoCard 
               key={item.rotulo}
               icone={item.icone}

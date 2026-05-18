@@ -1,40 +1,85 @@
-import React from 'react';
-import { 
-  ScrollView, 
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
-  StatusBar, 
-  TouchableOpacity 
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { DocumentItem } from '../../src/components/editais/DocumentItem';
-// Importa a lista oficial de documentos que você possui
-import { MEUS_DOCUMENTOS_CADASTRADOS } from '../../src/lib/mock-data';
+import api from '../../src/services/api';
+
+interface Documento {
+  id: string;
+  nome: string;
+  status: 'valido' | 'pendente' | 'vencido';
+  validade: string | null;
+}
 
 export default function DocumentsScreen() {
-  // Mapeia os documentos cadastrados para o formato visual da tela[cite: 7]
-  const listaExibicao = MEUS_DOCUMENTOS_CADASTRADOS.map(nome => ({
-    nome,
-    status: "valido" as const,
-    validade: "Vencimento em dia"
-  }));
+  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const [carregando, setCarregando] = useState(true);
+
+  const carregarDocumentos = useCallback(() => {
+    setCarregando(true);
+    api.get('/documentos')
+      .then(({ data }) => setDocumentos(data.data ?? []))
+      .catch(() => setDocumentos([]))
+      .finally(() => setCarregando(false));
+  }, []);
+
+  useEffect(() => {
+    carregarDocumentos();
+  }, [carregarDocumentos]);
+
+  const handleRemover = useCallback((id: string, nome: string) => {
+    Alert.alert(
+      'Remover documento',
+      `Deseja remover "${nome}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Remover',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/documentos/${id}`);
+              setDocumentos(prev => prev.filter(d => d.id !== id));
+            } catch {
+              Alert.alert('Erro', 'Não foi possível remover o documento.');
+            }
+          },
+        },
+      ]
+    );
+  }, []);
+
+  const labelValidade = (doc: Documento): string => {
+    if (doc.validade) return `Válido até ${doc.validade}`;
+    if (doc.status === 'valido') return 'Vencimento em dia';
+    if (doc.status === 'vencido') return 'Documento vencido';
+    return 'Não enviado';
+  };
 
   return (
     <SafeAreaView style={estilos.recipientePrincipal}>
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
-      
-      <AuthHeader 
-        titulo="Documentos" 
-        subtitulo="Mantenha suas certidões sempre em dia" 
+
+      <AuthHeader
+        titulo="Documentos"
+        subtitulo="Mantenha suas certidões sempre em dia"
         exibirVoltar={false}
       />
 
-      <ScrollView 
-        style={estilos.rolagemPagina} 
+      <ScrollView
+        style={estilos.rolagemPagina}
         contentContainerStyle={estilos.conteudoRolagem}
         showsVerticalScrollIndicator={false}
       >
@@ -48,24 +93,36 @@ export default function DocumentsScreen() {
 
           <View style={estilos.cabecalhoSecao}>
             <Text style={estilos.tituloSecao}>Meus documentos</Text>
-            <Text style={estilos.textoContagem}>{listaExibicao.length} no total</Text>
+            <Text style={estilos.textoContagem}>
+              {carregando ? '...' : `${documentos.length} no total`}
+            </Text>
           </View>
 
-          {listaExibicao.map((item, index) => (
-            <DocumentItem 
-              key={index}
-              nome={item.nome}
-              status={item.status}
-              validade={item.validade}
-            />
-          ))}
-
-          {/* Exemplo de documento pendente que não está na lista oficial para teste[cite: 5, 7] */}
-          <DocumentItem 
-            nome="Portfólio de Apps"
-            status="pendente"
-            validade="Não enviado"
-          />
+          {carregando ? (
+            <ActivityIndicator size="large" color="#0F172A" style={{ marginTop: 40 }} />
+          ) : documentos.length === 0 ? (
+            <View style={estilos.emptyState}>
+              <Ionicons name="document-outline" size={48} color="#CBD5E1" />
+              <Text style={estilos.emptyText}>Nenhum documento cadastrado.</Text>
+              <Text style={estilos.emptySubText}>
+                Envie suas certidões para participar de licitações.
+              </Text>
+            </View>
+          ) : (
+            documentos.map((doc) => (
+              <TouchableOpacity
+                key={doc.id}
+                onLongPress={() => handleRemover(doc.id, doc.nome)}
+                activeOpacity={0.85}
+              >
+                <DocumentItem
+                  nome={doc.nome}
+                  status={doc.status === 'vencido' ? 'pendente' : doc.status}
+                  validade={labelValidade(doc)}
+                />
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         <View style={estilos.cartaoInformativo}>
@@ -90,6 +147,9 @@ const estilos = StyleSheet.create({
   cabecalhoSecao: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 35, marginBottom: 15 },
   tituloSecao: { fontSize: 16, fontWeight: 'bold', color: '#0F172A' },
   textoContagem: { fontSize: 12, color: '#64748B' },
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, backgroundColor: '#FFF', borderRadius: 24, borderWidth: 1, borderColor: '#F1F5F9' },
+  emptyText: { color: '#64748B', fontSize: 14, marginTop: 12, fontWeight: '600' },
+  emptySubText: { color: '#94A3B8', fontSize: 12, marginTop: 6, textAlign: 'center', paddingHorizontal: 20 },
   cartaoInformativo: { marginHorizontal: 20, marginTop: 20, backgroundColor: '#F1F5F9', padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#E2E8F0' },
-  textoInformativo: { flex: 1, fontSize: 12, color: '#475569', lineHeight: 18 }
+  textoInformativo: { flex: 1, fontSize: 12, color: '#475569', lineHeight: 18 },
 });
