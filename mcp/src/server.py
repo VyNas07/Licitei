@@ -17,7 +17,8 @@ from starlette.responses import JSONResponse
 
 from src.cache import Cache
 from src.config import carregar_config
-from src.llm import chat
+import asyncio
+from src.agente import criar_agente, chat as _chat
 from src.tools.buscar_licitacoes import buscar_licitacoes as _buscar
 from src.tools.detalhar_licitacao import detalhar_licitacao as _detalhar
 from src.tools.gerar_checklist import gerar_checklist as _checklist
@@ -61,17 +62,9 @@ def _configurar_logger() -> None:
 _configurar_logger()
 config = carregar_config()
 cache = Cache(ttl=config.cache_ttl)
+agente = criar_agente(config)
 
 mcp = FastMCP("licitei")
-
-_ferramentas = {
-    "buscar_licitacoes": lambda **kw: _buscar(**kw, config=config),
-    "detalhar_licitacao": lambda **kw: _detalhar(**kw, config=config),
-    "keywords_cnae": lambda **kw: _keywords_cnae(**kw),
-    "resumir_edital": lambda **kw: _resumir(**kw, config=config),
-    "gerar_checklist": lambda **kw: _checklist(**kw, config=config),
-    "listar_documentos": lambda **kw: _documentos(**kw, config=config),
-}
 
 # ---------------------------------------------------------------------------
 # Tools MCP
@@ -154,12 +147,10 @@ def listar_documentos(numero_controle_pncp: str) -> dict:
 
 @mcp.custom_route("/chat", methods=["POST"])
 async def chat_handler(request: Request) -> JSONResponse:
-    """Recebe uma query em linguagem natural e retorna a resposta do LLM.
+    """Recebe query e thread_id, retorna resposta do agente LangGraph.
 
-    Verifica o cache antes de chamar o LLM. Armazena a resposta no cache
-    ao final para reutilização em queries idênticas.
-
-    Body JSON: {"query": "licitações de limpeza em PE"}
+    Body JSON: {"query": "licitações de limpeza em PE", "thread_id": "user-uuid"}
+    thread_id é opcional — sem ele, cada request é uma conversa independente.
     """
     try:
         body = await request.json()
@@ -170,6 +161,8 @@ async def chat_handler(request: Request) -> JSONResponse:
     if not query:
         return JSONResponse({"erro": "Campo 'query' é obrigatório."}, status_code=400)
 
+    thread_id = body.get("thread_id", "anonimo")
+
     try:
         chave = Cache.chave(query)
         cached = cache.get(chave)
@@ -177,8 +170,8 @@ async def chat_handler(request: Request) -> JSONResponse:
             logger.info(f"Cache hit | query={query!r}")
             return JSONResponse({"resposta": cached, "cache": True})
 
-        logger.info(f"Cache miss | query={query!r}")
-        resposta = chat(query=query, config=config, ferramentas=_ferramentas)
+        logger.info(f"Cache miss | query={query!r} | thread_id={thread_id!r}")
+        resposta = await asyncio.to_thread(_chat, agente, query, thread_id)
         cache.set(chave, resposta)
 
         return JSONResponse({"resposta": resposta, "cache": False})
