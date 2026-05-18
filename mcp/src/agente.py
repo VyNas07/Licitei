@@ -155,7 +155,7 @@ def criar_agente(config: Config):
         model=llm,
         tools=ferramentas,
         checkpointer=checkpointer,
-        state_modifier=_SYSTEM_PROMPT,
+        prompt=_SYSTEM_PROMPT,
     )
     logger.info(
         f"Agente LangGraph criado | provider={config.llm_provider} | "
