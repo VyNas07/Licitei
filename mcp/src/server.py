@@ -8,6 +8,7 @@ Execução:
 """
 
 import sys
+import uuid
 from pathlib import Path
 
 from loguru import logger
@@ -161,10 +162,10 @@ async def chat_handler(request: Request) -> JSONResponse:
     if not query:
         return JSONResponse({"erro": "Campo 'query' é obrigatório."}, status_code=400)
 
-    thread_id = body.get("thread_id", "anonimo")
+    thread_id = body.get("thread_id") or str(uuid.uuid4())
 
     try:
-        chave = Cache.chave(query)
+        chave = Cache.chave(f"{thread_id}:{query}")
         cached = cache.get(chave)
         if cached:
             logger.info(f"Cache hit | query={query!r}")
