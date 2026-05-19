@@ -3,8 +3,23 @@ import { Elysia, t } from 'elysia'
 import { authPlugin } from '../middleware/auth'
 import { supabase } from '../db/supabase'
 
+const TIPOS_VALIDOS = ['certidao_negativa', 'contrato_social', 'comprovante_endereco', 'cnpj', 'outro'] as const
 const STATUS_VALIDOS = ['valido', 'pendente', 'vencido'] as const
 type StatusDocumento = typeof STATUS_VALIDOS[number]
+
+type PostBody = {
+  nome: string
+  tipo: typeof TIPOS_VALIDOS[number]
+  url: string
+  status?: StatusDocumento
+  validade?: string | null
+  participacao_id?: string | null
+}
+
+type PatchBody = {
+  status?: string
+  validade?: string | null
+}
 
 export const documentosRoutes = new Elysia({ prefix: '/documentos' })
   .use(authPlugin)
@@ -30,18 +45,21 @@ export const documentosRoutes = new Elysia({ prefix: '/documentos' })
     }
   })
 
-  // POST /documentos — registra um novo documento
+  // POST /documentos — registra metadados após upload já feito no Supabase Storage
   .post(
     '/',
-    async ({ userId, body, set }: { userId: string; body: { nome: string; status?: StatusDocumento; validade?: string | null }; set: any }) => {
+    async ({ userId, body, set }: { userId: string; body: PostBody; set: any }) => {
       try {
         const { data, error } = await supabase
           .from('documentos')
           .insert({
             user_id: userId,
             nome: body.nome,
+            tipo: body.tipo,
+            url: body.url,
             status: body.status ?? 'pendente',
             validade: body.validade ?? null,
+            participacao_id: body.participacao_id ?? null,
           })
           .select()
           .single()
@@ -52,7 +70,7 @@ export const documentosRoutes = new Elysia({ prefix: '/documentos' })
             return { error: 'Documento já cadastrado' }
           }
           set.status = 500
-          return { error: 'Erro ao cadastrar documento' }
+          return { error: 'Erro ao cadastrar documento', details: error.message }
         }
 
         set.status = 201
@@ -65,16 +83,25 @@ export const documentosRoutes = new Elysia({ prefix: '/documentos' })
     {
       body: t.Object({
         nome: t.String({ minLength: 1, maxLength: 200 }),
+        tipo: t.Union([
+          t.Literal('certidao_negativa'),
+          t.Literal('contrato_social'),
+          t.Literal('comprovante_endereco'),
+          t.Literal('cnpj'),
+          t.Literal('outro'),
+        ]),
+        url: t.String({ minLength: 1 }),
         status: t.Optional(t.Union([t.Literal('valido'), t.Literal('pendente'), t.Literal('vencido')])),
         validade: t.Optional(t.Nullable(t.String())),
+        participacao_id: t.Optional(t.Nullable(t.String())),
       }),
     }
   )
 
-  // PATCH /documentos/:id — atualiza status ou validade de um documento
+  // PATCH /documentos/:id — atualiza status ou validade
   .patch(
     '/:id',
-    async ({ userId, params, body, set }: { userId: string; params: { id: string }; body: Record<string, unknown>; set: any }) => {
+    async ({ userId, params, body, set }: { userId: string; params: { id: string }; body: PatchBody; set: any }) => {
       if (body.status && !STATUS_VALIDOS.includes(body.status as StatusDocumento)) {
         set.status = 400
         return { error: `Status inválido. Use: ${STATUS_VALIDOS.join(', ')}` }
@@ -116,7 +143,7 @@ export const documentosRoutes = new Elysia({ prefix: '/documentos' })
     }
   )
 
-  // DELETE /documentos/:id — remove um documento
+  // DELETE /documentos/:id — remove documento
   .delete('/:id', async ({ userId, params, set }: { userId: string; params: { id: string }; set: any }) => {
     const { error, count } = await supabase
       .from('documentos')

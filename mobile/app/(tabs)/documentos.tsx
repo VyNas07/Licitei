@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ScrollView,
   View,
@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { DocumentItem } from '../../src/components/editais/DocumentItem';
+import { UploadModal } from '../../src/components/documentos/UploadModal';
 import { useDocumentos, type Documento } from '../../src/hooks/useDocumentos';
 
 function labelValidade(doc: Documento): string {
@@ -23,7 +24,8 @@ function labelValidade(doc: Documento): string {
 }
 
 export default function DocumentsScreen() {
-  const { documentos, carregando, erro, remover } = useDocumentos();
+  const [modalVisivel, setModalVisivel] = useState(false);
+  const { documentos, carregando, erro, remover, carregar } = useDocumentos();
 
   return (
     <SafeAreaView style={estilos.recipientePrincipal}>
@@ -41,7 +43,7 @@ export default function DocumentsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={estilos.containerInterno}>
-          <TouchableOpacity style={estilos.botaoUploadPrincipal} activeOpacity={0.9}>
+          <TouchableOpacity style={estilos.botaoUploadPrincipal} activeOpacity={0.9} onPress={() => setModalVisivel(true)}>
             <View style={estilos.circuloIcone}>
               <Ionicons name="cloud-upload" size={20} color="#FFF" />
             </View>
@@ -95,6 +97,12 @@ export default function DocumentsScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      <UploadModal
+        visivel={modalVisivel}
+        onFechar={() => setModalVisivel(false)}
+        onSucesso={() => { setModalVisivel(false); carregar(); }}
+      />
     </SafeAreaView>
   );
 }
