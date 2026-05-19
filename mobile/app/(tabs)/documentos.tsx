@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React from 'react';
 import {
   ScrollView,
   View,
@@ -8,65 +8,22 @@ import {
   StatusBar,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { DocumentItem } from '../../src/components/editais/DocumentItem';
-import api from '../../src/services/api';
+import { useDocumentos, type Documento } from '../../src/hooks/useDocumentos';
 
-interface Documento {
-  id: string;
-  nome: string;
-  status: 'valido' | 'pendente' | 'vencido';
-  validade: string | null;
+function labelValidade(doc: Documento): string {
+  if (doc.validade) return `Válido até ${doc.validade}`;
+  if (doc.status === 'valido') return 'Vencimento em dia';
+  if (doc.status === 'vencido') return 'Documento vencido';
+  return 'Não enviado';
 }
 
 export default function DocumentsScreen() {
-  const [documentos, setDocumentos] = useState<Documento[]>([]);
-  const [carregando, setCarregando] = useState(true);
-
-  const carregarDocumentos = useCallback(() => {
-    setCarregando(true);
-    api.get('/documentos')
-      .then(({ data }) => setDocumentos(data.data ?? []))
-      .catch(() => setDocumentos([]))
-      .finally(() => setCarregando(false));
-  }, []);
-
-  useEffect(() => {
-    carregarDocumentos();
-  }, [carregarDocumentos]);
-
-  const handleRemover = useCallback((id: string, nome: string) => {
-    Alert.alert(
-      'Remover documento',
-      `Deseja remover "${nome}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.delete(`/documentos/${id}`);
-              setDocumentos(prev => prev.filter(d => d.id !== id));
-            } catch {
-              Alert.alert('Erro', 'Não foi possível remover o documento.');
-            }
-          },
-        },
-      ]
-    );
-  }, []);
-
-  const labelValidade = (doc: Documento): string => {
-    if (doc.validade) return `Válido até ${doc.validade}`;
-    if (doc.status === 'valido') return 'Vencimento em dia';
-    if (doc.status === 'vencido') return 'Documento vencido';
-    return 'Não enviado';
-  };
+  const { documentos, carregando, erro, remover } = useDocumentos();
 
   return (
     <SafeAreaView style={estilos.recipientePrincipal}>
@@ -100,6 +57,12 @@ export default function DocumentsScreen() {
 
           {carregando ? (
             <ActivityIndicator size="large" color="#0F172A" style={{ marginTop: 40 }} />
+          ) : erro ? (
+            <View style={estilos.emptyState}>
+              <Ionicons name="cloud-offline-outline" size={48} color="#FCA5A5" />
+              <Text style={estilos.erroText}>Não foi possível carregar os documentos.</Text>
+              <Text style={estilos.emptySubText}>Verifique sua conexão e tente novamente.</Text>
+            </View>
           ) : documentos.length === 0 ? (
             <View style={estilos.emptyState}>
               <Ionicons name="document-outline" size={48} color="#CBD5E1" />
@@ -112,7 +75,7 @@ export default function DocumentsScreen() {
             documentos.map((doc) => (
               <TouchableOpacity
                 key={doc.id}
-                onLongPress={() => handleRemover(doc.id, doc.nome)}
+                onLongPress={() => remover(doc.id, doc.nome)}
                 activeOpacity={0.85}
               >
                 <DocumentItem
@@ -149,6 +112,7 @@ const estilos = StyleSheet.create({
   textoContagem: { fontSize: 12, color: '#64748B' },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, backgroundColor: '#FFF', borderRadius: 24, borderWidth: 1, borderColor: '#F1F5F9' },
   emptyText: { color: '#64748B', fontSize: 14, marginTop: 12, fontWeight: '600' },
+  erroText: { color: '#DC2626', fontSize: 14, marginTop: 12, fontWeight: '600' },
   emptySubText: { color: '#94A3B8', fontSize: 12, marginTop: 6, textAlign: 'center', paddingHorizontal: 20 },
   cartaoInformativo: { marginHorizontal: 20, marginTop: 20, backgroundColor: '#F1F5F9', padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#E2E8F0' },
   textoInformativo: { flex: 1, fontSize: 12, color: '#475569', lineHeight: 18 },

@@ -12,12 +12,14 @@ export interface Documento {
 export function useDocumentos() {
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(false);
 
   const carregar = useCallback(() => {
     setCarregando(true);
+    setErro(false);
     api.get('/documentos')
       .then(({ data }) => setDocumentos(data.data ?? []))
-      .catch(() => setDocumentos([]))
+      .catch(() => setErro(true))
       .finally(() => setCarregando(false));
   }, []);
 
@@ -54,5 +56,5 @@ export function useDocumentos() {
     }
   }, []);
 
-  return { documentos, carregando, carregar, remover, atualizar };
+  return { documentos, carregando, erro, carregar, remover, atualizar };
 }
