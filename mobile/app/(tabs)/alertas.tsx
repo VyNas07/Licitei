@@ -1,69 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ScrollView, View, Text, StyleSheet, SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { Calendar } from '../../src/components/alertas/Calendar';
 import { NotificationItem } from '../../src/components/alertas/NotificationItem';
-import api from '../../src/services/api';
-
-type TipoAlerta = 'prazo' | 'preferencia' | 'documento';
-
-interface AlertaUI {
-  id: string;
-  tipo: TipoAlerta;
-  titulo: string;
-  descricao: string;
-  data: string;
-  licitacao_id?: string;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapAlerta(alerta: any, index: number): AlertaUI {
-  if (alerta.tipo === 'prazo_curto') {
-    return {
-      id: String(index),
-      tipo: 'prazo',
-      titulo: `Prazo curto: ${alerta.dias_restantes} dia(s)`,
-      descricao: alerta.mensagem,
-      data: `${alerta.dias_restantes}d restantes`,
-      licitacao_id: alerta.licitacao_id,
-    };
-  }
-  if (alerta.tipo === 'teto_mei') {
-    return {
-      id: String(index),
-      tipo: 'documento',
-      titulo: alerta.urgente ? 'Teto MEI atingido!' : 'Atenção: teto MEI próximo',
-      descricao: alerta.mensagem,
-      data: 'Agora',
-    };
-  }
-  return {
-    id: String(index),
-    tipo: 'preferencia',
-    titulo: 'Novo edital compatível',
-    descricao: alerta.mensagem ?? alerta.edital?.objeto_compra ?? '',
-    data: 'Recente',
-    licitacao_id: alerta.edital?.numero_controle_pncp,
-  };
-}
+import { useAlertas } from '../../src/hooks/useAlertas';
 
 export default function AlertasScreen() {
   const router = useRouter();
-  const [alertas, setAlertas] = useState<AlertaUI[]>([]);
-  const [carregando, setCarregando] = useState(true);
-
-  useEffect(() => {
-    api.get('/alertas')
-      .then(({ data }) => setAlertas((data.data ?? []).map(mapAlerta)))
-      .catch(() => setAlertas([]))
-      .finally(() => setCarregando(false));
-  }, []);
-
-  const datasComAlerta: number[] = alertas
-    .filter(a => a.tipo === 'prazo')
-    .map(() => new Date().getDate());
+  const { alertas, carregando, datasComAlerta } = useAlertas();
 
   return (
     <SafeAreaView style={estilos.recipiente}>
