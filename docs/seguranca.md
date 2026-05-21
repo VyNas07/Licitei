@@ -43,7 +43,7 @@ Esse processo garante que apenas usuários autenticados acessem rotas protegidas
 O gerenciamento de senhas é totalmente delegado ao Supabase Auth.
 
 | Item | Detalhe |
-|------|---------|
+| --- | --- |
 | Armazenamento de senha | Não armazenada no backend — exclusividade do Supabase |
 | Hashing | Realizado pela infraestrutura do Supabase (bcrypt) |
 | Acesso às credenciais | Backend não tem acesso direto |
@@ -118,7 +118,7 @@ Storage, que utiliza a mesma infraestrutura AWS com criptografia AES-256 em repo
 e TLS em trânsito.
 
 | Item | Detalhe |
-|------|---------|
+| --- | --- |
 | Bucket | `documentos` (privado) |
 | Acesso | Via URL assinada gerada pelo backend (service_role) |
 | Criptografia em trânsito | TLS 1.2+ obrigatório |
@@ -128,7 +128,7 @@ e TLS em trânsito.
 ### 4. Dados sensíveis armazenados e tratamento
 
 | Dado | Onde fica | Formato armazenado | Sensibilidade |
-|------|-----------|-------------------|---------------|
+| --- | --- | --- | --- |
 | E-mail | `auth.users` (Supabase Auth) | Texto plano (gerenciado pelo Supabase) | Alta |
 | Senha | `auth.users` (Supabase Auth) | Hash bcrypt (Supabase gerencia) | Alta |
 | CNPJ | `mei_profile.cnpj` (Supabase) | Texto plano, 14 dígitos sem máscara | Alta |
@@ -143,13 +143,13 @@ e TLS em trânsito.
 (CNPJ é registro público na Receita Federal), mas o acesso é protegido por RLS
 (Row Level Security) — cada usuário acessa apenas o próprio registro.
 
-**Anonimização em logs:** nenhum dado pessoal (e-mail, CNPJ, nome) é emitido nos logs
-do backend. O logger registra `userId` (UUID) e `userEmail` como contexto interno —
-por inspeção do código-fonte, não há `console.log` ou logger emitindo campos sensíveis
-como CNPJ ou nome nas rotas do backend.
+**Anonimização em logs:** por inspeção do código-fonte, não há `console.log` ou logger
+emitindo campos sensíveis (CNPJ, nome, e-mail) nas rotas do backend. O handler global
+de erros (`index.ts:39`) registra apenas `error.code` e `error.message` genéricos do
+framework — sem dados do usuário.
 
-> **Nota:** validação em produção (Railway) pendente — o projeto ainda não está deployado
-> (Sprint 2). Verificar logs após o deploy previsto para o final da Sprint 2.
+> **Nota:** validação em produção (Railway) pendente — projeto ainda não deployado (Sprint 2).
+> Verificar logs após o deploy previsto para o final da Sprint 2.
 
 ---
 
@@ -159,12 +159,12 @@ como CNPJ ou nome nas rotas do backend.
 
 O backend (`backend/src/middleware/auth.ts`) valida cada requisição via Supabase Auth:
 
-```
+```text
 Cliente → Bearer <token> → authPlugin → supabase.auth.getUser(token) → userId, userEmail
 ```
 
 | Ponto de verificação | Status |
-|----------------------|--------|
+| --- | --- |
 | Token extraído do header `Authorization: Bearer` | ✅ |
 | Validação delegada ao Supabase (sem lógica própria de JWT) | ✅ |
 | Token inválido/expirado retorna HTTP 401 | ✅ |
@@ -178,7 +178,7 @@ O app mobile (`mobile/src/services/supabase.ts`) usa `AsyncStorage` para persist
 a sessão.
 
 | Ponto de verificação | Status |
-|----------------------|--------|
+| --- | --- |
 | `autoRefreshToken: true` | ✅ |
 | `persistSession: true` | ✅ |
 | Storage: `AsyncStorage` | ⚠️ Risco |
@@ -191,9 +191,11 @@ a sessão.
 ### Row Level Security (RLS)
 
 RLS habilitado em todas as tabelas do Supabase. Política padrão:
+
 ```sql
 user_id = auth.uid()
 ```
+
 Cada usuário acessa apenas seus próprios registros. Confirmado na especificação do schema
 (`docs/supabase-schema.md`).
 
@@ -208,7 +210,7 @@ Cada usuário acessa apenas seus próprios registros. Confirmado na especificaç
 ### 1. Base de dados pessoais coletados
 
 | Categoria | Dado | Base legal (LGPD art. 7º) |
-|-----------|------|--------------------------|
+| --- | --- | --- |
 | Identificação | E-mail | Execução de contrato (conta do usuário) |
 | Identificação | CNPJ | Execução de contrato (obrigatório para MEI) |
 | Identificação | Nome fantasia | Execução de contrato |
@@ -223,10 +225,10 @@ Tela de consentimento ainda não implementada no app — identificada como gap d
 
 | Item | Status |
 | --- | --- |
-| Tela de aceite de Termos de Uso e Política de Privacidade | ⚠️ Gap — previsto para Sprint 3 |
-| Termos de Uso redigidos | ⬜ Pendente |
-| Política de Privacidade redigida | ⬜ Pendente |
-| Log de aceite armazenado (data/hora + versão) | ⬜ Pendente — depende da tela ser implementada |
+| Termos de Uso redigidos | ✅ Rascunho revisado — `docs/termos-de-uso.md` |
+| Política de Privacidade redigida | ✅ Rascunho revisado — `docs/politica-de-privacidade.md` |
+| Tela de aceite de Termos de Uso e Política de Privacidade no onboarding | ⚠️ Gap — previsto para Sprint 3 (Track 2 Mobile) |
+| Log de aceite armazenado (data/hora + versão) | ⚠️ Gap — depende da tela ser implementada (Sprint 3) |
 
 ### 3. Direitos do titular
 
@@ -248,15 +250,15 @@ Verificado por inspeção do código-fonte do backend (`backend/src/routes/`) em
 ## Dependências e ações pendentes
 
 | Ação | Responsável | Prazo |
-|------|-------------|-------|
+| --- | --- | --- |
 | ~~Screenshot de encryption at rest no Atlas~~ | ~~Vyktor~~ | ~~13/05~~ ✅ Documentado via política oficial MongoDB |
 | ~~Screenshot de encryption at rest no Supabase~~ | ~~Vyktor / Pedro~~ | ~~13/05~~ ✅ Documentado via política oficial Supabase |
 | ~~Confirmar RLS ativo em produção (todas as tabelas)~~ | ~~Vyktor / Pedro~~ | ~~13/05~~ ✅ |
 | Migrar mobile de `AsyncStorage` → `SecureStore` | Pedro / Yuri | Sprint 2 |
 | Revisar logs Railway — confirmar sem PII | Vyktor / Pedro | Pós-deploy (fim Sprint 2) |
-| Confirmar tela de consentimento no onboarding | Thaíssa / Yuri | 20/05 (S3) |
-| Mapear fluxo de exclusão de conta | Pedro | 20/05 (S3) |
+| Implementar tela de consentimento no onboarding | Thaíssa / Yuri / Pedro | Sprint 3 |
+| Implementar fluxo de exclusão de conta (`DELETE /perfil`) | Pedro / Yuri | Sprint 3 |
 
 ---
 
-*v1.0 — 14/05/2026 · rascunho técnico baseado na inspeção do código (branch `develop`)*
+v1.1 — 14/05/2026 · S1 completo · S2 completo · S3 rascunho concluído (gaps documentados para Sprint 3)
