@@ -1,14 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface DocumentItemProps {
-  nome: string;
-  status: 'valido' | 'vencendo' | 'pendente';
-  validade: string;
+  readonly nome: string;
+  readonly status: 'valido' | 'vencendo' | 'pendente';
+  readonly validade: string;
+  readonly onRemover?: () => void;
 }
 
-export const DocumentItem = ({ nome, status, validade }: DocumentItemProps) => {
+export const DocumentItem = ({ nome, status, validade, onRemover }: DocumentItemProps) => {
   const getConfig = () => {
     switch (status) {
       case 'valido':
@@ -33,6 +34,11 @@ export const DocumentItem = ({ nome, status, validade }: DocumentItemProps) => {
         <Text style={estilos.validadeDocumento}>{validade}</Text>
       </View>
 
+      {onRemover && (
+        <TouchableOpacity onPress={onRemover} style={estilos.botaoRemover} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -68,5 +74,8 @@ const estilos = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     marginTop: 2,
+  },
+  botaoRemover: {
+    padding: 4,
   },
 });

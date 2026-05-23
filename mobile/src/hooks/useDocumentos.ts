@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import api from '../services/api';
 
 export interface Documento {
@@ -26,25 +26,27 @@ export function useDocumentos() {
   useEffect(() => { carregar(); }, [carregar]);
 
   const remover = useCallback((id: string, nome: string) => {
-    Alert.alert(
-      'Remover documento',
-      `Deseja remover "${nome}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.delete(`/documentos/${id}`);
-              setDocumentos(prev => prev.filter(d => d.id !== id));
-            } catch {
-              Alert.alert('Erro', 'Não foi possível remover o documento.');
-            }
-          },
-        },
-      ]
-    );
+    const executar = async () => {
+      try {
+        await api.delete(`/documentos/${id}`);
+        setDocumentos(prev => prev.filter(d => d.id !== id));
+      } catch {
+        Alert.alert('Erro', 'Não foi possível remover o documento.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (globalThis.confirm(`Deseja remover "${nome}"?`)) executar();
+    } else {
+      Alert.alert(
+        'Remover documento',
+        `Deseja remover "${nome}"?`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Remover', style: 'destructive', onPress: executar },
+        ]
+      );
+    }
   }, []);
 
   const atualizar = useCallback(async (id: string, campos: Partial<Pick<Documento, 'status' | 'validade'>>) => {

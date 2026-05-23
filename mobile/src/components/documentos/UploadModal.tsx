@@ -80,14 +80,10 @@ export function UploadModal({ visivel, onFechar, onSucesso }: Props) {
 
       if (uploadError) throw new Error(uploadError.message);
 
-      const { data: urlData } = supabase.storage
-        .from('documentos')
-        .getPublicUrl(storagePath);
-
       await api.post('/documentos', {
         nome: arquivo.name,
         tipo,
-        url: urlData.publicUrl,
+        url: storagePath,
         status: 'pendente',
       });
 

@@ -27,6 +27,44 @@ export default function DocumentsScreen() {
   const [modalVisivel, setModalVisivel] = useState(false);
   const { documentos, carregando, erro, remover, carregar } = useDocumentos();
 
+  function renderConteudo() {
+    if (carregando) {
+      return <ActivityIndicator size="large" color="#0F172A" style={{ marginTop: 40 }} />;
+    }
+    if (erro) {
+      return (
+        <View style={estilos.emptyState}>
+          <Ionicons name="cloud-offline-outline" size={48} color="#FCA5A5" />
+          <Text style={estilos.erroText}>Não foi possível carregar os documentos.</Text>
+          <Text style={estilos.emptySubText}>Verifique sua conexão e tente novamente.</Text>
+        </View>
+      );
+    }
+    if (documentos.length === 0) {
+      return (
+        <View style={estilos.emptyState}>
+          <Ionicons name="document-outline" size={48} color="#CBD5E1" />
+          <Text style={estilos.emptyText}>Nenhum documento cadastrado.</Text>
+          <Text style={estilos.emptySubText}>
+            Envie suas certidões para participar de licitações.
+          </Text>
+        </View>
+      );
+    }
+    return documentos.map((doc) => {
+      const statusNormalizado = doc.status === 'vencido' ? 'pendente' : doc.status;
+      return (
+        <DocumentItem
+          key={doc.id}
+          nome={doc.nome}
+          status={statusNormalizado}
+          validade={labelValidade(doc)}
+          onRemover={() => remover(doc.id, doc.nome)}
+        />
+      );
+    });
+  }
+
   return (
     <SafeAreaView style={estilos.recipientePrincipal}>
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
@@ -57,43 +95,13 @@ export default function DocumentsScreen() {
             </Text>
           </View>
 
-          {carregando ? (
-            <ActivityIndicator size="large" color="#0F172A" style={{ marginTop: 40 }} />
-          ) : erro ? (
-            <View style={estilos.emptyState}>
-              <Ionicons name="cloud-offline-outline" size={48} color="#FCA5A5" />
-              <Text style={estilos.erroText}>Não foi possível carregar os documentos.</Text>
-              <Text style={estilos.emptySubText}>Verifique sua conexão e tente novamente.</Text>
-            </View>
-          ) : documentos.length === 0 ? (
-            <View style={estilos.emptyState}>
-              <Ionicons name="document-outline" size={48} color="#CBD5E1" />
-              <Text style={estilos.emptyText}>Nenhum documento cadastrado.</Text>
-              <Text style={estilos.emptySubText}>
-                Envie suas certidões para participar de licitações.
-              </Text>
-            </View>
-          ) : (
-            documentos.map((doc) => (
-              <TouchableOpacity
-                key={doc.id}
-                onLongPress={() => remover(doc.id, doc.nome)}
-                activeOpacity={0.85}
-              >
-                <DocumentItem
-                  nome={doc.nome}
-                  status={doc.status === 'vencido' ? 'pendente' : doc.status}
-                  validade={labelValidade(doc)}
-                />
-              </TouchableOpacity>
-            ))
-          )}
+          {renderConteudo()}
         </View>
 
         <View style={estilos.cartaoInformativo}>
           <Ionicons name="shield-checkmark" size={20} color="#0F172A" />
           <Text style={estilos.textoInformativo}>
-            Suas certidões são armazenadas com criptografia de ponta a ponta.
+            Seus documentos são armazenados de forma privada — acesso exclusivo à sua conta.
           </Text>
         </View>
       </ScrollView>
