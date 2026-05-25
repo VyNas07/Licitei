@@ -17,6 +17,14 @@ import { ResumoCard } from '../../src/components/auth/ResumoCard';
 import { EditalCard } from '../../src/components/editais/EditalCard';
 import { useParticipacoes } from '../../src/hooks/useParticipacoes';
 
+const STATUS_LABELS: Record<string, string> = {
+  acompanhando: 'Acompanhando',
+  proposta_enviada: 'Proposta enviada',
+  venceu: 'Venceu',
+  perdeu: 'Perdeu',
+  desistiu: 'Desistiu',
+};
+
 export default function TelaDisputas() {
   const navegador = useRouter();
   const { participacoes, carregando, resumo } = useParticipacoes();
@@ -96,7 +104,7 @@ export default function TelaDisputas() {
                 orgao: p.orgao_nome,
                 valor: p.valor_estimado,
                 dataLimite: p.data_encerramento,
-                modalidade: p.status,
+                modalidade: STATUS_LABELS[p.status] ?? p.status,
               }}
             />
           ))}
