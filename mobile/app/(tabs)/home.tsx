@@ -82,6 +82,7 @@ export default function HomeUsuario() {
   const [modalCategorias, setModalCategorias] = useState(false);
   const [modalFiltros, setModalFiltros] = useState(false);
   const [pagina, setPagina] = useState(1);
+  const [nomeUsuario, setNomeUsuario] = useState('');
   const ITENS_POR_PAGINA = 5;
 
   const buscarOportunidades = useCallback(async () => {
@@ -93,7 +94,8 @@ export default function HomeUsuario() {
       if (filtrosAvancados.cnae) params.cnae = filtrosAvancados.cnae;
       const { data } = await api.get('/oportunidades', { params });
       setEditais((data.data ?? []).map(mapEdital));
-    } catch {
+    } catch (err) {
+      console.error('[Home] Erro ao buscar oportunidades:', err);
       setEditais([]);
     } finally {
       setCarregando(false);
@@ -101,6 +103,12 @@ export default function HomeUsuario() {
   }, [filtrosAvancados.uf, filtrosAvancados.valor, filtrosAvancados.cnae]);
 
   useEffect(() => { buscarOportunidades(); }, [buscarOportunidades]);
+
+  useEffect(() => {
+    api.get('/perfil')
+      .then(({ data }) => setNomeUsuario(data.nome_fantasia ?? ''))
+      .catch(() => {}); // silent fail — mantém string vazia
+  }, []);
 
   const validaFaixaValor = (valor: number, faixa: string) => {
     if (faixa === 'Todos') return true;
@@ -154,7 +162,7 @@ export default function HomeUsuario() {
       <View style={estilos.cabecalho}>
         <View style={estilos.linhaTopo}>
           <View>
-            <Text style={estilos.saudacao}>Olá, Ylson</Text>
+            <Text style={estilos.saudacao}>Olá{nomeUsuario ? `, ${nomeUsuario}` : ''}</Text>
             <Text style={estilos.tituloPagina}>Boas oportunidades hoje</Text>
           </View>
           <TouchableOpacity style={estilos.botaoNotificacao} onPress={() => router.push('/alertas')}>

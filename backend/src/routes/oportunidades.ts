@@ -45,8 +45,8 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
 
         if (uf) filter['uf'] = uf.toUpperCase()
 
-        // Só editais ainda abertos
-        filter['data_encerramento_proposta'] = { $gte: new Date() }
+        // TODO: restaurar em produção — filtra só editais ainda abertos
+        // filter['data_encerramento_proposta'] = { $gte: new Date() }
 
         if (keywords.length > 0) {
           const escapeRegex = (str: string) => str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)

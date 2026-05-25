@@ -127,8 +127,42 @@ export const documentosRoutes = new Elysia({ prefix: '/documentos' })
     }
   )
 
-  // DELETE /documentos/:id — remove documento
+  // DELETE /documentos/:id — remove documento e arquivo do Storage
   .delete('/:id', async ({ userId, params, set }) => {
+    const { data: doc, error: fetchError } = await supabase
+      .from('documentos')
+      .select('url')
+      .eq('id', params.id)
+      .eq('user_id', userId)
+      .single()
+
+    if (fetchError?.code === 'PGRST116' || !doc) {
+      set.status = 404
+      return { error: 'Documento não encontrado' }
+    }
+
+    if (fetchError) {
+      set.status = 500
+      return { error: 'Erro ao buscar documento' }
+    }
+
+    // Extrai o caminho relativo do Storage a partir da URL pública
+    const storagePath = doc.url.split('/documentos/')[1]
+    if (storagePath) {
+      await supabase.storage.from('documentos').remove([storagePath])
+    }
+
+    // Etapa 2: Remove o arquivo físico do Storage
+    const { error: storageError } = await supabase.storage
+      .from('documentos')
+      .remove([doc.url])
+
+    if (storageError) {
+      set.status = 500
+      return { error: 'Erro ao remover arquivo do storage' }
+    }
+
+    // Etapa 3: Remove o registro do banco
     const { error, count } = await supabase
       .from('documentos')
       .delete({ count: 'exact' })
