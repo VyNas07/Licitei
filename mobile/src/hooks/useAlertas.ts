@@ -9,6 +9,7 @@ export interface AlertaUI {
   titulo: string;
   descricao: string;
   data: string;
+  prazo_iso?: string;
   licitacao_id?: string;
 }
 
@@ -21,6 +22,7 @@ function mapAlerta(alerta: any, index: number): AlertaUI {
       titulo: `Prazo curto: ${alerta.dias_restantes} dia(s)`,
       descricao: alerta.mensagem,
       data: `${alerta.dias_restantes}d restantes`,
+      prazo_iso: alerta.data_encerramento ?? undefined,
       licitacao_id: alerta.licitacao_id,
     };
   }
@@ -58,8 +60,8 @@ export function useAlertas() {
   useEffect(() => { carregar(); }, [carregar]);
 
   const datasComAlerta: number[] = alertas
-    .filter(a => a.tipo === 'prazo')
-    .map(() => new Date().getDate());
+    .filter(a => a.tipo === 'prazo' && !!a.prazo_iso)
+    .map(a => new Date(a.prazo_iso!).getDate());
 
   return { alertas, carregando, carregar, datasComAlerta };
 }
