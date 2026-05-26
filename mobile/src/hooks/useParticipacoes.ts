@@ -14,12 +14,14 @@ export interface Participacao {
 export function useParticipacoes() {
   const [participacoes, setParticipacoes] = useState<Participacao[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(false);
 
   const carregar = useCallback(() => {
     setCarregando(true);
+    setErro(false);
     api.get('/participacoes')
       .then(({ data }) => setParticipacoes(data.data ?? []))
-      .catch(() => setParticipacoes([]))
+      .catch(() => setErro(true))
       .finally(() => setCarregando(false));
   }, []);
 
@@ -31,5 +33,5 @@ export function useParticipacoes() {
     finalizadas: participacoes.filter(p => ['venceu', 'perdeu', 'desistiu'].includes(p.status)).length,
   }), [participacoes]);
 
-  return { participacoes, carregando, carregar, resumo };
+  return { participacoes, carregando, erro, carregar, resumo };
 }

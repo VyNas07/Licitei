@@ -91,6 +91,7 @@ export default function HomeUsuario() {
       const params: Record<string, string> = { limit: '50' };
       if (filtrosAvancados.uf !== 'Todas') params.uf = filtrosAvancados.uf;
       if (filtrosAvancados.valor === 'Até R$ 80 mil (exclusivo MEI)') params.valor_max = '80000';
+      if (filtrosAvancados.cnae) params.cnae = filtrosAvancados.cnae;
       const { data } = await api.get('/oportunidades', { params });
       setEditais((data.data ?? []).map(mapEdital));
     } catch (err) {
@@ -99,7 +100,7 @@ export default function HomeUsuario() {
     } finally {
       setCarregando(false);
     }
-  }, [filtrosAvancados.uf, filtrosAvancados.valor]);
+  }, [filtrosAvancados.uf, filtrosAvancados.valor, filtrosAvancados.cnae]);
 
   useEffect(() => { buscarOportunidades(); }, [buscarOportunidades]);
 

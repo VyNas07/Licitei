@@ -1,3 +1,4 @@
+// @ts-ignore - Elysia types/module resolution handled externally
 import { Elysia } from 'elysia'
 import { cors } from '@elysiajs/cors'
 import { swagger } from '@elysiajs/swagger'

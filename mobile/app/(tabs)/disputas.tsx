@@ -17,9 +17,17 @@ import { ResumoCard } from '../../src/components/auth/ResumoCard';
 import { EditalCard } from '../../src/components/editais/EditalCard';
 import { useParticipacoes } from '../../src/hooks/useParticipacoes';
 
+const STATUS_LABELS: Record<string, string> = {
+  acompanhando: 'Acompanhando',
+  proposta_enviada: 'Proposta enviada',
+  venceu: 'Venceu',
+  perdeu: 'Perdeu',
+  desistiu: 'Desistiu',
+};
+
 export default function TelaDisputas() {
   const navegador = useRouter();
-  const { participacoes, carregando, resumo } = useParticipacoes();
+  const { participacoes, carregando, erro, carregar, resumo } = useParticipacoes();
 
   const resumoCards = [
     {
@@ -81,6 +89,14 @@ export default function TelaDisputas() {
 
           {carregando ? (
             <ActivityIndicator size="large" color="#0F172A" style={{ marginTop: 40 }} />
+          ) : erro ? (
+            <View style={estilos.emptyState}>
+              <Ionicons name="cloud-offline-outline" size={48} color="#FCA5A5" />
+              <Text style={[estilos.emptyText, { color: '#DC2626' }]}>Não foi possível carregar as participações.</Text>
+              <TouchableOpacity onPress={carregar} style={{ marginTop: 12 }}>
+                <Text style={{ color: '#0F172A', fontWeight: '600', fontSize: 13 }}>Tentar novamente</Text>
+              </TouchableOpacity>
+            </View>
           ) : participacoes.length === 0 ? (
             <View style={estilos.emptyState}>
               <Ionicons name="document-text-outline" size={48} color="#CBD5E1" />
@@ -96,7 +112,7 @@ export default function TelaDisputas() {
                 orgao: p.orgao_nome,
                 valor: p.valor_estimado,
                 dataLimite: p.data_encerramento,
-                modalidade: p.status,
+                modalidade: STATUS_LABELS[p.status] ?? p.status,
               }}
             />
           ))}

@@ -1,31 +1,15 @@
-// @ts-ignore: elysia types might not be installed in the environment
 import { Elysia, t } from 'elysia'
 import { authPlugin } from '../middleware/auth'
 import { supabase } from '../db/supabase'
 
-const TIPOS_VALIDOS = ['certidao_negativa', 'contrato_social', 'comprovante_endereco', 'cnpj', 'outro'] as const
 const STATUS_VALIDOS = ['valido', 'pendente', 'vencido'] as const
 type StatusDocumento = typeof STATUS_VALIDOS[number]
-
-type PostBody = {
-  nome: string
-  tipo: typeof TIPOS_VALIDOS[number]
-  url: string
-  status?: StatusDocumento
-  validade?: string | null
-  participacao_id?: string | null
-}
-
-type PatchBody = {
-  status?: string
-  validade?: string | null
-}
 
 export const documentosRoutes = new Elysia({ prefix: '/documentos' })
   .use(authPlugin)
 
   // GET /documentos — lista documentos do usuário
-  .get('/', async ({ userId, set }: { userId: string; set: any }) => {
+  .get('/', async ({ userId, set }) => {
     try {
       const { data, error } = await supabase
         .from('documentos')
@@ -48,7 +32,7 @@ export const documentosRoutes = new Elysia({ prefix: '/documentos' })
   // POST /documentos — registra metadados após upload já feito no Supabase Storage
   .post(
     '/',
-    async ({ userId, body, set }: { userId: string; body: PostBody; set: any }) => {
+    async ({ userId, body, set }) => {
       try {
         const { data, error } = await supabase
           .from('documentos')
@@ -101,7 +85,7 @@ export const documentosRoutes = new Elysia({ prefix: '/documentos' })
   // PATCH /documentos/:id — atualiza status ou validade
   .patch(
     '/:id',
-    async ({ userId, params, body, set }: { userId: string; params: { id: string }; body: PatchBody; set: any }) => {
+    async ({ userId, params, body, set }) => {
       if (body.status && !STATUS_VALIDOS.includes(body.status as StatusDocumento)) {
         set.status = 400
         return { error: `Status inválido. Use: ${STATUS_VALIDOS.join(', ')}` }
@@ -144,8 +128,7 @@ export const documentosRoutes = new Elysia({ prefix: '/documentos' })
   )
 
   // DELETE /documentos/:id — remove documento e arquivo do Storage
-  .delete('/:id', async ({ userId, params, set }: { userId: string; params: { id: string }; set: any }) => {
-    // Etapa 1: Busca o storagePath antes de deletar (valida existência + ownership)
+  .delete('/:id', async ({ userId, params, set }) => {
     const { data: doc, error: fetchError } = await supabase
       .from('documentos')
       .select('url')
@@ -161,6 +144,12 @@ export const documentosRoutes = new Elysia({ prefix: '/documentos' })
     if (fetchError) {
       set.status = 500
       return { error: 'Erro ao buscar documento' }
+    }
+
+    // Extrai o caminho relativo do Storage a partir da URL pública
+    const storagePath = doc.url.split('/documentos/')[1]
+    if (storagePath) {
+      await supabase.storage.from('documentos').remove([storagePath])
     }
 
     // Etapa 2: Remove o arquivo físico do Storage
