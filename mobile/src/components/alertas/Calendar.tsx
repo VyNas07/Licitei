@@ -1,10 +1,25 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import type { DataAlerta } from '../../hooks/useAlertas';
 
 interface CalendarProps {
-  datasComAlerta: number[];
+  readonly datasComAlerta: DataAlerta[];
 }
+
+// Identificadores únicos para os cabeçalhos de dia da semana
+const DIAS_SEMANA = [
+  { id: 'dom', label: 'D' },
+  { id: 'seg', label: 'S' },
+  { id: 'ter', label: 'T' },
+  { id: 'qua', label: 'Q' },
+  { id: 'qui', label: 'Q' },
+  { id: 'sex', label: 'S' },
+  { id: 'sab', label: 'S' },
+] as const;
+
+// Máximo de 6 células vazias antes do dia 1 (Dom=0 … Sab=6)
+const FILLER_KEYS = ['fill-0', 'fill-1', 'fill-2', 'fill-3', 'fill-4', 'fill-5'] as const;
 
 export function Calendar({ datasComAlerta }: CalendarProps) {
   const hoje = new Date();
@@ -12,15 +27,19 @@ export function Calendar({ datasComAlerta }: CalendarProps) {
 
   const ano = dataExibida.getFullYear();
   const mes = dataExibida.getMonth();
-  
-  const nomeMes = dataExibida.toLocaleDateString("pt-BR", { month: "long" });
+
+  const nomeMes = dataExibida.toLocaleDateString('pt-BR', { month: 'long' });
   const tituloFormatado = `${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}/${ano}`;
-  
+
   const primeiroDia = new Date(ano, mes, 1).getDay();
   const diasNoMes = new Date(ano, mes + 1, 0).getDate();
-  const diasComAlertaSet = new Set(datasComAlerta);
 
-  const diasSemana = ["D", "S", "T", "Q", "Q", "S", "S"];
+  // Filtra apenas datas do mês/ano exibido — evita destacar dias errados ao navegar
+  const diasComAlertaSet = new Set(
+    datasComAlerta
+      .filter(d => d.mes === mes && d.ano === ano)
+      .map(d => d.dia)
+  );
 
   const alterarMes = (direcao: number) => {
     const novaData = new Date(ano, mes + direcao, 1);
@@ -45,14 +64,14 @@ export function Calendar({ datasComAlerta }: CalendarProps) {
       </View>
 
       <View style={estilos.gradeDiasSemana}>
-        {diasSemana.map((d, i) => (
-          <Text key={i} style={estilos.textoDiaSemana}>{d}</Text>
+        {DIAS_SEMANA.map(({ id, label }) => (
+          <Text key={id} style={estilos.textoDiaSemana}>{label}</Text>
         ))}
       </View>
 
       <View style={estilos.gradeDias}>
-        {Array.from({ length: primeiroDia }).map((_, i) => (
-          <View key={`vazio-${i}`} style={estilos.caixaDia} />
+        {FILLER_KEYS.slice(0, primeiroDia).map((key) => (
+          <View key={key} style={estilos.caixaDia} />
         ))}
         {Array.from({ length: diasNoMes }).map((_, i) => {
           const dia = i + 1;
@@ -104,7 +123,7 @@ const estilos = StyleSheet.create({
   gradeDiasSemana: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   textoDiaSemana: { flex: 1, textAlign: 'center', fontSize: 10, fontWeight: 'bold', color: '#94A3B8' },
   gradeDias: { flexDirection: 'row', flexWrap: 'wrap' },
-  caixaDia: { width: '14.28%', aspectSquare: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  caixaDia: { width: '14.28%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   circuloDia: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   diaComAlerta: { backgroundColor: '#0F172A' },
   diaHoje: { backgroundColor: '#F1F5F9' },
@@ -112,7 +131,7 @@ const estilos = StyleSheet.create({
   textoDiaAtivo: { color: '#FFF', fontWeight: 'bold' },
   textoDiaHoje: { color: '#0F172A', fontWeight: 'bold' },
   pontoAlerta: { position: 'absolute', bottom: 4, width: 3, height: 3, borderRadius: 2, backgroundColor: '#F59E0B' },
-  legenda: { flexDirection: 'row', gap: 16, pt: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 10 },
+  legenda: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 10 },
   itemLegenda: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   pontoLegenda: { width: 8, height: 8, borderRadius: 4 },
   textoLegenda: { fontSize: 10, color: '#64748B' }
