@@ -120,7 +120,9 @@ e TLS em trânsito.
 | Item | Detalhe |
 | --- | --- |
 | Bucket | `documentos` (privado) |
-| Acesso | Via URL assinada gerada pelo backend (service_role) |
+| Upload | Direto do cliente mobile via Supabase anon key + policy RLS (INSERT restrito a `auth.uid()`) |
+| Acesso de leitura | Restrito ao próprio usuário via RLS (SELECT por `auth.uid()`); URL assinada via `createSignedUrl` planejada para quando o botão de visualização for implementado |
+| Exclusão | Backend remove o arquivo do Storage antes de deletar o registro no banco (`service_role`) |
 | Criptografia em trânsito | TLS 1.2+ obrigatório |
 
 ---
