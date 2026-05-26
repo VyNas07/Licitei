@@ -61,7 +61,7 @@ export function useAlertas() {
 
   const datasComAlerta: number[] = alertas
     .filter(a => a.tipo === 'prazo' && !!a.prazo_iso)
-    .map(a => new Date(a.prazo_iso!).getDate());
+    .map(a => Number.parseInt(a.prazo_iso!.slice(8, 10), 10));
 
   return { alertas, carregando, carregar, datasComAlerta };
 }
