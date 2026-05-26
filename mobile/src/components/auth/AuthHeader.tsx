@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+
+import { LogoImage } from '../../../constants/theme';
 
 interface Props {
   titulo: string;
@@ -25,7 +27,11 @@ export function AuthHeader({ titulo, subtitulo, exibirVoltar = true }: Props) {
 
       <View style={estilos.containerLogo}>
         <View style={estilos.fundoIconeLogo}>
-          <Ionicons name="sparkles" size={16} color="#FFF" />
+          <Image 
+            source={LogoImage.source} 
+            style={{ width: 60, height: 60 }} 
+            resizeMode="contain"
+          />
         </View>
         <Text style={estilos.textoLogo}>Licitei</Text>
       </View>
@@ -49,8 +55,8 @@ const estilos = StyleSheet.create({
   espacadorSemVoltar: { height: 0, marginBottom: 8 },
   textoVoltar: { color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '500' },
   containerLogo: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  fundoIconeLogo: { width: 32, height: 32, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  textoLogo: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  fundoIconeLogo: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  textoLogo: { color: '#FFF', fontSize: 25, fontWeight: 'bold' },
   titulo: { color: '#FFF', fontSize: 24, fontWeight: 'bold', letterSpacing: -0.5 },
   subtitulo: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 4 },
 });

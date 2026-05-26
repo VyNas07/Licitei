@@ -17,6 +17,7 @@ import { supabase } from '../../src/services/supabase';
 import api from '../../src/services/api';
 
 import { Footer } from '../../src/components/landing/Footer';
+import { AuthHeader } from '../../src/components/auth/AuthHeader';
 
 function formatCnpj(v: string) {
   const d = v.replace(/\D/g, "").slice(0, 14);
@@ -80,22 +81,11 @@ export default function Cadastro() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={16} color="#E2E8F0" />
-            <Text style={styles.backText}>Voltar</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.logoRow}>
-            <View style={styles.iconBox}>
-              <Ionicons name="sparkles" size={16} color="#FFF" />
-            </View>
-            <Text style={styles.logoText}>Licitei</Text>
-          </View>
-          
-          <Text style={styles.title}>Crie sua conta</Text>
-          <Text style={styles.subtitle}>Comece a vender para o governo em poucos minutos.</Text>
-        </View>
+        <AuthHeader 
+          titulo="Crie sua conta" 
+          subtitulo="Comece a vender para o governo em poucos minutos." 
+          exibirVoltar={true} 
+        />
 
         <View style={styles.cardWrapper}>
           <View style={styles.card}>
@@ -223,22 +213,6 @@ export default function Cadastro() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
   scrollContent: { flexGrow: 1 },
-  
-  header: { 
-    backgroundColor: '#0F172A', 
-    paddingHorizontal: 20, 
-    paddingTop: 60, 
-    paddingBottom: 40,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  backButton: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
-  backText: { color: '#E2E8F0', fontSize: 12, marginLeft: 4 },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconBox: { width: 32, height: 32, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  logoText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
-  title: { color: '#FFF', fontSize: 24, fontWeight: 'bold', letterSpacing: -0.5 },
-  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 4 },
 
   cardWrapper: { paddingHorizontal: 20, marginTop: 10, paddingBottom: 20 },
   card: { backgroundColor: '#FFF', borderRadius: 16, padding: 20, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 , marginBottom: 20 },

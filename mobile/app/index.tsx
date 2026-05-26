@@ -13,12 +13,12 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { FeatureCard } from '../src/components/landing/FeatureCard';
-import { PlanCard } from '../src/components/landing/PlanCard';
 import { CtaBox } from '../src/components/landing/CtaBox';
 import { Footer } from '../src/components/landing/Footer';
 import { formatBRL } from '../src/lib/mock-data';
 
-import iconeDocumento from '../assets/images/Icone_documento.png';
+import { LogoImage } from '../constants/theme';
+
 
 export default function Landing() {
   const router = useRouter();
@@ -39,8 +39,8 @@ export default function Landing() {
             <View style={styles.logoContainer}>
               <View style={styles.logoIconBg}>
                 <Image 
-                  source={iconeDocumento} 
-                  style={{ width: 22, height: 22 }} 
+                  source={LogoImage.source} 
+                  style={{ width: LogoImage.width, height: LogoImage.height }} 
                   resizeMode="contain"
                 />
               </View>
@@ -143,26 +143,13 @@ export default function Landing() {
         <View style={styles.section}>
           <Text style={styles.sectionOverline}>PLANOS</Text>
           <Text style={styles.sectionTitle}>Escolha o plano ideal para o seu momento</Text>
-          <Text style={styles.sectionSubtitle}>Transparência desde o primeiro clique. Sem surpresas.</Text>
-
-          <PlanCard 
-            titulo="Iniciante"
-            preco="R$ 0"
-            descricao="Para quem está validando os primeiros processos de licitação."
-            funcionalidades={['Match inteligente por CNAE', 'Visualize até 2 editais por mês', 'Acesso ao Dashboard de oportunidades']}
-            textoBotao="Começar grátis"
-            onPress={() => router.push('/(auth)/cadastro')}
-          />
-
-          <PlanCard 
-            titulo="Licitei PRO"
-            preco="R$ 29,90"
-            descricao="Para quem quer escalar e vencer licitações com segurança."
-            funcionalidades={['Editais Ilimitados', 'Checklist automático da Lei 14.133', 'Alertas de Teto MEI (R$ 81.000)']}
-            destaque={true}
-            textoBotao="Começar com PRO"
-            onPress={() => router.push('/(auth)/cadastro')}
-          />
+          <TouchableOpacity 
+            style={styles.btnSection} 
+            onPress={() => router.push('/paywall')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.btnSectionText}>Ver planos</Text>
+          </TouchableOpacity>
         </View>
 
         <CtaBox onPress={() => router.push('/(auth)/cadastro')} />
@@ -181,7 +168,7 @@ const styles = StyleSheet.create({
   heroTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
   logoContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoIconBg: { width: 32, height: 32, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  logoText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  logoText: { color: '#FFF', fontSize: 30, fontWeight: 'bold', marginLeft: 10},
   loginText: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 8 },
   badgeMeiContainer: { flexDirection: 'row' },
   badgeMei: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 16, marginBottom: 16, gap: 6 },
@@ -212,6 +199,7 @@ const styles = StyleSheet.create({
   section: { paddingHorizontal: 20, marginTop: 32 },
   sectionOverline: { fontSize: 11, fontWeight: 'bold', color: '#64748B', letterSpacing: 1 },
   sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#0F172A', marginTop: 4, letterSpacing: -0.5 },
-  sectionSubtitle: { fontSize: 12, color: '#64748B', marginTop: 6, lineHeight: 18 },
   featureList: { marginTop: 16 },
+  btnSection: { flexDirection: 'row', backgroundColor: '#0F172A', height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16 },
+  btnSectionText: { color: '#FFF', fontSize: 14, fontWeight: 'bold' },
 });
