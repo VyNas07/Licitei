@@ -146,12 +146,6 @@ export const documentosRoutes = new Elysia({ prefix: '/documentos' })
       return { error: 'Erro ao buscar documento' }
     }
 
-    // Extrai o caminho relativo do Storage a partir da URL pública
-    const storagePath = doc.url.split('/documentos/')[1]
-    if (storagePath) {
-      await supabase.storage.from('documentos').remove([storagePath])
-    }
-
     // Etapa 2: Remove o arquivo físico do Storage
     const { error: storageError } = await supabase.storage
       .from('documentos')
