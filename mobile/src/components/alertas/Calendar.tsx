@@ -123,7 +123,7 @@ const estilos = StyleSheet.create({
   gradeDiasSemana: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   textoDiaSemana: { flex: 1, textAlign: 'center', fontSize: 10, fontWeight: 'bold', color: '#94A3B8' },
   gradeDias: { flexDirection: 'row', flexWrap: 'wrap' },
-  caixaDia: { width: '14.28%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  caixaDia: { width: '14.28%', height: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   circuloDia: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   diaComAlerta: { backgroundColor: '#0F172A' },
   diaHoje: { backgroundColor: '#F1F5F9' },

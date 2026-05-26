@@ -10,7 +10,7 @@ export interface ItemChecklist {
 }
 
 function storageKey(editalId: string) {
-  return `checklist:${editalId.replace(/[^a-zA-Z0-9]/g, '_')}`;
+  return `checklist_${editalId.replace(/[^a-zA-Z0-9]/g, '_')}`;
 }
 
 function parseChecklist(texto: string): ItemChecklist[] {
