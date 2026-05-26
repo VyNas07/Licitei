@@ -45,23 +45,35 @@ function mapAlerta(alerta: any, index: number): AlertaUI {
   };
 }
 
+export interface DataAlerta {
+  dia: number;
+  mes: number; // 0-indexed, igual a Date.getMonth()
+  ano: number;
+}
+
 export function useAlertas() {
   const [alertas, setAlertas] = useState<AlertaUI[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(false);
 
   const carregar = useCallback(() => {
     setCarregando(true);
+    setErro(false);
     api.get('/alertas')
       .then(({ data }) => setAlertas((data.data ?? []).map(mapAlerta)))
-      .catch(() => setAlertas([]))
+      .catch(() => setErro(true))
       .finally(() => setCarregando(false));
   }, []);
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  const datasComAlerta: number[] = alertas
+  const datasComAlerta: DataAlerta[] = alertas
     .filter(a => a.tipo === 'prazo' && !!a.prazo_iso)
-    .map(a => Number.parseInt(a.prazo_iso!.slice(8, 10), 10));
+    .map(a => ({
+      dia: Number.parseInt(a.prazo_iso!.slice(8, 10), 10),
+      mes: Number.parseInt(a.prazo_iso!.slice(5, 7), 10) - 1,
+      ano: Number.parseInt(a.prazo_iso!.slice(0, 4), 10),
+    }));
 
-  return { alertas, carregando, carregar, datasComAlerta };
+  return { alertas, carregando, erro, carregar, datasComAlerta };
 }
