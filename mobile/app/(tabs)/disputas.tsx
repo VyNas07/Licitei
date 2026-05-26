@@ -17,17 +17,47 @@ import { ResumoCard } from '../../src/components/auth/ResumoCard';
 import { EditalCard } from '../../src/components/editais/EditalCard';
 import { useParticipacoes } from '../../src/hooks/useParticipacoes';
 
-const STATUS_LABELS: Record<string, string> = {
-  acompanhando: 'Acompanhando',
-  proposta_enviada: 'Proposta enviada',
-  venceu: 'Venceu',
-  perdeu: 'Perdeu',
-  desistiu: 'Desistiu',
-};
-
 export default function TelaDisputas() {
   const navegador = useRouter();
   const { participacoes, carregando, erro, carregar, resumo } = useParticipacoes();
+
+  function renderParticipacoes() {
+    if (carregando) {
+      return <ActivityIndicator size="large" color="#0F172A" style={{ marginTop: 40 }} />;
+    }
+    if (erro) {
+      return (
+        <View style={estilos.emptyState}>
+          <Ionicons name="cloud-offline-outline" size={48} color="#FCA5A5" />
+          <Text style={[estilos.emptyText, { color: '#DC2626' }]}>Não foi possível carregar as participações.</Text>
+          <TouchableOpacity onPress={carregar} style={{ marginTop: 12 }}>
+            <Text style={{ color: '#0F172A', fontWeight: '600', fontSize: 13 }}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    if (participacoes.length === 0) {
+      return (
+        <View style={estilos.emptyState}>
+          <Ionicons name="document-text-outline" size={48} color="#CBD5E1" />
+          <Text style={estilos.emptyText}>Nenhuma participação ainda.</Text>
+        </View>
+      );
+    }
+    return participacoes.map((p) => (
+      <EditalCard
+        key={p.id}
+        onPress={() => navegador.push({ pathname: '/edital/[id]', params: { id: p.licitacao_id } })}
+        item={{
+          id: p.licitacao_id,
+          objeto: p.objeto_compra,
+          orgao: p.orgao_nome,
+          valor: p.valor_estimado,
+          dataLimite: p.data_encerramento,
+        }}
+      />
+    ));
+  }
 
   const resumoCards = [
     {
@@ -87,35 +117,7 @@ export default function TelaDisputas() {
             </TouchableOpacity>
           </View>
 
-          {carregando ? (
-            <ActivityIndicator size="large" color="#0F172A" style={{ marginTop: 40 }} />
-          ) : erro ? (
-            <View style={estilos.emptyState}>
-              <Ionicons name="cloud-offline-outline" size={48} color="#FCA5A5" />
-              <Text style={[estilos.emptyText, { color: '#DC2626' }]}>Não foi possível carregar as participações.</Text>
-              <TouchableOpacity onPress={carregar} style={{ marginTop: 12 }}>
-                <Text style={{ color: '#0F172A', fontWeight: '600', fontSize: 13 }}>Tentar novamente</Text>
-              </TouchableOpacity>
-            </View>
-          ) : participacoes.length === 0 ? (
-            <View style={estilos.emptyState}>
-              <Ionicons name="document-text-outline" size={48} color="#CBD5E1" />
-              <Text style={estilos.emptyText}>Nenhuma participação ainda.</Text>
-            </View>
-          ) : participacoes.map((p) => (
-            <EditalCard
-              key={p.id}
-              onPress={() => navegador.push({ pathname: '/edital/[id]', params: { id: p.licitacao_id } })}
-              item={{
-                id: p.licitacao_id,
-                objeto: p.objeto_compra,
-                orgao: p.orgao_nome,
-                valor: p.valor_estimado,
-                dataLimite: p.data_encerramento,
-                modalidade: STATUS_LABELS[p.status] ?? p.status,
-              }}
-            />
-          ))}
+          {renderParticipacoes()}
         </View>
 
         {/* Card de Incentivo */}
