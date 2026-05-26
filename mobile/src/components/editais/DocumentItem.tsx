@@ -26,7 +26,7 @@ export const DocumentItem = ({ nome, status, validade, onRemover }: DocumentItem
   return (
     <View style={estilos.container}>
       <View style={[estilos.iconeFundo, { backgroundColor: config.fundo }]}>
-        <Ionicons name={config.icone as any} size={20} color={config.cor} />
+        <Ionicons name={config.icone as keyof typeof Ionicons.glyphMap} size={20} color={config.cor} />
       </View>
       
       <View style={estilos.textosContainer}>

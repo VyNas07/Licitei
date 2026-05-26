@@ -2,10 +2,16 @@ import React from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+interface Categoria {
+  id: string;
+  icone: keyof typeof Ionicons.glyphMap;
+  nome: string;
+}
+
 interface Props {
   visivel: boolean;
   fechar: () => void;
-  categorias: any[];
+  categorias: Categoria[];
   selecionadas: string[];
   alternarSelecao: (id: string) => void;
   contagens?: Record<string, number>;

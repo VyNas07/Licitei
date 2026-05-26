@@ -2,11 +2,16 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+interface EstiloIcone {
+  backgroundColor: string;
+  color: string;
+}
+
 interface ResumoCardProps {
   icone: keyof typeof Ionicons.glyphMap;
   rotulo: string;
   valor: number;
-  estiloIcone: any;
+  estiloIcone: EstiloIcone;
 }
 
 export function ResumoCard({ icone, rotulo, valor, estiloIcone }: ResumoCardProps) {
