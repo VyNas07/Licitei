@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
-const SLIDES = [
+const SLIDES: { icon: keyof typeof Ionicons.glyphMap; title: string; description: string }[] = [
   {
     icon: 'rocket-outline',
     title: 'O seu Match Perfeito',
@@ -51,7 +52,7 @@ export default function Onboarding() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Ionicons name={slide.icon as any} size={60} color="#0F172A" />
+          <Ionicons name={slide.icon} size={60} color="#0F172A" />
         </View>
         <Text style={styles.title}>{slide.title}</Text>
         <Text style={styles.description}>{slide.description}</Text>

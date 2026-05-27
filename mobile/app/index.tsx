@@ -5,10 +5,10 @@ import {
   Text, 
   ScrollView, 
   TouchableOpacity, 
-  SafeAreaView,
   Image,
   StatusBar
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -18,7 +18,6 @@ import { Footer } from '../src/components/landing/Footer';
 import { formatBRL } from '../src/lib/mock-data';
 
 import { LogoImage } from '../constants/theme';
-
 
 export default function Landing() {
   const router = useRouter();
@@ -39,8 +38,8 @@ export default function Landing() {
             <View style={styles.logoContainer}>
               <View style={styles.logoIconBg}>
                 <Image 
-                  source={LogoImage.source} 
-                  style={{ width: LogoImage.width, height: LogoImage.height }} 
+                  source={LogoImage} 
+                  style={{ width: 60, height: 60 }} 
                   resizeMode="contain"
                 />
               </View>
@@ -164,11 +163,11 @@ export default function Landing() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#0F172A' },
   scrollContent: { backgroundColor: '#F8FAFC', paddingBottom: 0, flexGrow: 1 },
-  heroSection: { backgroundColor: '#0F172A', borderBottomLeftRadius: 32, borderBottomRightRadius: 32, paddingHorizontal: 20, paddingTop: 40, paddingBottom: 40 },
+  heroSection: { backgroundColor: '#0F172A', borderBottomLeftRadius: 32, borderBottomRightRadius: 32, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   heroTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
   logoContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoIconBg: { width: 32, height: 32, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  logoText: { color: '#FFF', fontSize: 30, fontWeight: 'bold', marginLeft: 10},
+  logoIconBg: { borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginLeft: -13 },
+  logoText: { color: '#FFF', fontSize: 30, fontWeight: 'bold', marginLeft: -15 },
   loginText: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 8 },
   badgeMeiContainer: { flexDirection: 'row' },
   badgeMei: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 16, marginBottom: 16, gap: 6 },
