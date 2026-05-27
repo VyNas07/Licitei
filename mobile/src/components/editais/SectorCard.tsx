@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface SectorCardProps {
-  icone: any;
+  icone: keyof typeof Ionicons.glyphMap;
   nome: string;
   qtd: number;
 }

@@ -52,6 +52,7 @@ function alertasPrazoCurto(participacoes: Participacao[]): Record<string, unknow
     alertas.push({
       tipo: 'prazo_curto',
       dias_restantes: diasRestantes,
+      data_encerramento: p.data_encerramento,
       licitacao_id: p.licitacao_id,
       objeto_compra: p.objeto_compra,
       orgao_nome: p.orgao_nome,

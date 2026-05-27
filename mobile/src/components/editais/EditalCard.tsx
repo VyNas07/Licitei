@@ -54,7 +54,7 @@ export const EditalCard = ({ onPress, item }: EditalCardProps) => {
       </Text>
 
       <View style={styles.footer}>
-        <MatchBadge type={displayMatch as any} />
+        <MatchBadge type={displayMatch as 'Alta' | 'Média' | 'Baixa' | 'Atenção'} />
         
         <View style={styles.valorContainer}>
           <Text style={styles.valor}>{formatCurrency(item.valor)}</Text>

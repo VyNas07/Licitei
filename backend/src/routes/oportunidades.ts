@@ -13,7 +13,7 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
     '/',
     async ({ userId, query, set }) => {
       try {
-        const { page = 1, limit = 20, uf, valor_max } = query
+        const { page = 1, limit = 20, uf, valor_max, cnae } = query
         const pageNum = Math.max(1, Number(page))
         const limitNum = Math.min(50, Math.max(1, Number(limit)))
         const skip = (pageNum - 1) * limitNum
@@ -27,11 +27,12 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
 
         let keywords: string[] = []
 
-        if (perfil?.ramo_atuacao) {
-          // 2a. Usa ramo_atuacao — preenchido manualmente ou auto-populado via CNPJ no PUT /perfil
+        if (cnae) {
+          // Filtro explícito por CNAE enviado pelo frontend — sobrescreve o do perfil
+          keywords = buildKeywordsFromCnaes([{ codigo: cnae, descricao: cnae }])
+        } else if (perfil?.ramo_atuacao) {
           keywords = buildKeywordsFromCnaes([{ codigo: perfil.cnae ?? '', descricao: perfil.ramo_atuacao }])
         } else if (perfil?.cnpj) {
-          // 2b. Fallback: CNPJ disponível mas ramo não preenchido — chama BrasilAPI
           const cnaes = await getCnaesFromCnpj(perfil.cnpj)
           keywords = buildKeywordsFromCnaes(cnaes)
         }
@@ -93,6 +94,7 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
         limit: t.Optional(t.Numeric()),
         uf: t.Optional(t.String()),
         valor_max: t.Optional(t.Numeric()),
+        cnae: t.Optional(t.String()),
       }),
     }
   )

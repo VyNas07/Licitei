@@ -4,12 +4,12 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -91,15 +91,15 @@ export default function HomeUsuario() {
       const params: Record<string, string> = { limit: '50' };
       if (filtrosAvancados.uf !== 'Todas') params.uf = filtrosAvancados.uf;
       if (filtrosAvancados.valor === 'Até R$ 80 mil (exclusivo MEI)') params.valor_max = '80000';
+      if (filtrosAvancados.cnae) params.cnae = filtrosAvancados.cnae;
       const { data } = await api.get('/oportunidades', { params });
       setEditais((data.data ?? []).map(mapEdital));
-    } catch (err) {
-      console.error('[Home] Erro ao buscar oportunidades:', err);
+    } catch {
       setEditais([]);
     } finally {
       setCarregando(false);
     }
-  }, [filtrosAvancados.uf, filtrosAvancados.valor]);
+  }, [filtrosAvancados.uf, filtrosAvancados.valor, filtrosAvancados.cnae]);
 
   useEffect(() => { buscarOportunidades(); }, [buscarOportunidades]);
 
