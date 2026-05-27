@@ -65,6 +65,9 @@ export const savedSearchesRoutes = new Elysia({ prefix: '/saved-searches' })
             uf: t.Optional(t.String()),
             valor_min: t.Optional(t.Number()),
             valor_max: t.Optional(t.Number()),
+            municipio: t.Optional(t.String()),
+            cnae: t.Optional(t.String()),
+            categorias: t.Optional(t.Array(t.String())),
           })
         ),
       }),

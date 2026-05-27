@@ -378,11 +378,18 @@ Salva uma busca para o MEI autenticado.
 ```json
 {
   "termo_busca": "limpeza",
-  "filtros": { "uf": "PE", "valor_max": 50000 }
+  "filtros": {
+    "uf": "PE",
+    "valor_min": 0,
+    "valor_max": 80000,
+    "municipio": "Recife",
+    "cnae": "6201-5/00",
+    "categorias": ["Tecnologia", "Consultoria"]
+  }
 }
 ```
 
-`termo_busca` é obrigatório. `filtros` é opcional.
+`termo_busca` é obrigatório. `filtros` é opcional — todos os seus campos são opcionais entre si.
 
 #### Resposta 201
 

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -17,6 +18,9 @@ import { SectorCard } from '../../src/components/editais/SectorCard';
 import { EditalCard } from '../../src/components/editais/EditalCard';
 import { CategoryModal } from '../../src/components/editais/CategoryModal';
 import { FilterModal } from '../../src/components/editais/FilterModal';
+import { BuscasSalvasModal } from '../../src/components/editais/BuscasSalvasModal';
+import { useBuscasSalvas } from '../../src/hooks/useBuscasSalvas';
+import type { FiltrosBusca, BuscaSalva } from '../../src/hooks/useBuscasSalvas';
 import api from '../../src/services/api';
 
 interface EditalAPI {
@@ -81,9 +85,12 @@ export default function HomeUsuario() {
   });
   const [modalCategorias, setModalCategorias] = useState(false);
   const [modalFiltros, setModalFiltros] = useState(false);
+  const [modalBuscasSalvas, setModalBuscasSalvas] = useState(false);
   const [pagina, setPagina] = useState(1);
   const [nomeUsuario, setNomeUsuario] = useState('');
   const ITENS_POR_PAGINA = 5;
+
+  const { buscas, carregando: carregandoBuscas, erro: erroBuscas, carregar: recarregarBuscas, salvar, remover } = useBuscasSalvas();
 
   const buscarOportunidades = useCallback(async () => {
     setCarregando(true);
@@ -154,6 +161,48 @@ export default function HomeUsuario() {
     setFiltrosAvancados({ uf: 'Todas', municipio: '', valor: 'Todos', cnae: '' });
   };
 
+  const filtrosParaSalvar = (): FiltrosBusca => {
+    const f: FiltrosBusca = {};
+    if (filtrosAvancados.uf !== 'Todas') f.uf = filtrosAvancados.uf;
+    if (filtrosAvancados.municipio) f.municipio = filtrosAvancados.municipio;
+    if (filtrosAvancados.cnae) f.cnae = filtrosAvancados.cnae;
+    if (filtrosAvancados.valor === 'Até R$ 80 mil (exclusivo MEI)') f.valor_max = 80000;
+    if (filtrosAvancados.valor === 'R$ 80 mil – R$ 200 mil') { f.valor_min = 80000; f.valor_max = 200000; }
+    if (filtrosAvancados.valor === 'Acima de R$ 200 mil') f.valor_min = 200000;
+    if (selecionadas.length) f.categorias = selecionadas.map(id => TODAS_CATEGORIAS.find(c => c.id === id)?.nome ?? id);
+    return f;
+  };
+
+  const aplicarBuscaSalva = (b: BuscaSalva) => {
+    setBusca(b.termo_busca);
+    const f = b.filtros;
+    let valorFaixa = 'Todos';
+    if (f?.valor_max === 80000 && !f.valor_min) valorFaixa = 'Até R$ 80 mil (exclusivo MEI)';
+    else if (f?.valor_min === 80000) valorFaixa = 'R$ 80 mil – R$ 200 mil';
+    else if (f?.valor_min === 200000) valorFaixa = 'Acima de R$ 200 mil';
+    setFiltrosAvancados({
+      uf: f?.uf ?? 'Todas',
+      municipio: f?.municipio ?? '',
+      valor: valorFaixa,
+      cnae: f?.cnae ?? '',
+    });
+    if (f?.categorias?.length) {
+      const ids = f.categorias.map(nome => TODAS_CATEGORIAS.find(c => c.nome === nome)?.id).filter(Boolean) as string[];
+      setSelecionadas(ids);
+    } else {
+      setSelecionadas([]);
+    }
+    setPagina(1);
+  };
+
+  const temFiltrosAtivos =
+    busca !== '' ||
+    filtrosAvancados.uf !== 'Todas' ||
+    filtrosAvancados.municipio !== '' ||
+    filtrosAvancados.cnae !== '' ||
+    filtrosAvancados.valor !== 'Todos' ||
+    selecionadas.length > 0;
+
   return (
     <SafeAreaView style={estilos.areaSegura}>
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
@@ -183,6 +232,9 @@ export default function HomeUsuario() {
           </View>
           <TouchableOpacity style={estilos.botaoFiltroAvancado} onPress={() => setModalFiltros(true)}>
             <Ionicons name="options-outline" size={22} color="#0F172A" />
+          </TouchableOpacity>
+          <TouchableOpacity style={estilos.botaoBookmark} onPress={() => setModalBuscasSalvas(true)}>
+            <Ionicons name="bookmark-outline" size={22} color="#0F172A" />
           </TouchableOpacity>
         </View>
       </View>
@@ -241,7 +293,36 @@ export default function HomeUsuario() {
         </View>
       </ScrollView>
 
-      <CategoryModal 
+      <BuscasSalvasModal
+        visivel={modalBuscasSalvas}
+        fechar={() => setModalBuscasSalvas(false)}
+        termoBusca={busca}
+        filtrosAtivos={filtrosParaSalvar()}
+        temFiltrosAtivos={temFiltrosAtivos}
+        buscas={buscas}
+        carregando={carregandoBuscas}
+        erro={erroBuscas}
+        onRecarregar={recarregarBuscas}
+        onSalvarAtual={async () => {
+          try {
+            await salvar(busca || 'Busca sem termo', filtrosParaSalvar());
+            setModalBuscasSalvas(false);
+          } catch (e: unknown) {
+            const status = (e as { response?: { status?: number } })?.response?.status;
+            if (status === 409) {
+              Alert.alert('Busca já salva', 'Esta busca já foi salva anteriormente.');
+              setModalBuscasSalvas(false);
+            }
+          }
+        }}
+        onAplicar={(b) => {
+          aplicarBuscaSalva(b);
+          setModalBuscasSalvas(false);
+        }}
+        onRemover={remover}
+      />
+
+      <CategoryModal
         visivel={modalCategorias} 
         fechar={() => setModalCategorias(false)} 
         categorias={TODAS_CATEGORIAS} 
@@ -272,6 +353,7 @@ const estilos = StyleSheet.create({
   barraBusca: { flex: 1, height: 48, backgroundColor: '#FFF', borderRadius: 15, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15 },
   inputReal: { flex: 1, marginLeft: 10, fontSize: 14, color: '#0F172A', height: '100%' },
   botaoFiltroAvancado: { width: 48, height: 48, backgroundColor: '#FFF', borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  botaoBookmark: { width: 48, height: 48, backgroundColor: '#FFF', borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   rolagem: { flex: 1, backgroundColor: '#F8FAFC' },
   conteudoRolagem: { paddingBottom: 40, paddingTop: 10 },
   bannerPro: { marginHorizontal: 20, marginTop: 20, backgroundColor: '#0F172A', borderRadius: 24, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
