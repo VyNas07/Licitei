@@ -22,11 +22,11 @@ export default function Paywall() {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar barStyle="light-content" />
-      
+
       <View style={styles.headerNavy}>
-        <SafeAreaView>
+        <SafeAreaView edges={['top']}>
           <View style={styles.headerContent}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="chevron-back" size={28} color="#FFF" />
@@ -51,8 +51,8 @@ export default function Paywall() {
             </View>
           </View>
           <View style={styles.list}>
-            {INICIANTE.map((item, i) => (
-              <View key={i} style={styles.listItem}>
+            {INICIANTE.map((item) => (
+              <View key={item} style={styles.listItem}>
                 <Ionicons name="checkmark" size={18} color="#64748B" />
                 <Text style={styles.listTextMuted}>{item}</Text>
               </View>
@@ -84,8 +84,8 @@ export default function Paywall() {
           </View>
 
           <View style={styles.list}>
-            {PRO.map((item, i) => (
-              <View key={i} style={styles.listItem}>
+            {PRO.map((item) => (
+              <View key={item} style={styles.listItem}>
                 <View style={styles.checkCirclePro}>
                   <Ionicons name="checkmark" size={12} color="#FFF" />
                 </View>
@@ -101,7 +101,7 @@ export default function Paywall() {
         </View>
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
