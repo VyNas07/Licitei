@@ -3,11 +3,7 @@ import { Platform } from 'react-native';
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
 
-export const LogoImage = {
-  source: require('../assets/images/licitei-logo.png'),
-  width: 70,
-  height: 70,
-};
+export const LogoImage = require('../assets/images/licitei-logo.png');
 
 export const Colors = {
   light: {

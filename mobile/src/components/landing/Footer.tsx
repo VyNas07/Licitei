@@ -10,7 +10,7 @@ export function Footer() {
       <View style={estilos.containerLogo}>
         <View style={estilos.fundoIconeLogo}>
           <Image 
-            source={LogoImage.source} 
+            source={LogoImage} 
             style={{ width: 60, height: 60 }} 
             resizeMode="contain"
           />
@@ -66,10 +66,10 @@ const estilos = StyleSheet.create({
     justifyContent: 'center',
   },
   textoLogo: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: 'bold',
     color: '#0F172A',
-    marginLeft: 10,
+    marginLeft: 5,
   },
   descricao: {
     fontSize: 12,

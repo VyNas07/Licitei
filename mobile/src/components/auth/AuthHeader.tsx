@@ -28,7 +28,7 @@ export function AuthHeader({ titulo, subtitulo, exibirVoltar = true }: Props) {
       <View style={estilos.containerLogo}>
         <View style={estilos.fundoIconeLogo}>
           <Image 
-            source={LogoImage.source} 
+            source={LogoImage} 
             style={{ width: 60, height: 60 }} 
             resizeMode="contain"
           />
@@ -56,7 +56,7 @@ const estilos = StyleSheet.create({
   textoVoltar: { color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '500' },
   containerLogo: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   fundoIconeLogo: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  textoLogo: { color: '#FFF', fontSize: 25, fontWeight: 'bold' },
+  textoLogo: { color: '#FFF', fontSize: 30, fontWeight: 'bold' },
   titulo: { color: '#FFF', fontSize: 24, fontWeight: 'bold', letterSpacing: -0.5 },
   subtitulo: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 4 },
 });
