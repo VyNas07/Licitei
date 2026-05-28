@@ -1,6 +1,6 @@
 # API Contract — Licitei Backend
 
-> **Versão:** 1.1 — Sprint 2
+> **Versão:** 1.2 — Sprint 3
 > **Base URL (dev):** `http://localhost:3000`
 > **Base URL (staging):** a definir após deploy no Railway (Sprint 2)
 
@@ -586,6 +586,106 @@ Encaminha uma query em linguagem natural para o assistente de IA (servidor MCP �
 ```json
 { "error": "Assistente temporariamente indisponível", "details": "..." }
 ```
+
+---
+
+## POST /chat/stream
+
+Encaminha uma query em linguagem natural para o assistente de IA e devolve a resposta em **Server-Sent Events (SSE)**, com streaming real do MCP até o cliente.
+
+> **Sprint 3:** o backend faz proxy do stream SSE exposto pelo MCP em `MCP_URL/chat/stream`.
+
+#### Headers de resposta
+
+```http
+Content-Type: text/event-stream; charset=utf-8
+Cache-Control: no-cache, no-transform
+Connection: keep-alive
+```
+
+#### Body
+
+```json
+{ "query": "quais licitações de limpeza estão abertas em PE?" }
+```
+
+`query` deve ter entre 1 e 1000 caracteres.
+
+#### Eventos SSE
+
+Cada evento é enviado no formato padrão SSE:
+
+```text
+event: <nome-do-evento>
+data: <json>
+
+```
+
+##### `start`
+
+Emitido imediatamente após o início do processamento.
+
+```text
+event: start
+data: {"message":"Processando pergunta"}
+
+```
+
+##### `status`
+
+Emitido durante etapas intermediárias do MCP, por exemplo quando o agente consulta tools.
+
+```text
+event: status
+data: {"message":"Consultando buscar_licitacoes"}
+
+```
+
+##### `message`
+
+Chunk incremental da resposta do assistente. O cliente deve concatenar os valores de `content` na ordem recebida para montar a resposta final.
+
+```text
+event: message
+data: {"content":"Foram encontradas "}
+
+```
+
+Quando a resposta vier do cache, o backend pode enviar um único `message` com o texto completo e `cache: true`:
+
+```text
+event: message
+data: {"content":"Foram encontradas 3 licitações...","cache":true}
+
+```
+
+##### `done`
+
+Indica o fim do stream.
+
+```text
+event: done
+data: {"cache":false}
+
+```
+
+##### `error`
+
+Emitido quando o MCP ou o proxy não conseguem concluir a resposta.
+
+```text
+event: error
+data: {"error":"Assistente temporariamente indisponível","details":"..."}
+
+```
+
+#### Resposta 400
+
+```json
+{ "error": "Body inválido ou query ausente" }
+```
+
+> Na prática, erros de validação do backend interrompem a requisição antes do início do stream.
 
 ---
 
