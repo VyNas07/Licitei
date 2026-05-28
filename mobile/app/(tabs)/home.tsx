@@ -47,7 +47,10 @@ interface EditalCard {
 }
 
 function mapEdital(e: EditalAPI): EditalCard {
-  const match = e.valor_total_estimado <= 40000 ? 'Alta' : e.valor_total_estimado <= 80000 ? 'Média' : 'Baixa';
+  let match: 'Alta' | 'Média' | 'Baixa';
+  if (e.valor_total_estimado <= 40000) match = 'Alta';
+  else if (e.valor_total_estimado <= 80000) match = 'Média';
+  else match = 'Baixa';
   return {
     id: e.numero_controle_pncp,
     objeto: e.objeto_compra,
@@ -62,13 +65,28 @@ function mapEdital(e: EditalAPI): EditalCard {
 }
 
 const TODAS_CATEGORIAS = [
-  { id: '1', icone: 'construct' as const, nome: 'Tecnologia', descricao: 'Softwares e serviços de TI' },
-  { id: '2', icone: 'restaurant' as const, nome: 'Consultoria', descricao: 'Consultoria em tecnologia' },
-  { id: '3', icone: 'medkit' as const, nome: 'Saúde', descricao: 'Atividades na área de saúde' },
-  { id: '4', icone: 'hammer' as const, nome: 'Obras', descricao: 'Construção e reformas' },
-  { id: '5', icone: 'desktop' as const, nome: 'Treinamento', descricao: 'Cursos e capacitação' },
-  { id: '6', icone: 'car' as const, nome: 'Segurança', descricao: 'Monitoramento e sistemas' },
+  { id: '1', icone: 'construct' as const, nome: 'Tecnologia',
+    keywords: ['software', 'sistema', 'tecnologia', 'informática', 'aplicativo', 'desenvolvimento', 'licença', 'servidor', 'computador', 'web', 'suporte técnico', 'hardware'] },
+  { id: '2', icone: 'restaurant' as const, nome: 'Consultoria',
+    keywords: ['consultoria', 'assessoria', 'auditoria', 'análise', 'diagnóstico'] },
+  { id: '3', icone: 'medkit' as const, nome: 'Saúde',
+    keywords: ['médic', 'hospitalar', 'hospital', 'clínica', 'medicamento', 'farmác', 'enfermagem', 'odontológ', 'fisioterapia', 'ambulatorial', 'material médico', 'equipamento médico'] },
+  { id: '4', icone: 'hammer' as const, nome: 'Obras',
+    keywords: ['construção', 'reforma', 'obra', 'engenharia', 'pavimentação', 'elétrica', 'hidráulica', 'edificação', 'manutenção predial'] },
+  { id: '5', icone: 'desktop' as const, nome: 'Treinamento',
+    keywords: ['treinamento', 'capacitação', 'curso', 'formação', 'qualificação', 'workshop', 'palestra'] },
+  { id: '6', icone: 'car' as const, nome: 'Segurança',
+    keywords: ['vigilância', 'monitoramento', 'câmera', 'cftv', 'alarme', 'porteiro', 'controle de acesso', 'segurança patrimonial', 'segurança armada', 'serviço de segurança'] },
 ];
+
+const KEYWORDS_BY_CATEGORY: Record<string, string[]> = Object.fromEntries(
+  TODAS_CATEGORIAS.map(c => [c.id, c.keywords])
+);
+
+function matchesKeywords(objeto: string, keywords: string[]): boolean {
+  const lower = objeto.toLowerCase();
+  return keywords.some(k => lower.includes(k));
+}
 
 export default function HomeUsuario() {
   const router = useRouter();
@@ -131,7 +149,7 @@ export default function HomeUsuario() {
       const termo = busca.toLowerCase();
       if (busca !== '' && !e.objeto.toLowerCase().includes(termo) && !e.orgao.toLowerCase().includes(termo)) return;
       TODAS_CATEGORIAS.forEach(cat => {
-        if (e.objeto.toLowerCase().includes(cat.descricao.split(' ')[0].toLowerCase())) stats[cat.id] += 1;
+        if (matchesKeywords(e.objeto, cat.keywords)) stats[cat.id] += 1;
       });
     });
     return stats;
@@ -143,10 +161,8 @@ export default function HomeUsuario() {
       const matchBusca = busca === '' || e.objeto.toLowerCase().includes(termo) || e.orgao.toLowerCase().includes(termo);
       const matchMun = filtrosAvancados.municipio === '' || (e.municipio?.toLowerCase().includes(filtrosAvancados.municipio.toLowerCase()));
       const matchValor = validaFaixaValor(e.valor, filtrosAvancados.valor);
-      const matchCategoria = selecionadas.length === 0 || selecionadas.some(id => {
-        const cat = TODAS_CATEGORIAS.find(c => c.id === id);
-        return cat && e.objeto.toLowerCase().includes(cat.descricao.split(' ')[0].toLowerCase());
-      });
+      const matchCategoria = selecionadas.length === 0 ||
+        selecionadas.some(id => matchesKeywords(e.objeto, KEYWORDS_BY_CATEGORY[id] ?? []));
       return matchBusca && matchMun && matchValor && matchCategoria;
     });
   }, [editais, selecionadas, filtrosAvancados, busca]);
