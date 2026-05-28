@@ -21,6 +21,7 @@ import { FilterModal } from '../../src/components/editais/FilterModal';
 import { BuscasSalvasModal } from '../../src/components/editais/BuscasSalvasModal';
 import { useBuscasSalvas } from '../../src/hooks/useBuscasSalvas';
 import type { FiltrosBusca, BuscaSalva } from '../../src/hooks/useBuscasSalvas';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../src/services/api';
 
 interface EditalAPI {
@@ -88,6 +89,9 @@ function matchesKeywords(objeto: string, keywords: string[]): boolean {
   return keywords.some(k => lower.includes(k));
 }
 
+const buildCacheKey = (uf: string, valor: string, cnae: string) =>
+  `oportunidades_${uf}_${valor}_${cnae}`;
+
 export default function HomeUsuario() {
   const router = useRouter();
 
@@ -112,15 +116,23 @@ export default function HomeUsuario() {
 
   const buscarOportunidades = useCallback(async () => {
     setCarregando(true);
+    const cacheKey = buildCacheKey(filtrosAvancados.uf, filtrosAvancados.valor, filtrosAvancados.cnae);
     try {
       const params: Record<string, string> = { limit: '50' };
       if (filtrosAvancados.uf !== 'Todas') params.uf = filtrosAvancados.uf;
       if (filtrosAvancados.valor === 'Até R$ 80 mil (exclusivo MEI)') params.valor_max = '80000';
       if (filtrosAvancados.cnae) params.cnae = filtrosAvancados.cnae;
       const { data } = await api.get('/oportunidades', { params });
-      setEditais((data.data ?? []).map(mapEdital));
+      const mapped = (data.data ?? []).map(mapEdital);
+      setEditais(mapped);
+      AsyncStorage.setItem(cacheKey, JSON.stringify(mapped)).catch(() => {});
     } catch {
-      setEditais([]);
+      try {
+        const cached = await AsyncStorage.getItem(cacheKey);
+        setEditais(cached ? JSON.parse(cached) : []);
+      } catch {
+        setEditais([]);
+      }
     } finally {
       setCarregando(false);
     }
