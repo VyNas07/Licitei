@@ -77,6 +77,6 @@ def carregar_config() -> Config:
         ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
         ollama_model=os.getenv("OLLAMA_MODEL", "qwen2.5:7b"),
         mcp_host=os.getenv("MCP_HOST", "0.0.0.0"),
-        mcp_port=int(os.getenv("MCP_PORT", "8000")),
+        mcp_port=int(os.getenv("PORT", os.getenv("MCP_PORT", "8000"))),
         cache_ttl=int(os.getenv("CACHE_TTL", "3600")),
     )
