@@ -37,10 +37,10 @@ Buscas salvas pelo MEI. Relação N:1 com `auth.users`.
 | `id` | `uuid` | sim | PK |
 | `user_id` | `uuid` | sim | FK → `auth.users(id)` |
 | `termo_busca` | `text` | sim | ex: "limpeza", "TI" |
-| `filtros` | `jsonb` | não | `{ "uf": "PE", "valor_min": 0, "valor_max": 50000 }` |
+| `filtros` | `jsonb` | não | `{ "uf": "PE", "valor_min": 0, "valor_max": 50000, "municipio": "Recife", "cnae": "6201-5/00", "categorias": ["Tecnologia"] }` |
 | `created_at` | `timestamptz` | sim | `now()` |
 
-`filtros` como JSONB permite que o usuário salve qualquer combinação de filtros sem colunas mortas.
+`filtros` como JSONB permite que o usuário salve qualquer combinação de filtros sem colunas mortas. UNIQUE constraint em `(user_id, termo_busca)` — adicionada em 27/05/2026 (Sprint 2, RF01).
 
 ---
 
@@ -183,6 +183,16 @@ GRANT ALL ON TABLE public.alertas           TO service_role, authenticated;
 ```
 
 > `saved_searches` foi criada no Sprint 1 (PR #3). GRANT verificado e confirmado em 07/05/2026 — backend acessa a tabela sem erro 42501.
+
+### UNIQUE constraint em `saved_searches`
+
+A constraint que impede um MEI de salvar a mesma busca duas vezes foi adicionada em 27/05/2026 (Sprint 2, RF01). Se precisar recriar o banco do zero:
+
+```sql
+ALTER TABLE saved_searches
+ADD CONSTRAINT saved_searches_user_id_termo_busca_key
+UNIQUE (user_id, termo_busca);
+```
 
 ### UNIQUE constraint em `participacoes`
 
