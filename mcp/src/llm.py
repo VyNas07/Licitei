@@ -1,7 +1,8 @@
 """Integração com LLM (gpt-4o-mini em prod, qwen2.5:7b via Ollama em dev)."""
 
 import json
-from typing import Callable
+from collections.abc import Callable, Iterator
+from typing import Any
 
 from loguru import logger
 
@@ -162,35 +163,31 @@ _SYSTEM_PROMPT = (
 )
 
 
-def chat(
-    query: str,
-    config: Config,
-    ferramentas: dict[str, Callable],
-) -> str:
-    """Executa o loop de agente: query → LLM → tools → resposta final.
+ToolMap = dict[str, Callable[..., Any]]
 
-    O LLM decide quais tools chamar. O loop continua até o modelo retornar
-    uma resposta de texto final (finish_reason == 'stop').
 
-    Args:
-        query: Pergunta ou comando do usuário em linguagem natural.
-        config: Configurações do servidor (modelo, chaves de API).
-        ferramentas: Dicionário de funções executáveis pelo LLM.
-                     Chaves devem corresponder aos nomes em _TOOLS_SCHEMA.
-
-    Returns:
-        Resposta final do LLM como string.
-    """
-    messages: list[dict] = [
+def _build_messages(query: str) -> list[dict]:
+    return [
         {"role": "system", "content": _SYSTEM_PROMPT},
         {"role": "user", "content": query},
     ]
 
+
+def _run_tool_loop(
+    messages: list[dict],
+    config: Config,
+    ferramentas: ToolMap,
+) -> str:
     max_iteracoes = 5
+
     for iteracao in range(max_iteracoes):
         logger.debug(f"LLM: iteração {iteracao + 1} | mensagens={len(messages)}")
 
-        response = completions_com_retry(config=config, messages=messages, tools=_TOOLS_SCHEMA)
+        response = completions_com_retry(
+            config=config,
+            messages=messages,
+            tools=_TOOLS_SCHEMA,
+        )
 
         choice = response.choices[0]
         messages.append(choice.message)
@@ -211,11 +208,157 @@ def chat(
                 else:
                     resultado = fn(**args)
 
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "content": json.dumps(resultado, ensure_ascii=False, default=str),
-                })
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": json.dumps(
+                            resultado, ensure_ascii=False, default=str
+                        ),
+                    }
+                )
 
     logger.warning("LLM: limite de iterações atingido sem resposta final")
     return "Não foi possível gerar uma resposta. Tente reformular a pergunta."
+
+
+def _tool_calls_from_stream(
+    tool_calls: dict[int, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    return [tool_calls[index] for index in sorted(tool_calls)]
+
+
+def _accumulate_tool_call(tool_calls: dict[int, dict[str, Any]], partial: Any) -> None:
+    if partial.index not in tool_calls:
+        tool_calls[partial.index] = {
+            "id": partial.id or "",
+            "type": "function",
+            "function": {
+                "name": partial.function.name
+                if partial.function and partial.function.name
+                else "",
+                "arguments": "",
+            },
+        }
+
+    current = tool_calls[partial.index]
+
+    if partial.id:
+        current["id"] = partial.id
+
+    if partial.function:
+        if partial.function.name:
+            current["function"]["name"] = partial.function.name
+        if partial.function.arguments:
+            current["function"]["arguments"] += partial.function.arguments
+
+
+def chat(
+    query: str,
+    config: Config,
+    ferramentas: ToolMap,
+) -> str:
+    """Executa o loop de agente: query → LLM → tools → resposta final."""
+    return _run_tool_loop(
+        messages=_build_messages(query),
+        config=config,
+        ferramentas=ferramentas,
+    )
+
+
+def chat_stream(
+    query: str,
+    config: Config,
+    ferramentas: ToolMap,
+) -> Iterator[dict[str, Any]]:
+    """Executa o fluxo de chat emitindo eventos incrementais para SSE."""
+    messages = _build_messages(query)
+    max_iteracoes = 5
+
+    for iteracao in range(max_iteracoes):
+        logger.debug(f"LLM stream: iteração {iteracao + 1} | mensagens={len(messages)}")
+
+        response_stream = completions_com_retry(
+            config=config,
+            messages=messages,
+            tools=_TOOLS_SCHEMA,
+            stream=True,
+        )
+
+        content_parts: list[str] = []
+        tool_calls: dict[int, dict[str, Any]] = {}
+        finish_reason: str | None = None
+
+        for chunk in response_stream:
+            if not chunk.choices:
+                continue
+
+            choice = chunk.choices[0]
+            delta = choice.delta
+
+            if delta.content:
+                content_parts.append(delta.content)
+                yield {
+                    "event": "message",
+                    "data": {"content": delta.content},
+                }
+
+            for partial in delta.tool_calls or []:
+                _accumulate_tool_call(tool_calls, partial)
+
+            if choice.finish_reason:
+                finish_reason = choice.finish_reason
+
+        if finish_reason == "stop":
+            logger.info("LLM stream: resposta final gerada")
+            return
+
+        if finish_reason == "tool_calls":
+            assistant_message = {
+                "role": "assistant",
+                "content": "".join(content_parts) or None,
+                "tool_calls": _tool_calls_from_stream(tool_calls),
+            }
+            messages.append(assistant_message)
+
+            for tc in assistant_message["tool_calls"]:
+                nome = tc["function"]["name"]
+                args_json = tc["function"].get("arguments", "") or "{}"
+                logger.debug(f"LLM stream: chamando tool '{nome}' | args={args_json}")
+
+                yield {
+                    "event": "status",
+                    "data": {"message": f"Consultando {nome}"},
+                }
+
+                fn = ferramentas.get(nome)
+                if fn is None:
+                    resultado = {"erro": f"Tool '{nome}' não disponível."}
+                else:
+                    try:
+                        resultado = fn(**json.loads(args_json))
+                    except json.JSONDecodeError as exc:
+                        resultado = {
+                            "erro": f"Argumentos inválidos para tool '{nome}': {exc.msg}",
+                        }
+
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": json.dumps(
+                            resultado, ensure_ascii=False, default=str
+                        ),
+                    }
+                )
+            continue
+
+        raise RuntimeError("Resposta do LLM finalizada sem finish_reason suportado.")
+
+    logger.warning("LLM stream: limite de iterações atingido sem resposta final")
+    yield {
+        "event": "message",
+        "data": {
+            "content": "Não foi possível gerar uma resposta. Tente reformular a pergunta.",
+        },
+    }
