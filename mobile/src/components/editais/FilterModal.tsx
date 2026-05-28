@@ -14,11 +14,19 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { PERFIL_MOCK } from '../../lib/mock-data'; // Importando seu perfil real[cite: 1]
 
+interface FiltrosOportunidade {
+  uf: string;
+  municipio: string;
+  valor: string;
+  cnae: string;
+  modalidadeSugerida?: string;
+}
+
 interface Props {
-  visivel: boolean;
-  fechar: () => void;
-  filtrosAtuais: any;
-  aplicar: (filtros: any) => void;
+  readonly visivel: boolean;
+  readonly fechar: () => void;
+  readonly filtrosAtuais: FiltrosOportunidade;
+  readonly aplicar: (filtros: FiltrosOportunidade) => void;
 }
 
 const CIDADES_POR_UF: Record<string, string[]> = {

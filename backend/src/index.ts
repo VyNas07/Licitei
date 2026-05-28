@@ -1,5 +1,7 @@
+// @ts-ignore - Elysia types/module resolution handled externally
 import { Elysia } from 'elysia'
 import { cors } from '@elysiajs/cors'
+import { swagger } from '@elysiajs/swagger'
 
 import { config } from './config'
 import { closeDb } from './db/mongo'
@@ -12,8 +14,43 @@ import { participacoesRoutes } from './routes/participacoes'
 import { alertasRoutes } from './routes/alertas'
 import { chatRoutes } from './routes/chat'
 import { savedSearchesRoutes } from './routes/savedSearches'
+import { documentosRoutes } from './routes/documentos'
 
 const app = new Elysia()
+  .use(
+    swagger({
+      documentation: {
+        info: {
+          title: 'Licitei API',
+          version: '1.0.0',
+          description: 'API REST do Licitei — plataforma de licitações para MEIs',
+        },
+        tags: [
+          { name: 'health', description: 'Status do servidor' },
+          { name: 'editais', description: 'Licitações públicas do PNCP' },
+          { name: 'oportunidades', description: 'Editais filtrados por CNAE do MEI' },
+          { name: 'participacoes', description: 'Acompanhamento de editais pelo usuário' },
+          { name: 'documentos', description: 'Gerenciamento de certidões e documentos' },
+          { name: 'alertas', description: 'Alertas de prazo, teto MEI e novos editais' },
+          { name: 'perfil', description: 'Perfil do MEI' },
+          { name: 'chat', description: 'Assistente de IA via MCP (SSE)' },
+          { name: 'saved-searches', description: 'Buscas salvas pelo usuário' },
+        ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: 'http',
+              scheme: 'bearer',
+              bearerFormat: 'JWT',
+              description: 'JWT gerado pelo Supabase Auth',
+            },
+          },
+        },
+        security: [{ bearerAuth: [] }],
+      },
+      path: '/docs',
+    })
+  )
   // CORS — permite requisições do app mobile (Expo)
   .use(
     cors({
@@ -55,6 +92,7 @@ const app = new Elysia()
   .use(alertasRoutes)
   .use(chatRoutes)
   .use(savedSearchesRoutes)
+  .use(documentosRoutes)
 
   .listen(config.port)
 

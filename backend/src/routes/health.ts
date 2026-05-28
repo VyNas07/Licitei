@@ -1,13 +1,23 @@
 import { Elysia } from 'elysia'
 import { getDb } from '../db/mongo'
+import { supabase } from '../db/supabase'
 
 export const healthRoutes = new Elysia()
   .get('/health', async () => {
-    try {
-      const db = await getDb()
-      await db.command({ ping: 1 })
-      return { status: 'ok', mongo: 'connected', timestamp: new Date().toISOString() }
-    } catch {
-      return { status: 'degraded', mongo: 'disconnected', timestamp: new Date().toISOString() }
+    const [mongoResult, supabaseResult] = await Promise.allSettled([
+      getDb().then(db => db.command({ ping: 1 })),
+      supabase.from('mei_profile').select('id').limit(1),
+    ])
+
+    const mongo = mongoResult.status === 'fulfilled' ? 'connected' : 'disconnected'
+    const supabaseOk =
+      supabaseResult.status === 'fulfilled' && !supabaseResult.value.error
+    const supabaseStatus = supabaseOk ? 'connected' : 'disconnected'
+
+    return {
+      status: mongo === 'connected' && supabaseOk ? 'ok' : 'degraded',
+      mongo,
+      supabase: supabaseStatus,
+      timestamp: new Date().toISOString(),
     }
   })

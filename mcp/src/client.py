@@ -48,6 +48,7 @@ def completions_com_retry(
     config: Config,
     messages: list[dict],
     tools: list[dict],
+    stream: bool = False,
 ) -> object:
     """Chama o LLM com retry exponencial e fallback para Ollama em 429.
 
@@ -59,6 +60,7 @@ def completions_com_retry(
         config: Configurações do servidor.
         messages: Lista de mensagens no formato OpenAI.
         tools: Schema de tools para function calling.
+        stream: Quando True, retorna um iterador de chunks da resposta.
 
     Returns:
         Objeto de resposta da API OpenAI/Groq/Ollama.
@@ -71,6 +73,7 @@ def completions_com_retry(
                 model=model,
                 messages=messages,
                 tools=tools,
+                stream=stream,
             )
         except RateLimitError as exc:
             retry_after = _extrair_retry_after(exc)
@@ -87,6 +90,7 @@ def completions_com_retry(
         model=fallback_model,
         messages=messages,
         tools=tools,
+        stream=stream,
     )
 
 

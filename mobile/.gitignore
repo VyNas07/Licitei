@@ -41,3 +41,7 @@ app-example
 # generated native folders
 /ios
 /android
+
+# EAS / Google Play credentials — nunca commitar
+google-service-account.json
+*.serviceaccount.json

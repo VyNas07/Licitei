@@ -7,17 +7,18 @@ Execução:
     python -m src.server
 """
 
+import json
 import sys
 from pathlib import Path
 
-from loguru import logger
 from fastmcp import FastMCP
+from loguru import logger
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, StreamingResponse
 
 from src.cache import Cache
 from src.config import carregar_config
-from src.llm import chat
+from src.llm import chat, chat_stream
 from src.tools.buscar_licitacoes import buscar_licitacoes as _buscar
 from src.tools.detalhar_licitacao import detalhar_licitacao as _detalhar
 from src.tools.gerar_checklist import gerar_checklist as _checklist
@@ -28,6 +29,7 @@ from src.tools.resumir_edital import resumir_edital as _resumir
 # ---------------------------------------------------------------------------
 # Logger
 # ---------------------------------------------------------------------------
+
 
 def _configurar_logger() -> None:
     """Configura loguru com saída no console e rotação diária em arquivo."""
@@ -54,6 +56,11 @@ def _configurar_logger() -> None:
     )
 
 
+def _sse_event(event: str, data: dict) -> bytes:
+    payload = json.dumps(data, ensure_ascii=False)
+    return f"event: {event}\ndata: {payload}\n\n".encode("utf-8")
+
+
 # ---------------------------------------------------------------------------
 # Inicialização
 # ---------------------------------------------------------------------------
@@ -77,6 +84,7 @@ _ferramentas = {
 # Tools MCP
 # ---------------------------------------------------------------------------
 
+
 @mcp.tool()
 def buscar_licitacoes(
     termo: str,
@@ -92,7 +100,9 @@ def buscar_licitacoes(
         valor_max: Valor máximo estimado em reais. Opcional.
         limite: Quantidade máxima de resultados (padrão: 10, máximo: 50).
     """
-    return _buscar(termo=termo, uf=uf, valor_max=valor_max, limite=limite, config=config)
+    return _buscar(
+        termo=termo, uf=uf, valor_max=valor_max, limite=limite, config=config
+    )
 
 
 @mcp.tool()
@@ -152,6 +162,7 @@ def listar_documentos(numero_controle_pncp: str) -> dict:
 # Endpoint HTTP: POST /chat
 # ---------------------------------------------------------------------------
 
+
 @mcp.custom_route("/chat", methods=["POST"])
 async def chat_handler(request: Request) -> JSONResponse:
     """Recebe uma query em linguagem natural e retorna a resposta do LLM.
@@ -185,6 +196,63 @@ async def chat_handler(request: Request) -> JSONResponse:
     except Exception as exc:
         logger.exception(f"Erro no /chat | query={query!r}")
         return JSONResponse({"erro": str(exc)}, status_code=500)
+
+
+@mcp.custom_route("/chat/stream", methods=["POST"])
+async def chat_stream_handler(request: Request) -> StreamingResponse | JSONResponse:
+    """Recebe uma query e devolve a resposta do LLM em SSE real."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "Body JSON inválido."}, status_code=400)
+
+    query = body.get("query", "").strip()
+    if not query:
+        return JSONResponse({"erro": "Campo 'query' é obrigatório."}, status_code=400)
+
+    def event_stream():
+        yield _sse_event("start", {"message": "Processando pergunta"})
+
+        try:
+            chave = Cache.chave(query)
+            cached = cache.get(chave)
+            if cached:
+                logger.info(f"Cache hit (stream) | query={query!r}")
+                yield _sse_event("message", {"content": cached, "cache": True})
+                yield _sse_event("done", {"cache": True})
+                return
+
+            logger.info(f"Cache miss (stream) | query={query!r}")
+            resposta_partes: list[str] = []
+
+            for event in chat_stream(
+                query=query, config=config, ferramentas=_ferramentas
+            ):
+                if event["event"] == "message":
+                    resposta_partes.append(str(event["data"].get("content", "")))
+                yield _sse_event(event["event"], event["data"])
+
+            cache.set(chave, "".join(resposta_partes))
+            yield _sse_event("done", {"cache": False})
+        except Exception as exc:
+            logger.exception(f"Erro no /chat/stream | query={query!r}")
+            yield _sse_event(
+                "error",
+                {
+                    "error": "Assistente temporariamente indisponível",
+                    "details": str(exc),
+                },
+            )
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 # ---------------------------------------------------------------------------
