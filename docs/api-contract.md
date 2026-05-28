@@ -16,7 +16,7 @@ O token é obtido via Supabase Auth no app mobile após login.
 
 ## GET /health
 
-Verifica se o servidor e o MongoDB estão no ar. Não requer autenticação.
+Verifica se o servidor, o MongoDB e o Supabase estão no ar. Não requer autenticação.
 
 #### Resposta 200
 
@@ -24,6 +24,18 @@ Verifica se o servidor e o MongoDB estão no ar. Não requer autenticação.
 {
   "status": "ok",
   "mongo": "connected",
+  "supabase": "connected",
+  "timestamp": "2026-04-27T12:00:00.000Z"
+}
+```
+
+Quando um dos serviços está inacessível, `status` passa a `"degraded"` e o campo correspondente muda para `"disconnected"`:
+
+```json
+{
+  "status": "degraded",
+  "mongo": "connected",
+  "supabase": "disconnected",
   "timestamp": "2026-04-27T12:00:00.000Z"
 }
 ```
