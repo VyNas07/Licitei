@@ -74,6 +74,9 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
   .post(
     '/stream',
     async ({ body }) => {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 30_000)
+
       try {
         const res = await fetch(`${config.mcp.url}/chat/stream`, {
           method: 'POST',
@@ -82,8 +85,9 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
             Accept: 'text/event-stream',
           },
           body: JSON.stringify({ query: body.query }),
-          signal: AbortSignal.timeout(30_000),
+          signal: controller.signal,
         })
+        clearTimeout(timeout)
 
         if (!res.ok || !res.body) {
           return sseErrorResponse({
@@ -94,6 +98,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
 
         return sseResponse(res.body)
       } catch (err) {
+        clearTimeout(timeout)
         return sseErrorResponse({
           error: 'Assistente temporariamente indisponível',
           details: String(err),
