@@ -51,18 +51,36 @@ mcp/
 
 ## Setup
 
-```bash
-# 1. Criar e ativar o ambiente virtual
-python -m venv .venv
-.venv\Scripts\activate        # Windows
-source .venv/bin/activate     # Linux/Mac
+### Windows (PowerShell)
 
-# 2. Instalar dependências
+```powershell
+# 0. Liberar execução de scripts (apenas na primeira vez, se necessário)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# 1. Criar o ambiente virtual
+python -m venv .venv
+
+# Verificar se foi criado corretamente antes de continuar
+Test-Path .venv\Scripts\Activate.ps1   # deve retornar True
+
+# 2. Ativar
+.\.venv\Scripts\Activate.ps1
+
+# 3. Instalar dependências
 pip install -r requirements.txt
 
-# 3. Configurar variáveis de ambiente
+# 4. Configurar variáveis de ambiente
+copy .env.example .env
+# Abra o .env e preencha: MONGO_URI, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY e GROQ_API_KEY
+```
+
+### Linux / Mac
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 cp .env.example .env
-# Preencha MONGO_URI, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY e GROQ_API_KEY
 ```
 
 ---
@@ -93,15 +111,26 @@ cp .env.example .env
 
 ## Execução
 
-```bash
-# Iniciar o servidor (porta 8000)
+### Servidor MCP
+
+```powershell
+# Terminal 1 — inicia o servidor na porta 8000
 python -m src.server
 ```
 
 O servidor expõe:
 - **MCP protocol** — `http://localhost:8000/sse` (para clientes MCP)
 - **POST /chat** — endpoint HTTP para integração com o backend (resposta completa)
-- **POST /chat/stream** — endpoint SSE com streaming de tokens (Sprint 3)
+- **POST /chat/stream** — endpoint SSE com streaming de tokens
+
+### Chatbot Streamlit
+
+```powershell
+# Terminal 2 — com o servidor MCP já rodando
+streamlit run chatbot/app.py
+```
+
+Abre em `http://localhost:8501`. Permite conversar com o assistente diretamente pelo navegador.
 
 ---
 
