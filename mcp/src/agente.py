@@ -2,6 +2,7 @@
 
 import json
 import sqlite3
+from pathlib import Path
 from typing import AsyncGenerator
 
 from langchain_core.messages import HumanMessage
@@ -59,7 +60,7 @@ def _criar_ferramentas(config: Config) -> list:
         termo: str,
         uf: str | None = None,
         valor_max: float | None = None,
-        limite: int = 10,
+        limite: int | str = 10,
     ) -> str:
         """Busca licitações públicas por palavra-chave no objeto da compra.
 
@@ -71,7 +72,7 @@ def _criar_ferramentas(config: Config) -> list:
             valor_max: Valor máximo estimado em reais. Opcional.
             limite: Quantidade máxima de resultados (padrão: 10, máximo: 50).
         """
-        result = _buscar(termo=termo, uf=uf, valor_max=valor_max, limite=limite, config=config)
+        result = _buscar(termo=termo, uf=uf, valor_max=valor_max, limite=int(limite), config=config)
         return json.dumps(result, ensure_ascii=False, default=str)
 
     @tool
@@ -151,6 +152,7 @@ def criar_agente(config: Config):
     Returns:
         CompiledStateGraph pronto para invocar.
     """
+    Path(config.sqlite_memoria_path).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(config.sqlite_memoria_path, check_same_thread=False)
     checkpointer = SqliteSaver(conn)
 
