@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.licitei.mobile",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -23,7 +24,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/Icone_documento.png",
+      "favicon": "./assets/images/Icone_documento.png"
     },
     "plugins": [
       "expo-router",
@@ -38,11 +39,18 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "df71ca5f-f985-4206-8ca0-134d8355a457"
+      }
     }
   }
 }

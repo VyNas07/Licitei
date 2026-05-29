@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import iconeDocumento from '../../../assets/images/Icone_documento.png';
+import { LogoImage } from '../../../constants/theme';
 
 export function Footer() {
   return (
@@ -10,8 +10,8 @@ export function Footer() {
       <View style={estilos.containerLogo}>
         <View style={estilos.fundoIconeLogo}>
           <Image 
-            source={iconeDocumento} 
-            style={{ width: 14, height: 14 }} 
+            source={LogoImage} 
+            style={{ width: 60, height: 60 }} 
             resizeMode="contain"
           />
         </View>
@@ -59,17 +59,17 @@ const estilos = StyleSheet.create({
     marginBottom: 12,
   },
   fundoIconeLogo: {
-    width: 24,
-    height: 24,
-    backgroundColor: '#0F172A',
+    width: 60,
+    height: 60,
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   textoLogo: {
-    fontSize: 16,
+    fontSize: 25,
     fontWeight: 'bold',
     color: '#0F172A',
+    marginLeft: -15,
   },
   descricao: {
     fontSize: 12,

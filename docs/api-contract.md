@@ -1,6 +1,6 @@
 # API Contract — Licitei Backend
 
-> **Versão:** 1.0 — Sprint 1
+> **Versão:** 1.2 — Sprint 3
 > **Base URL (dev):** `http://localhost:3000`
 > **Base URL (staging):** a definir após deploy no Railway (Sprint 2)
 
@@ -16,7 +16,7 @@ O token é obtido via Supabase Auth no app mobile após login.
 
 ## GET /health
 
-Verifica se o servidor e o MongoDB estão no ar. Não requer autenticação.
+Verifica se o servidor, o MongoDB e o Supabase estão no ar. Não requer autenticação.
 
 #### Resposta 200
 
@@ -24,6 +24,18 @@ Verifica se o servidor e o MongoDB estão no ar. Não requer autenticação.
 {
   "status": "ok",
   "mongo": "connected",
+  "supabase": "connected",
+  "timestamp": "2026-04-27T12:00:00.000Z"
+}
+```
+
+Quando um dos serviços está inacessível, `status` passa a `"degraded"` e o campo correspondente muda para `"disconnected"`:
+
+```json
+{
+  "status": "degraded",
+  "mongo": "connected",
+  "supabase": "disconnected",
   "timestamp": "2026-04-27T12:00:00.000Z"
 }
 ```
@@ -34,7 +46,7 @@ Verifica se o servidor e o MongoDB estão no ar. Não requer autenticação.
 
 Listagem paginada de licitações com filtros livres.
 
-Por padrão, retorna apenas editais com `data_encerramento_proposta >= hoje` ou sem data definida (editais vencidos são ocultados). Resultados ordenados por prazo mais próximo primeiro; editais sem data ficam no fim.
+Retorna todos os editais sem filtro de data (editais vencidos incluídos). Resultados ordenados por prazo mais próximo primeiro; editais sem data ficam no fim.
 
 #### Query params
 
@@ -107,6 +119,7 @@ Editais abertos filtrados automaticamente pelo CNAE ou ramo de atuação do perf
 | `limit` | number | Não | Resultados por página. Máx: `50`. Padrão: `20` |
 | `uf` | string | Não | Filtro por estado. Ex: `PE` |
 | `valor_max` | number | Não | Teto personalizado. Padrão: `81000` |
+| `cnae` | string | Não | Substitui o CNAE do perfil para filtrar keywords. Ex: `8121400` |
 
 #### Resposta 200
 
@@ -346,7 +359,7 @@ Tipos de alerta:
 
 ---
 
-## GET /saved_searches
+## GET /saved-searches
 
 Lista as buscas salvas do MEI autenticado, em ordem cronológica decrescente.
 
@@ -368,7 +381,7 @@ Lista as buscas salvas do MEI autenticado, em ordem cronológica decrescente.
 
 ---
 
-## POST /saved_searches
+## POST /saved-searches
 
 Salva uma busca para o MEI autenticado.
 
@@ -377,11 +390,18 @@ Salva uma busca para o MEI autenticado.
 ```json
 {
   "termo_busca": "limpeza",
-  "filtros": { "uf": "PE", "valor_max": 50000 }
+  "filtros": {
+    "uf": "PE",
+    "valor_min": 0,
+    "valor_max": 80000,
+    "municipio": "Recife",
+    "cnae": "6201-5/00",
+    "categorias": ["Tecnologia", "Consultoria"]
+  }
 }
 ```
 
-`termo_busca` é obrigatório. `filtros` é opcional.
+`termo_busca` é obrigatório. `filtros` é opcional — todos os seus campos são opcionais entre si.
 
 #### Resposta 201
 
@@ -395,7 +415,7 @@ Busca salva criada (mesmo formato de um item do GET /saved_searches).
 
 ---
 
-## DELETE /saved_searches/:id
+## DELETE /saved-searches/:id
 
 Remove uma busca salva do MEI.
 
@@ -415,6 +435,144 @@ Remove uma busca salva do MEI.
 
 ```json
 { "error": "Busca não encontrada" }
+```
+
+---
+
+## GET /documentos
+
+Lista todos os documentos do MEI autenticado, em ordem cronológica decrescente.
+
+#### Resposta 200
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "user_id": "uuid",
+      "nome": "Certidão Negativa Federal",
+      "tipo": "certidao_negativa",
+      "url": "userId/1716825600000.pdf",
+      "status": "valido",
+      "validade": "2026-12-31",
+      "participacao_id": null,
+      "created_at": "2026-05-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+> `url` armazena o `storagePath` relativo no bucket privado `documentos` do Supabase Storage (formato `{userId}/{timestamp}.ext`). O frontend faz upload direto para o Storage e envia o path resultante via `POST /documentos`.
+
+---
+
+## POST /documentos
+
+Registra metadados de um documento após o upload já ter sido feito no Supabase Storage.
+
+#### Body
+
+```json
+{
+  "nome": "Certidão Negativa Federal",
+  "tipo": "certidao_negativa",
+  "url": "userId/1716825600000.pdf",
+  "status": "pendente",
+  "validade": "2026-12-31",
+  "participacao_id": null
+}
+```
+
+| Campo | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `nome` | string | Sim | Nome legível do documento (1–200 chars) |
+| `tipo` | string | Sim | Um dos valores: `certidao_negativa`, `contrato_social`, `comprovante_endereco`, `cnpj`, `outro` |
+| `url` | string | Sim | `storagePath` retornado pelo Supabase Storage após upload |
+| `status` | string | Não | `valido`, `pendente` (padrão) ou `vencido` |
+| `validade` | string | Não | Data de vencimento no formato `YYYY-MM-DD` |
+| `participacao_id` | string | Não | UUID da participação vinculada ao documento |
+
+#### Resposta 201
+
+Documento criado (mesmo formato de um item do `GET /documentos`).
+
+#### Resposta 409
+
+```json
+{ "error": "Documento já cadastrado" }
+```
+
+---
+
+## PATCH /documentos/:id
+
+Atualiza o status ou a data de validade de um documento.
+
+#### Path params
+
+| Parâmetro | Descrição |
+| --- | --- |
+| `id` | UUID do documento |
+
+#### Body
+
+```json
+{ "status": "vencido", "validade": "2026-06-30" }
+```
+
+Ambos os campos são opcionais, mas ao menos um deve ser enviado.
+
+Valores válidos para `status`: `valido` · `pendente` · `vencido`
+
+#### Resposta 200
+
+Documento atualizado (mesmo formato de um item do `GET /documentos`).
+
+#### Resposta 400
+
+```json
+{ "error": "Status inválido. Use: valido, pendente, vencido" }
+```
+
+```json
+{ "error": "Nenhum campo para atualizar" }
+```
+
+#### Resposta 404
+
+```json
+{ "error": "Documento não encontrado" }
+```
+
+---
+
+## DELETE /documentos/:id
+
+Remove o documento do banco **e** o arquivo físico do bucket `documentos` no Supabase Storage. A operação é atômica: se a remoção do Storage falhar, o registro no banco **não** é deletado.
+
+#### Path params
+
+| Parâmetro | Descrição |
+| --- | --- |
+| `id` | UUID do documento |
+
+#### Resposta 200
+
+```json
+{ "message": "Documento removido com sucesso" }
+```
+
+#### Resposta 404
+
+```json
+{ "error": "Documento não encontrado" }
+```
+
+#### Resposta 500
+
+```json
+{ "error": "Erro ao remover arquivo do storage" }
 ```
 
 ---
@@ -447,6 +605,106 @@ Encaminha uma query em linguagem natural para o assistente de IA (servidor MCP �
 ```json
 { "error": "Assistente temporariamente indisponível", "details": "..." }
 ```
+
+---
+
+## POST /chat/stream
+
+Encaminha uma query em linguagem natural para o assistente de IA e devolve a resposta em **Server-Sent Events (SSE)**, com streaming real do MCP até o cliente.
+
+> **Sprint 3:** o backend faz proxy do stream SSE exposto pelo MCP em `MCP_URL/chat/stream`.
+
+#### Headers de resposta
+
+```http
+Content-Type: text/event-stream; charset=utf-8
+Cache-Control: no-cache, no-transform
+Connection: keep-alive
+```
+
+#### Body
+
+```json
+{ "query": "quais licitações de limpeza estão abertas em PE?" }
+```
+
+`query` deve ter entre 1 e 1000 caracteres.
+
+#### Eventos SSE
+
+Cada evento é enviado no formato padrão SSE:
+
+```text
+event: <nome-do-evento>
+data: <json>
+
+```
+
+##### `start`
+
+Emitido imediatamente após o início do processamento.
+
+```text
+event: start
+data: {"message":"Processando pergunta"}
+
+```
+
+##### `status`
+
+Emitido durante etapas intermediárias do MCP, por exemplo quando o agente consulta tools.
+
+```text
+event: status
+data: {"message":"Consultando buscar_licitacoes"}
+
+```
+
+##### `message`
+
+Chunk incremental da resposta do assistente. O cliente deve concatenar os valores de `content` na ordem recebida para montar a resposta final.
+
+```text
+event: message
+data: {"content":"Foram encontradas "}
+
+```
+
+Quando a resposta vier do cache, o backend pode enviar um único `message` com o texto completo e `cache: true`:
+
+```text
+event: message
+data: {"content":"Foram encontradas 3 licitações...","cache":true}
+
+```
+
+##### `done`
+
+Indica o fim do stream.
+
+```text
+event: done
+data: {"cache":false}
+
+```
+
+##### `error`
+
+Emitido quando o MCP ou o proxy não conseguem concluir a resposta.
+
+```text
+event: error
+data: {"error":"Assistente temporariamente indisponível","details":"..."}
+
+```
+
+#### Resposta 400
+
+```json
+{ "error": "Body inválido ou query ausente" }
+```
+
+> Na prática, erros de validação do backend interrompem a requisição antes do início do stream.
 
 ---
 

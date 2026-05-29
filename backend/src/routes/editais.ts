@@ -16,12 +16,8 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
         const limitNum = Math.min(50, Math.max(1, Number(limit)))
         const skip = (pageNum - 1) * limitNum
 
-        const filter: Filter<Document> = {
-          $or: [
-            { data_encerramento_proposta: { $gte: new Date() } },
-            { data_encerramento_proposta: null },
-          ],
-        }
+        // TODO: filtrar por data_encerramento_proposta em produção
+        const filter: Filter<Document> = {}
 
         const escapeRegex = (str: string) => str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
         if (uf) filter['uf'] = uf.toUpperCase()

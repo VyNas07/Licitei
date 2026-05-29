@@ -4,12 +4,13 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -17,6 +18,10 @@ import { SectorCard } from '../../src/components/editais/SectorCard';
 import { EditalCard } from '../../src/components/editais/EditalCard';
 import { CategoryModal } from '../../src/components/editais/CategoryModal';
 import { FilterModal } from '../../src/components/editais/FilterModal';
+import { BuscasSalvasModal } from '../../src/components/editais/BuscasSalvasModal';
+import { useBuscasSalvas } from '../../src/hooks/useBuscasSalvas';
+import type { FiltrosBusca, BuscaSalva } from '../../src/hooks/useBuscasSalvas';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../src/services/api';
 
 interface EditalAPI {
@@ -43,7 +48,10 @@ interface EditalCard {
 }
 
 function mapEdital(e: EditalAPI): EditalCard {
-  const match = e.valor_total_estimado <= 40000 ? 'Alta' : e.valor_total_estimado <= 80000 ? 'Média' : 'Baixa';
+  let match: 'Alta' | 'Média' | 'Baixa';
+  if (e.valor_total_estimado <= 40000) match = 'Alta';
+  else if (e.valor_total_estimado <= 80000) match = 'Média';
+  else match = 'Baixa';
   return {
     id: e.numero_controle_pncp,
     objeto: e.objeto_compra,
@@ -58,13 +66,31 @@ function mapEdital(e: EditalAPI): EditalCard {
 }
 
 const TODAS_CATEGORIAS = [
-  { id: '1', icone: 'construct' as const, nome: 'Tecnologia', descricao: 'Softwares e serviços de TI' },
-  { id: '2', icone: 'restaurant' as const, nome: 'Consultoria', descricao: 'Consultoria em tecnologia' },
-  { id: '3', icone: 'medkit' as const, nome: 'Saúde', descricao: 'Atividades na área de saúde' },
-  { id: '4', icone: 'hammer' as const, nome: 'Obras', descricao: 'Construção e reformas' },
-  { id: '5', icone: 'desktop' as const, nome: 'Treinamento', descricao: 'Cursos e capacitação' },
-  { id: '6', icone: 'car' as const, nome: 'Segurança', descricao: 'Monitoramento e sistemas' },
+  { id: '1', icone: 'construct' as const, nome: 'Tecnologia',
+    keywords: ['software', 'sistema', 'tecnologia', 'informática', 'aplicativo', 'desenvolvimento', 'licença', 'servidor', 'computador', 'web', 'suporte técnico', 'hardware'] },
+  { id: '2', icone: 'restaurant' as const, nome: 'Consultoria',
+    keywords: ['consultoria', 'assessoria', 'auditoria', 'análise', 'diagnóstico'] },
+  { id: '3', icone: 'medkit' as const, nome: 'Saúde',
+    keywords: ['médic', 'hospitalar', 'hospital', 'clínica', 'medicamento', 'farmác', 'enfermagem', 'odontológ', 'fisioterapia', 'ambulatorial', 'material médico', 'equipamento médico'] },
+  { id: '4', icone: 'hammer' as const, nome: 'Obras',
+    keywords: ['construção', 'reforma', 'obra', 'engenharia', 'pavimentação', 'elétrica', 'hidráulica', 'edificação', 'manutenção predial'] },
+  { id: '5', icone: 'desktop' as const, nome: 'Treinamento',
+    keywords: ['treinamento', 'capacitação', 'curso', 'formação', 'qualificação', 'workshop', 'palestra'] },
+  { id: '6', icone: 'car' as const, nome: 'Segurança',
+    keywords: ['vigilância', 'monitoramento', 'câmera', 'cftv', 'alarme', 'porteiro', 'controle de acesso', 'segurança patrimonial', 'segurança armada', 'serviço de segurança'] },
 ];
+
+const KEYWORDS_BY_CATEGORY: Record<string, string[]> = Object.fromEntries(
+  TODAS_CATEGORIAS.map(c => [c.id, c.keywords])
+);
+
+function matchesKeywords(objeto: string, keywords: string[]): boolean {
+  const lower = objeto.toLowerCase();
+  return keywords.some(k => lower.includes(k));
+}
+
+const buildCacheKey = (uf: string, valor: string, cnae: string) =>
+  `oportunidades_${uf}_${valor}_${cnae}`;
 
 export default function HomeUsuario() {
   const router = useRouter();
@@ -81,25 +107,44 @@ export default function HomeUsuario() {
   });
   const [modalCategorias, setModalCategorias] = useState(false);
   const [modalFiltros, setModalFiltros] = useState(false);
+  const [modalBuscasSalvas, setModalBuscasSalvas] = useState(false);
   const [pagina, setPagina] = useState(1);
+  const [nomeUsuario, setNomeUsuario] = useState('');
   const ITENS_POR_PAGINA = 5;
+
+  const { buscas, carregando: carregandoBuscas, erro: erroBuscas, carregar: recarregarBuscas, salvar, remover } = useBuscasSalvas();
 
   const buscarOportunidades = useCallback(async () => {
     setCarregando(true);
+    const cacheKey = buildCacheKey(filtrosAvancados.uf, filtrosAvancados.valor, filtrosAvancados.cnae);
     try {
       const params: Record<string, string> = { limit: '50' };
       if (filtrosAvancados.uf !== 'Todas') params.uf = filtrosAvancados.uf;
       if (filtrosAvancados.valor === 'Até R$ 80 mil (exclusivo MEI)') params.valor_max = '80000';
+      if (filtrosAvancados.cnae) params.cnae = filtrosAvancados.cnae;
       const { data } = await api.get('/oportunidades', { params });
-      setEditais((data.data ?? []).map(mapEdital));
+      const mapped = (data.data ?? []).map(mapEdital);
+      setEditais(mapped);
+      AsyncStorage.setItem(cacheKey, JSON.stringify(mapped)).catch(() => {});
     } catch {
-      setEditais([]);
+      try {
+        const cached = await AsyncStorage.getItem(cacheKey);
+        setEditais(cached ? JSON.parse(cached) : []);
+      } catch {
+        setEditais([]);
+      }
     } finally {
       setCarregando(false);
     }
-  }, [filtrosAvancados.uf, filtrosAvancados.valor]);
+  }, [filtrosAvancados.uf, filtrosAvancados.valor, filtrosAvancados.cnae]);
 
   useEffect(() => { buscarOportunidades(); }, [buscarOportunidades]);
+
+  useEffect(() => {
+    api.get('/perfil')
+      .then(({ data }) => setNomeUsuario(data.nome_fantasia ?? ''))
+      .catch(() => {}); // silent fail — mantém string vazia
+  }, []);
 
   const validaFaixaValor = (valor: number, faixa: string) => {
     if (faixa === 'Todos') return true;
@@ -116,7 +161,7 @@ export default function HomeUsuario() {
       const termo = busca.toLowerCase();
       if (busca !== '' && !e.objeto.toLowerCase().includes(termo) && !e.orgao.toLowerCase().includes(termo)) return;
       TODAS_CATEGORIAS.forEach(cat => {
-        if (e.objeto.toLowerCase().includes(cat.descricao.split(' ')[0].toLowerCase())) stats[cat.id] += 1;
+        if (matchesKeywords(e.objeto, cat.keywords)) stats[cat.id] += 1;
       });
     });
     return stats;
@@ -128,10 +173,8 @@ export default function HomeUsuario() {
       const matchBusca = busca === '' || e.objeto.toLowerCase().includes(termo) || e.orgao.toLowerCase().includes(termo);
       const matchMun = filtrosAvancados.municipio === '' || (e.municipio?.toLowerCase().includes(filtrosAvancados.municipio.toLowerCase()));
       const matchValor = validaFaixaValor(e.valor, filtrosAvancados.valor);
-      const matchCategoria = selecionadas.length === 0 || selecionadas.some(id => {
-        const cat = TODAS_CATEGORIAS.find(c => c.id === id);
-        return cat && e.objeto.toLowerCase().includes(cat.descricao.split(' ')[0].toLowerCase());
-      });
+      const matchCategoria = selecionadas.length === 0 ||
+        selecionadas.some(id => matchesKeywords(e.objeto, KEYWORDS_BY_CATEGORY[id] ?? []));
       return matchBusca && matchMun && matchValor && matchCategoria;
     });
   }, [editais, selecionadas, filtrosAvancados, busca]);
@@ -146,6 +189,48 @@ export default function HomeUsuario() {
     setFiltrosAvancados({ uf: 'Todas', municipio: '', valor: 'Todos', cnae: '' });
   };
 
+  const filtrosParaSalvar = (): FiltrosBusca => {
+    const f: FiltrosBusca = {};
+    if (filtrosAvancados.uf !== 'Todas') f.uf = filtrosAvancados.uf;
+    if (filtrosAvancados.municipio) f.municipio = filtrosAvancados.municipio;
+    if (filtrosAvancados.cnae) f.cnae = filtrosAvancados.cnae;
+    if (filtrosAvancados.valor === 'Até R$ 80 mil (exclusivo MEI)') f.valor_max = 80000;
+    if (filtrosAvancados.valor === 'R$ 80 mil – R$ 200 mil') { f.valor_min = 80000; f.valor_max = 200000; }
+    if (filtrosAvancados.valor === 'Acima de R$ 200 mil') f.valor_min = 200000;
+    if (selecionadas.length) f.categorias = selecionadas.map(id => TODAS_CATEGORIAS.find(c => c.id === id)?.nome ?? id);
+    return f;
+  };
+
+  const aplicarBuscaSalva = (b: BuscaSalva) => {
+    setBusca(b.termo_busca);
+    const f = b.filtros;
+    let valorFaixa = 'Todos';
+    if (f?.valor_max === 80000 && !f.valor_min) valorFaixa = 'Até R$ 80 mil (exclusivo MEI)';
+    else if (f?.valor_min === 80000) valorFaixa = 'R$ 80 mil – R$ 200 mil';
+    else if (f?.valor_min === 200000) valorFaixa = 'Acima de R$ 200 mil';
+    setFiltrosAvancados({
+      uf: f?.uf ?? 'Todas',
+      municipio: f?.municipio ?? '',
+      valor: valorFaixa,
+      cnae: f?.cnae ?? '',
+    });
+    if (f?.categorias?.length) {
+      const ids = f.categorias.map(nome => TODAS_CATEGORIAS.find(c => c.nome === nome)?.id).filter(Boolean) as string[];
+      setSelecionadas(ids);
+    } else {
+      setSelecionadas([]);
+    }
+    setPagina(1);
+  };
+
+  const temFiltrosAtivos =
+    busca !== '' ||
+    filtrosAvancados.uf !== 'Todas' ||
+    filtrosAvancados.municipio !== '' ||
+    filtrosAvancados.cnae !== '' ||
+    filtrosAvancados.valor !== 'Todos' ||
+    selecionadas.length > 0;
+
   return (
     <SafeAreaView style={estilos.areaSegura}>
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
@@ -153,7 +238,7 @@ export default function HomeUsuario() {
       <View style={estilos.cabecalho}>
         <View style={estilos.linhaTopo}>
           <View>
-            <Text style={estilos.saudacao}>Olá, Ylson</Text>
+            <Text style={estilos.saudacao}>Olá{nomeUsuario ? `, ${nomeUsuario}` : ''}</Text>
             <Text style={estilos.tituloPagina}>Boas oportunidades hoje</Text>
           </View>
           <TouchableOpacity style={estilos.botaoNotificacao} onPress={() => router.push('/alertas')}>
@@ -175,6 +260,9 @@ export default function HomeUsuario() {
           </View>
           <TouchableOpacity style={estilos.botaoFiltroAvancado} onPress={() => setModalFiltros(true)}>
             <Ionicons name="options-outline" size={22} color="#0F172A" />
+          </TouchableOpacity>
+          <TouchableOpacity style={estilos.botaoBookmark} onPress={() => setModalBuscasSalvas(true)}>
+            <Ionicons name="bookmark-outline" size={22} color="#0F172A" />
           </TouchableOpacity>
         </View>
       </View>
@@ -233,7 +321,36 @@ export default function HomeUsuario() {
         </View>
       </ScrollView>
 
-      <CategoryModal 
+      <BuscasSalvasModal
+        visivel={modalBuscasSalvas}
+        fechar={() => setModalBuscasSalvas(false)}
+        termoBusca={busca}
+        filtrosAtivos={filtrosParaSalvar()}
+        temFiltrosAtivos={temFiltrosAtivos}
+        buscas={buscas}
+        carregando={carregandoBuscas}
+        erro={erroBuscas}
+        onRecarregar={recarregarBuscas}
+        onSalvarAtual={async () => {
+          try {
+            await salvar(busca || 'Busca sem termo', filtrosParaSalvar());
+            setModalBuscasSalvas(false);
+          } catch (e: unknown) {
+            const status = (e as { response?: { status?: number } })?.response?.status;
+            if (status === 409) {
+              Alert.alert('Busca já salva', 'Esta busca já foi salva anteriormente.');
+              setModalBuscasSalvas(false);
+            }
+          }
+        }}
+        onAplicar={(b) => {
+          aplicarBuscaSalva(b);
+          setModalBuscasSalvas(false);
+        }}
+        onRemover={remover}
+      />
+
+      <CategoryModal
         visivel={modalCategorias} 
         fechar={() => setModalCategorias(false)} 
         categorias={TODAS_CATEGORIAS} 
@@ -264,6 +381,7 @@ const estilos = StyleSheet.create({
   barraBusca: { flex: 1, height: 48, backgroundColor: '#FFF', borderRadius: 15, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15 },
   inputReal: { flex: 1, marginLeft: 10, fontSize: 14, color: '#0F172A', height: '100%' },
   botaoFiltroAvancado: { width: 48, height: 48, backgroundColor: '#FFF', borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  botaoBookmark: { width: 48, height: 48, backgroundColor: '#FFF', borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   rolagem: { flex: 1, backgroundColor: '#F8FAFC' },
   conteudoRolagem: { paddingBottom: 40, paddingTop: 10 },
   bannerPro: { marginHorizontal: 20, marginTop: 20, backgroundColor: '#0F172A', borderRadius: 24, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },

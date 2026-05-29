@@ -7,19 +7,20 @@ Execução:
     python -m src.server
 """
 
+import asyncio
+import json
 import sys
 import uuid
 from pathlib import Path
 
-from loguru import logger
 from fastmcp import FastMCP
+from loguru import logger
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, StreamingResponse
 
+from src.agente import chat as _chat, chat_stream as _chat_stream, criar_agente
 from src.cache import Cache
 from src.config import carregar_config
-import asyncio
-from src.agente import criar_agente, chat as _chat
 from src.tools.buscar_licitacoes import buscar_licitacoes as _buscar
 from src.tools.detalhar_licitacao import detalhar_licitacao as _detalhar
 from src.tools.gerar_checklist import gerar_checklist as _checklist
@@ -30,6 +31,7 @@ from src.tools.resumir_edital import resumir_edital as _resumir
 # ---------------------------------------------------------------------------
 # Logger
 # ---------------------------------------------------------------------------
+
 
 def _configurar_logger() -> None:
     """Configura loguru com saída no console e rotação diária em arquivo."""
@@ -56,6 +58,11 @@ def _configurar_logger() -> None:
     )
 
 
+def _sse_event(event: str, data: dict) -> bytes:
+    payload = json.dumps(data, ensure_ascii=False)
+    return f"event: {event}\ndata: {payload}\n\n".encode("utf-8")
+
+
 # ---------------------------------------------------------------------------
 # Inicialização
 # ---------------------------------------------------------------------------
@@ -70,6 +77,7 @@ mcp = FastMCP("licitei")
 # ---------------------------------------------------------------------------
 # Tools MCP
 # ---------------------------------------------------------------------------
+
 
 @mcp.tool()
 def buscar_licitacoes(
@@ -86,7 +94,9 @@ def buscar_licitacoes(
         valor_max: Valor máximo estimado em reais. Opcional.
         limite: Quantidade máxima de resultados (padrão: 10, máximo: 50).
     """
-    return _buscar(termo=termo, uf=uf, valor_max=valor_max, limite=limite, config=config)
+    return _buscar(
+        termo=termo, uf=uf, valor_max=valor_max, limite=limite, config=config
+    )
 
 
 @mcp.tool()
@@ -146,6 +156,7 @@ def listar_documentos(numero_controle_pncp: str) -> dict:
 # Endpoint HTTP: POST /chat
 # ---------------------------------------------------------------------------
 
+
 @mcp.custom_route("/chat", methods=["POST"])
 async def chat_handler(request: Request) -> JSONResponse:
     """Recebe query e thread_id, retorna resposta do agente LangGraph.
@@ -179,6 +190,55 @@ async def chat_handler(request: Request) -> JSONResponse:
     except Exception as exc:
         logger.exception(f"Erro no /chat | query={query!r}")
         return JSONResponse({"erro": str(exc)}, status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# Endpoint HTTP: POST /chat/stream
+# ---------------------------------------------------------------------------
+
+
+@mcp.custom_route("/chat/stream", methods=["POST"])
+async def chat_stream_handler(request: Request) -> StreamingResponse | JSONResponse:
+    """Recebe query e thread_id, devolve tokens do agente LangGraph via SSE.
+
+    Body JSON: {"query": "...", "thread_id": "user-uuid"}
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "Body JSON inválido."}, status_code=400)
+
+    query = body.get("query", "").strip()
+    if not query:
+        return JSONResponse({"erro": "Campo 'query' é obrigatório."}, status_code=400)
+
+    thread_id = body.get("thread_id") or str(uuid.uuid4())
+
+    async def event_stream():
+        yield _sse_event("start", {"message": "Processando pergunta"})
+        try:
+            async for chunk in _chat_stream(agente, query, thread_id):
+                yield _sse_event("message", {"content": chunk})
+            yield _sse_event("done", {})
+        except Exception as exc:
+            logger.exception(f"Erro no /chat/stream | query={query!r}")
+            yield _sse_event(
+                "error",
+                {
+                    "error": "Assistente temporariamente indisponível",
+                    "details": str(exc),
+                },
+            )
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 # ---------------------------------------------------------------------------
