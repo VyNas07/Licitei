@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,7 +35,7 @@ const SLIDES: Slide[] = [
     icon: 'sparkles-outline',
     title: 'O Governo é seu Cliente',
     description: 'Tudo pronto! Navegue pelas abas para explorar oportunidades e acompanhar disputas.',
-  }
+  },
 ];
 
 export default function Onboarding() {
@@ -54,10 +54,6 @@ export default function Onboarding() {
     }
   }, [isLastSlide, aceitouTermos, router]);
 
-  const toggleTermos = useCallback(() => {
-    setAceitouTermos((prev) => !prev);
-  }, []);
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -66,33 +62,34 @@ export default function Onboarding() {
         </View>
         <Text style={styles.title}>{slide.title}</Text>
         <Text style={styles.description}>{slide.description}</Text>
-        
+
         <View style={styles.dotsContainer}>
           {SLIDES.map((_, index) => (
-            <View key={index} style={[styles.dot, currentIndex === index && styles.dotActive]} />
+            <View
+              key={index}
+              style={[styles.dot, currentIndex === index && styles.dotActive]}
+            />
           ))}
         </View>
       </View>
 
       <View style={styles.footer}>
         {isLastSlide && (
-          <Pressable 
-            style={styles.lgpdContainer} 
-            onPress={toggleTermos}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: aceitouTermos }}
-          >
-            <View style={[styles.checkbox, aceitouTermos && styles.checkboxChecked]}>
-              {aceitouTermos && <Ionicons name="checkmark" size={16} color="#FFF" />}
-            </View>
+          <View style={styles.lgpdContainer}>
+            <Switch
+              trackColor={{ false: '#CBD5E1', true: '#38BDF8' }}
+              thumbColor={aceitouTermos ? '#0EA5E9' : '#F8FAFC'}
+              onValueChange={setAceitouTermos}
+              value={aceitouTermos}
+            />
             <Text style={styles.lgpdText}>
               Li e aceito os Termos de Uso e a Política de Privacidade (LGPD).
             </Text>
-          </Pressable>
+          </View>
         )}
 
-        <TouchableOpacity 
-          style={[styles.button, isLastSlide && !aceitouTermos && styles.buttonDisabled]} 
+        <TouchableOpacity
+          style={[styles.button, isLastSlide && !aceitouTermos && styles.buttonDisabled]}
           onPress={handleNext}
           disabled={isLastSlide && !aceitouTermos}
           activeOpacity={0.8}
@@ -117,10 +114,8 @@ const styles = StyleSheet.create({
   dotActive: { width: 24, backgroundColor: '#0F172A' },
   footer: { padding: 24 },
   lgpdContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, paddingHorizontal: 10 },
-  checkbox: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center' },
-  checkboxChecked: { backgroundColor: '#0EA5E9', borderColor: '#0EA5E9' },
   lgpdText: { flex: 1, marginLeft: 12, fontSize: 14, color: '#475569', lineHeight: 20 },
   button: { backgroundColor: '#0F172A', paddingVertical: 18, borderRadius: 16, alignItems: 'center' },
   buttonDisabled: { backgroundColor: '#94A3B8' },
-  buttonText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' }
+  buttonText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 });
