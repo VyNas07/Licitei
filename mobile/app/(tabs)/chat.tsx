@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Keyboard
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import EventSource from 'react-native-sse';
+import { supabase } from '../../src/services/supabase';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
 
@@ -27,10 +28,13 @@ export default function ChatScreen() {
     const assistantMsgId = (Date.now() + 1).toString();
     setMessages((prev) => [...prev, { id: assistantMsgId, role: 'assistant', content: '' }]);
 
+    const { data: { session } } = await supabase.auth.getSession();
+
     const es = new EventSource(`${API_URL}/chat/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${session?.access_token ?? ''}`,
       },
       body: JSON.stringify({ query: userMessage.content }),
     });
@@ -55,8 +59,14 @@ export default function ChatScreen() {
       es.close();
     });
 
-    es.addEventListener('error', (event) => {
-      console.log('Fim do stream ou erro:', event);
+    es.addEventListener('error', () => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMsgId && msg.content === ''
+            ? { ...msg, content: 'Desculpe, ocorreu um erro. Tente novamente.' }
+            : msg,
+        ),
+      );
       setIsTyping(false);
       es.close();
     });
