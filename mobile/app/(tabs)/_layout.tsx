@@ -62,6 +62,18 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'IA',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[estilos.containerIcone, focused && estilos.fundoAtivo]}>
+              <Ionicons name={focused ? "sparkles" : "sparkles-outline"} size={22} color={color} />
+            </View>
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="documentos" 
         options={{
           title: 'Documentos',
