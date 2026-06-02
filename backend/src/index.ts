@@ -2,10 +2,10 @@
 import { Elysia } from 'elysia'
 import { cors } from '@elysiajs/cors'
 import { swagger } from '@elysiajs/swagger'
+import { rateLimit } from 'elysia-rate-limit'
 
 import { config } from './config'
 import { closeDb } from './db/mongo'
-import { rateLimitPlugin } from './middleware/rateLimit'
 
 import { healthRoutes } from './routes/health'
 import { editaisRoutes } from './routes/editais'
@@ -63,7 +63,19 @@ const app = new Elysia()
       allowedHeaders: ['Content-Type', 'Authorization'],
     })
   )
-  .use(rateLimitPlugin)
+  .use(
+    rateLimit({
+      duration: config.rateLimit.windowMs,
+      max: config.rateLimit.maxRequests,
+      errorResponse: new Response(
+        JSON.stringify({ error: 'Muitas requisições. Tente novamente mais tarde.' }),
+        {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      ),
+    })
+  )
 
   // Tratamento global de erros
   .onError(({ code, error, set }) => {
