@@ -46,7 +46,7 @@ flowchart LR
 | Transformação | Python · `pandas` | Normalização de campos, cast de tipos, descarte de registros inválidos |
 | Carga documental | MongoDB Atlas | Armazenamento dos editais para consultas flexíveis e full-text |
 | Dados do usuário | Supabase (Postgres) | Perfis MEI, participações, documentos e alertas — escritos pelo backend |
-| Servidor MCP | FastMCP · Python | Tools expostas ao LLM: busca, resumo, documentos necessários |
+| Servidor MCP | FastMCP · Python | Tools expostas ao LLM: busca, listagem com contagem, data atual, resumo, checklist, documentos necessários |
 | LLM | Groq llama-3.3-70b-versatile (prod) · qwen2.5:7b Ollama (dev) | Interpretação de linguagem natural, geração de respostas |
 | Backend | Elysia · TypeScript | API REST com autenticação JWT, integração MongoDB + Supabase + MCP |
 | Mobile | React Native | Interface do usuário: busca, detalhe do edital, assistente IA |
@@ -88,6 +88,6 @@ Servidor MCP
 1. O pipeline ETL roda sob demanda ou agendado, consultando `/contratacoes/publicacao` e `/contratacoes/proposta` na API PNCP.
 2. Os registros são normalizados (snake_case, tipos, campos aninhados) e persistidos via upsert no MongoDB Atlas.
 3. O backend Elysia expõe endpoints REST autenticados por JWT, consultando MongoDB para editais e Supabase para dados do usuário.
-4. O servidor MCP conecta-se ao MongoDB e expõe tools ao LLM: busca de editais, resumo de objeto, lista de documentos exigidos.
+4. O servidor MCP conecta-se ao MongoDB e expõe tools ao LLM: busca de editais, listagem com contagem total, data atual (para raciocínio sobre prazos), resumo de edital, checklist de habilitação e lista de documentos exigidos.
 5. Quando o usuário aciona o assistente no app, o backend encaminha a mensagem ao MCP via HTTP + SSE; o MCP chama o LLM com as tools disponíveis e devolve a resposta em stream.
 6. O Mobile consome os endpoints REST para as telas de busca e detalhe, e o stream SSE para a tela do assistente.

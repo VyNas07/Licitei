@@ -46,6 +46,17 @@ e mantém zero dependência de serviço externo para a camada de memória.
 - ADR 001 atualizado implicitamente: o cliente LLM agora é `ChatGroq` / `ChatOpenAI`
   (LangChain) em vez do SDK `openai` com `base_url` customizado
 
+## Sprint 3 — Novas tools adicionadas
+
+Seguindo o mesmo padrão de closure (`_criar_ferramentas`), duas tools foram acrescentadas:
+
+| Tool | Arquivo | Descrição |
+| --- | --- | --- |
+| `data_atual` | `tools/data_atual.py` | Retorna data/hora atual em português; resolve a limitação do LLM com datas para verificar se editais estão vencidos |
+| `listar_licitacoes` | `tools/listar_licitacoes.py` | Busca textual como `buscar_licitacoes`, mas retorna `total_encontrado` via `count_documents` e aceita até 200 resultados |
+
+Nenhuma alteração arquitetural — o padrão de registro em `agente.py` e `server.py` permanece idêntico.
+
 ## Notas de implementação
 
 | Detalhe | Motivo |
