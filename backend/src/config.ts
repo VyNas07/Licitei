@@ -11,6 +11,10 @@ export const config = {
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),
+  rateLimit: {
+    windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS ?? 60_000),
+    maxRequests: Number(process.env.RATE_LIMIT_MAX_REQUESTS ?? 120),
+  },
 
   supabase: {
     url: required('SUPABASE_URL'),

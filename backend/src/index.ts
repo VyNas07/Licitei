@@ -5,6 +5,7 @@ import { swagger } from '@elysiajs/swagger'
 
 import { config } from './config'
 import { closeDb } from './db/mongo'
+import { rateLimitPlugin } from './middleware/rateLimit'
 
 import { healthRoutes } from './routes/health'
 import { editaisRoutes } from './routes/editais'
@@ -62,6 +63,7 @@ const app = new Elysia()
       allowedHeaders: ['Content-Type', 'Authorization'],
     })
   )
+  .use(rateLimitPlugin)
 
   // Tratamento global de erros
   .onError(({ code, error, set }) => {
