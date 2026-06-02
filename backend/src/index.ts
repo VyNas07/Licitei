@@ -51,10 +51,13 @@ const app = new Elysia()
       path: '/docs',
     })
   )
-  // CORS — permite requisições do app mobile (Expo)
+  // CORS — permite apenas origens explicitamente configuradas
   .use(
     cors({
-      origin: true,
+      origin: ({ headers }) => {
+        const origin = headers.get('origin')
+        return origin ? config.allowedOrigins.includes(origin) : false
+      },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
     })
