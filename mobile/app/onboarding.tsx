@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Slide = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -46,10 +47,11 @@ export default function Onboarding() {
   const isLastSlide = useMemo(() => currentIndex === SLIDES.length - 1, [currentIndex]);
   const slide = useMemo(() => SLIDES[currentIndex], [currentIndex]);
 
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
     if (!isLastSlide) {
       setCurrentIndex((prev) => prev + 1);
     } else if (aceitouTermos) {
+      await AsyncStorage.setItem('onboarding_concluido', 'true');
       router.replace('/(tabs)/home');
     }
   }, [isLastSlide, aceitouTermos, router]);
