@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -66,9 +66,9 @@ export default function Onboarding() {
         <Text style={styles.description}>{slide.description}</Text>
 
         <View style={styles.dotsContainer}>
-          {SLIDES.map((_, index) => (
+          {SLIDES.map((slide, index) => (
             <View
-              key={index}
+              key={slide.icon}
               style={[styles.dot, currentIndex === index && styles.dotActive]}
             />
           ))}
@@ -85,7 +85,29 @@ export default function Onboarding() {
               value={aceitouTermos}
             />
             <Text style={styles.lgpdText}>
-              Li e aceito os Termos de Uso e a Política de Privacidade (LGPD).
+              {'Li e aceito os '}
+              <Text
+                style={styles.lgpdLink}
+                onPress={() =>
+                  Linking.openURL(
+                    'https://github.com/VyNas07/Licitei/blob/main/docs/termos-de-uso.md',
+                  )
+                }
+              >
+                Termos de Uso
+              </Text>
+              {' e a '}
+              <Text
+                style={styles.lgpdLink}
+                onPress={() =>
+                  Linking.openURL(
+                    'https://github.com/VyNas07/Licitei/blob/main/docs/politica-de-privacidade.md',
+                  )
+                }
+              >
+                Política de Privacidade (LGPD)
+              </Text>
+              .
             </Text>
           </View>
         )}
@@ -117,6 +139,7 @@ const styles = StyleSheet.create({
   footer: { padding: 24 },
   lgpdContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, paddingHorizontal: 10 },
   lgpdText: { flex: 1, marginLeft: 12, fontSize: 14, color: '#475569', lineHeight: 20 },
+  lgpdLink: { color: '#0EA5E9', textDecorationLine: 'underline' },
   button: { backgroundColor: '#0F172A', paddingVertical: 18, borderRadius: 16, alignItems: 'center' },
   buttonDisabled: { backgroundColor: '#94A3B8' },
   buttonText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
