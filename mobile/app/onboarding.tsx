@@ -66,9 +66,9 @@ export default function Onboarding() {
         <Text style={styles.description}>{slide.description}</Text>
 
         <View style={styles.dotsContainer}>
-          {SLIDES.map((slide, index) => (
+          {SLIDES.map((s, index) => (
             <View
-              key={slide.icon}
+              key={s.icon}
               style={[styles.dot, currentIndex === index && styles.dotActive]}
             />
           ))}
