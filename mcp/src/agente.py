@@ -15,10 +15,12 @@ from loguru import logger
 
 from src.config import Config
 from src.tools.buscar_licitacoes import buscar_licitacoes as _buscar
+from src.tools.data_atual import data_atual as _data_atual
 from src.tools.detalhar_licitacao import detalhar_licitacao as _detalhar
 from src.tools.gerar_checklist import gerar_checklist as _checklist
 from src.tools.keywords_cnae import keywords_cnae as _keywords_cnae
 from src.tools.listar_documentos import listar_documentos as _listar
+from src.tools.listar_licitacoes import listar_licitacoes as _listar_licitacoes
 from src.tools.resumir_edital import resumir_edital as _resumir
 
 _SYSTEM_PROMPT = (
@@ -131,6 +133,42 @@ def _criar_ferramentas(config: Config) -> list:
         """
         return json.dumps(_listar(numero_controle_pncp=numero_controle_pncp, config=config), ensure_ascii=False, default=str)
 
+    @tool
+    def data_atual() -> str:
+        """Retorna a data e hora atual do servidor.
+
+        Use quando precisar saber a data atual para verificar se um edital está
+        vencido ou calcular prazos. Sempre chame antes de comparar datas de
+        encerramento de licitações com "hoje".
+        """
+        return json.dumps(_data_atual(), ensure_ascii=False)
+
+    @tool
+    def listar_licitacoes(
+        termo: str,
+        uf: str | None = None,
+        valor_max: float | None = None,
+        limite: int | str = 50,
+    ) -> str:
+        """Lista todas as licitações correspondentes a uma busca, com contagem total.
+
+        Use quando o usuário quiser ver uma lista abrangente de licitações ou
+        quiser saber quantas licitações existem para um tema. Retorna o total
+        real encontrado e até 200 resultados.
+        Prefira esta tool sobre buscar_licitacoes quando o usuário pedir
+        "todas as licitações" ou "quantas licitações existem".
+
+        Args:
+            termo: Palavra-chave para buscar (ex: 'limpeza', 'TI', 'obras').
+            uf: Sigla do estado para filtrar (ex: 'PE', 'SP'). Opcional.
+            valor_max: Valor máximo estimado em reais. Opcional.
+            limite: Quantidade máxima de resultados (padrão: 50, máximo: 200).
+        """
+        result = _listar_licitacoes(
+            termo=termo, uf=uf, valor_max=valor_max, limite=int(limite), config=config
+        )
+        return json.dumps(result, ensure_ascii=False, default=str)
+
     return [
         buscar_licitacoes,
         detalhar_licitacao,
@@ -138,6 +176,8 @@ def _criar_ferramentas(config: Config) -> list:
         resumir_edital,
         gerar_checklist,
         listar_documentos,
+        data_atual,
+        listar_licitacoes,
     ]
 
 

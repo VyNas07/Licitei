@@ -182,6 +182,13 @@ Resposta esperada:
 | `resumir_edital` | `numero_controle_pncp` | Retorna dados do edital para o LLM resumir em linguagem simples para MEIs | ✅ |
 | `listar_documentos` | `numero_controle_pncp` | Retorna dados do edital para o LLM listar documentos necessários por categoria | ✅ |
 
+### Sprint 3
+
+| Tool | Parâmetros | Descrição | Status |
+| --- | --- | --- | --- |
+| `data_atual` | *(nenhum)* | Retorna data atual em português para raciocínio sobre prazos e vencimentos de editais | ✅ |
+| `listar_licitacoes` | `termo`, `uf?`, `valor_max?`, `limite?` | Lista licitações com contagem total real (`total_encontrado`); retorna até 200 resultados | ✅ |
+
 > Toda resposta baseada em uma licitação específica cita a fonte ao final no formato:
 > `Fonte: PNCP — [numero_controle_pncp] | [orgao_razao_social]`
 
