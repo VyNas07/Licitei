@@ -22,10 +22,12 @@ from src.agente import chat as _chat, chat_stream as _chat_stream, criar_agente
 from src.cache import Cache
 from src.config import carregar_config
 from src.tools.buscar_licitacoes import buscar_licitacoes as _buscar
+from src.tools.data_atual import data_atual as _data_atual
 from src.tools.detalhar_licitacao import detalhar_licitacao as _detalhar
 from src.tools.gerar_checklist import gerar_checklist as _checklist
 from src.tools.keywords_cnae import keywords_cnae as _keywords_cnae
 from src.tools.listar_documentos import listar_documentos as _documentos
+from src.tools.listar_licitacoes import listar_licitacoes as _listar_licitacoes
 from src.tools.resumir_edital import resumir_edital as _resumir
 
 # ---------------------------------------------------------------------------
@@ -150,6 +152,39 @@ def listar_documentos(numero_controle_pncp: str) -> dict:
         numero_controle_pncp: Identificador único da licitação no PNCP.
     """
     return _documentos(numero_controle_pncp=numero_controle_pncp, config=config)
+
+
+@mcp.tool()
+def data_atual() -> dict:
+    """Retorna a data e hora atual do servidor.
+
+    Use quando precisar saber a data atual para verificar se um edital está
+    vencido ou calcular prazos.
+    """
+    return _data_atual()
+
+
+@mcp.tool()
+def listar_licitacoes(
+    termo: str,
+    uf: str | None = None,
+    valor_max: float | None = None,
+    limite: int = 50,
+) -> dict:
+    """Lista todas as licitações correspondentes a uma busca, com contagem total.
+
+    Use quando o usuário quiser ver uma lista abrangente de licitações.
+    Retorna o total real encontrado e até 200 resultados.
+
+    Args:
+        termo: Palavra-chave para buscar (ex: "limpeza", "TI", "obras").
+        uf: Sigla do estado para filtrar (ex: "PE", "SP"). Opcional.
+        valor_max: Valor máximo estimado em reais. Opcional.
+        limite: Quantidade máxima de resultados (padrão: 50, máximo: 200).
+    """
+    return _listar_licitacoes(
+        termo=termo, uf=uf, valor_max=valor_max, limite=limite, config=config
+    )
 
 
 # ---------------------------------------------------------------------------
