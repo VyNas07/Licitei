@@ -112,23 +112,26 @@ export const perfilRoutes = new Elysia({ prefix: '/perfil' })
       }
     }
 
+    const tabelasComErro: string[] = []
     for (const table of USER_OWNED_TABLES) {
       const { error } = await supabase
         .from(table)
         .delete()
         .eq('user_id', userId)
 
-      if (error) {
-        set.status = 500
-        return { error: `Erro ao remover dados da conta em ${table}` }
-      }
+      if (error) tabelasComErro.push(table)
+    }
+
+    if (tabelasComErro.length > 0) {
+      set.status = 500
+      return { error: `Erro ao remover dados em: ${tabelasComErro.join(', ')}. Conta de autenticação mantida para nova tentativa.` }
     }
 
     const { error: authError } = await supabase.auth.admin.deleteUser(userId)
 
     if (authError) {
       set.status = 500
-      return { error: 'Erro ao remover usuário da autenticação' }
+      return { error: 'Dados removidos, mas erro ao encerrar sessão de autenticação. Contate o suporte.' }
     }
 
     return { message: 'Conta removida com sucesso' }
