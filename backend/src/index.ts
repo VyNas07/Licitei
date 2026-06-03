@@ -2,6 +2,7 @@
 import { Elysia } from 'elysia'
 import { cors } from '@elysiajs/cors'
 import { swagger } from '@elysiajs/swagger'
+import { rateLimit } from 'elysia-rate-limit'
 
 import { config } from './config'
 import { closeDb } from './db/mongo'
@@ -51,12 +52,28 @@ const app = new Elysia()
       path: '/docs',
     })
   )
-  // CORS — permite requisições do app mobile (Expo)
+  // CORS — permite apenas origens explicitamente configuradas
   .use(
     cors({
-      origin: true,
+      origin: ({ headers }) => {
+        const origin = headers.get('origin')
+        return origin ? config.allowedOrigins.includes(origin) : false
+      },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
+    })
+  )
+  .use(
+    rateLimit({
+      duration: config.rateLimit.windowMs,
+      max: config.rateLimit.maxRequests,
+      errorResponse: new Response(
+        JSON.stringify({ error: 'Muitas requisições. Tente novamente mais tarde.' }),
+        {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      ),
     })
   )
 

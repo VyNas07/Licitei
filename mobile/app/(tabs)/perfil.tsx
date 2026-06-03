@@ -6,7 +6,8 @@ import {
   StyleSheet,
   StatusBar,
   TouchableOpacity,
-  TextInput
+  TextInput,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,9 +16,35 @@ import { AuthHeader } from '../../src/components/auth/AuthHeader';
 import { RevenueCard } from '../../src/components/perfil/RevenueCard';
 import { PERFIL_MOCK, MEI_TETO } from '../../src/lib/mock-data';
 import { supabase } from '../../src/services/supabase';
+import api from '../../src/services/api';
 
 export default function TelaPerfil() {
   const [cnpj, setCnpj] = useState('45.123.890/0001-22');
+  const [excluindoConta, setExcluindoConta] = useState(false);
+
+  const handleExcluirConta = () => {
+    Alert.alert(
+      'Excluir conta',
+      'Todos os seus dados serão removidos permanentemente (LGPD). Essa ação não pode ser desfeita.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            setExcluindoConta(true);
+            try {
+              await api.delete('/perfil/account');
+              await supabase.auth.signOut();
+            } catch {
+              setExcluindoConta(false);
+              Alert.alert('Erro', 'Não foi possível excluir a conta. Tente novamente.');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={estilos.recipientePrincipal}>
@@ -86,13 +113,24 @@ export default function TelaPerfil() {
               <Text style={estilos.textoMenu}>Privacidade & dados</Text>
               <Ionicons name="chevron-forward" size={16} color="#CBD5E1" />
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={estilos.itemMenu}
               onPress={() => supabase.auth.signOut()}
             >
               <Ionicons name="log-out-outline" size={20} color="#EF4444" />
               <Text style={[estilos.textoMenu, { color: '#EF4444' }]}>Sair da conta</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[estilos.itemMenu, { borderBottomWidth: 0 }]}
+              onPress={handleExcluirConta}
+              disabled={excluindoConta}
+            >
+              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+              <Text style={[estilos.textoMenu, { color: '#EF4444' }]}>
+                {excluindoConta ? 'Excluindo conta...' : 'Excluir minha conta'}
+              </Text>
             </TouchableOpacity>
           </View>
 

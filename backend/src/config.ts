@@ -7,6 +7,14 @@ const required = (key: string): string => {
 export const config = {
   port: Number(process.env.PORT ?? 3000),
   nodeEnv: process.env.NODE_ENV ?? 'development',
+  allowedOrigins: (process.env.ALLOWED_ORIGINS ?? 'http://localhost:3000,http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+  rateLimit: {
+    windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS ?? 60_000),
+    maxRequests: Number(process.env.RATE_LIMIT_MAX_REQUESTS ?? 120),
+  },
 
   supabase: {
     url: required('SUPABASE_URL'),
