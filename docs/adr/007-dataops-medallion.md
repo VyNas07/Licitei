@@ -28,7 +28,7 @@ coexistindo no mesmo monorepo sem interferência.
 
 Adotar a **arquitetura Medallion** com **Apache Kafka** como camada de ingestão:
 
-```
+```text
 API PNCP → Kafka (editais_raw) → Bronze (Parquet) → Silver (Iceberg) → Gold (MongoDB)
 ```
 
@@ -69,18 +69,45 @@ logados e o registro é descartado — nunca silenciado.
 ## Consequências
 
 **Positivas:**
-- Dado raw preservado indefinidamente na Bronze — qualquer bug na transformação pode ser corrigido
-  e reprocessado sem nova extração da API
+
+- Dado raw preservado indefinidamente na Bronze — qualquer bug na transformação pode ser corrigido e reprocessado sem nova extração da API
 - Producer e Consumer são desacoplados — podem escalar independentemente
 - Contratos Pydantic tornam explícito o schema em cada camada, facilitando testes e debugging
-- Time travel na Silver (Sprint 3) permite auditar o estado dos dados em qualquer data passada
+- Time travel na Silver permite auditar o estado dos dados em qualquer data passada
 
 **Negativas:**
+
 - Adiciona Docker como dependência de desenvolvimento (Kafka precisa estar rodando)
 - Maior complexidade operacional vs. o ETL batch simples
 - Kafka local não persiste dados entre `docker compose down` sem volume configurado
 
 **Mitigações:**
+
 - `docker-compose.yml` já está versionado — setup é um único comando
 - O ETL batch (`etl/`) continua operacional e independente; DataOps é aditivo
 - Volume Docker (`kafka_data`) configurado para persistir mensagens entre reinicios
+
+---
+
+## Emenda — implementação final (2026-06-04)
+
+Durante a implementação (Sprint 4), três pontos divergiram da decisão original:
+
+| Ponto | Decisão original | Implementação real |
+| --- | --- | --- |
+| Modo Kafka | KRaft (sem Zookeeper) | **Zookeeper + `confluentinc/cp-kafka:7.5.0`** — exigido pelo professor |
+| Client Python | `kafka-python` | **`confluent-kafka==2.3.0`** — melhor suporte a consumer groups e offsets manuais |
+| Tópico principal | `editais_raw` | **`raw.licitacoes`** + `transformed.licitacoes` + 2 DLQs |
+| Coleções Gold | `kpi_por_cnae` | **`kpi_por_modalidade`** — campo CNAE ausente na API PNCP |
+| Coleções Gold | 5 coleções KPI | **6 coleções**: `contratos_ativos` (editais individuais) + 5 KPIs |
+| Agregação KPI | por batch atual | **`agregar_do_banco()`** — agrega do dataset completo (`contratos_ativos`) após cada ciclo |
+
+**Resultado do smoke test (2026-06-04):**
+
+- 4.867 licitações extraídas da API PNCP (01/06/2026 – 02/06/2026)
+- 0 mensagens no DLQ (sem erros de parse ou validação)
+- `contratos_ativos`: 4.867 documentos no MongoDB Atlas
+- KPIs: 28 UFs, 1 modalidade, prazos e elegibilidade calculados do dataset completo
+
+As pastas `etl/` e `dataops/` foram removidas do repositório; o histórico de cada sprint
+anterior está preservado no `git log`.
