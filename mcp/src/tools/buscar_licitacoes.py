@@ -1,5 +1,7 @@
 """Tool MCP: busca licitações no MongoDB por palavra-chave e filtros opcionais."""
 
+from datetime import datetime
+
 from loguru import logger
 
 from src.config import Config
@@ -57,7 +59,8 @@ def buscar_licitacoes(
         cursor = mongo.collection.find(query, _CAMPOS).limit(limite)
         resultados = []
         for doc in cursor:
-            if enc := doc.get("data_encerramento_proposta"):
+            enc = doc.get("data_encerramento_proposta")
+            if enc and isinstance(enc, datetime):
                 doc["data_encerramento_proposta"] = enc.isoformat()
             resultados.append(doc)
 
