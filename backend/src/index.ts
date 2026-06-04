@@ -60,7 +60,7 @@ const app = new Elysia()
         return origin ? config.allowedOrigins.includes(origin) : false
       },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'X-Requested-With'],
     })
   )
   .use(
