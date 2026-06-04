@@ -1,15 +1,14 @@
 """Agente LangGraph — substitui o loop manual de llm.py."""
 
+import asyncio
 import json
-import sqlite3
-from pathlib import Path
 from typing import AsyncGenerator
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from loguru import logger
 
@@ -24,15 +23,18 @@ from src.tools.listar_licitacoes import listar_licitacoes as _listar_licitacoes
 from src.tools.resumir_edital import resumir_edital as _resumir
 
 _SYSTEM_PROMPT = (
-    "Você é um assistente especializado em licitações públicas brasileiras, "
-    "focado em ajudar Microempreendedores Individuais (MEIs) a encontrar oportunidades. "
-    "Use as ferramentas disponíveis para buscar e detalhar licitações no banco de dados. "
+    "Você é LicIA, uma assistente especializada em licitações públicas brasileiras "
+    "focada em ajudar Microempreendedores Individuais (MEIs) a encontrar oportunidades. "
+    "Use as ferramentas disponíveis somente quando o usuário pedir explicitamente informações "
+    "sobre licitações: buscar, listar, resumir, detalhar, gerar checklist ou listar documentos. "
+    "Para saudações, perguntas gerais ou conversas casuais, responda diretamente sem chamar nenhuma ferramenta. "
+    "Nunca chame uma ferramenta para responder a 'olá', 'oi', 'tudo bem' ou expressões similares. "
     "Responda sempre em português, de forma clara e objetiva. "
-    "Ao apresentar resultados, destaque o objeto da compra, o órgão responsável, "
+    "Ao apresentar resultados de licitações, destaque o objeto da compra, o órgão responsável, "
     "o valor estimado e o prazo de encerramento. "
-    "Sempre que sua resposta se basear em dados de uma licitação específica, "
-    "cite a fonte ao final no formato: "
-    "'Fonte: PNCP — [numero_controle_pncp] | [orgao_razao_social]'."
+    "Cite a fonte ao final de cada licitação no formato: "
+    "'Fonte: PNCP — [numero_controle_pncp] | [orgao_razao_social]'. "
+    "Quando precisar chamar ferramentas, chame sempre uma por vez e aguarde o resultado antes de chamar a próxima."
 )
 
 
@@ -182,9 +184,10 @@ def _criar_ferramentas(config: Config) -> list:
 
 
 def criar_agente(config: Config):
-    """Cria o agente LangGraph com checkpointer SQLite persistente.
+    """Cria o agente LangGraph com checkpointer em memória.
 
     Deve ser chamado uma única vez no startup do servidor.
+    Memória persiste durante a sessão do servidor; reiniciar limpa o histórico.
 
     Args:
         config: Configurações do servidor.
@@ -192,9 +195,7 @@ def criar_agente(config: Config):
     Returns:
         CompiledStateGraph pronto para invocar.
     """
-    Path(config.sqlite_memoria_path).parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(config.sqlite_memoria_path, check_same_thread=False)
-    checkpointer = SqliteSaver(conn)
+    checkpointer = MemorySaver()
 
     llm = _criar_llm(config)
     ferramentas = _criar_ferramentas(config)
@@ -231,8 +232,57 @@ def chat(agente, query: str, thread_id: str) -> str:
     return resultado["messages"][-1].content
 
 
+def _processar_evento_stream(event: dict, buffer: list[str], state: dict) -> list[str]:
+    """Processa um evento do astream_events e retorna chunks de texto a emitir.
+
+    Mantém buffer e run_id em `state` para correlacionar eventos start/stream/end
+    do mesmo ciclo LLM. Retorna lista vazia enquanto o LLM ainda não terminou ou
+    quando o término indica tool_call (em vez de resposta final de texto).
+
+    Args:
+        event: Evento emitido por agente.astream_events().
+        buffer: Lista mutável de chunks acumulados para o ciclo atual.
+        state: Dict com chave "run_id" rastreando o ciclo LLM em andamento.
+
+    Returns:
+        Lista de strings a emitir para o cliente (vazia na maioria dos eventos).
+    """
+    kind = event["event"]
+    current_run_id = state["run_id"]
+
+    if kind == "on_chat_model_start":
+        buffer.clear()
+        state["run_id"] = event["run_id"]
+        return []
+
+    if kind == "on_chat_model_stream" and event["run_id"] == current_run_id:
+        chunk = event["data"]["chunk"]
+        if chunk.content:
+            buffer.append(chunk.content)
+        return []
+
+    if kind == "on_chat_model_end" and event["run_id"] == current_run_id:
+        output = event["data"].get("output")
+        has_tool_calls = bool(output and getattr(output, "tool_calls", None))
+        texts = buffer[:] if (not has_tool_calls and buffer) else []
+        buffer.clear()
+        state["run_id"] = None
+        return texts
+
+    return []
+
+
 async def chat_stream(agente, query: str, thread_id: str) -> AsyncGenerator[str, None]:
-    """Invoca o agente com streaming de tokens para uso no endpoint SSE (Sprint 3).
+    """Invoca o agente com streaming de tokens para uso no endpoint SSE.
+
+    Groq/Llama 3.3 emite a chamada de ferramenta dentro de chunk.content durante o
+    streaming (formato <function>...</function>). Para evitar exibir esse XML ao
+    usuário, bufferizamos cada chamada LLM e só emitimos se on_chat_model_end
+    confirmar que não houve tool_calls (i.e., é resposta final de texto).
+
+    Quando o Groq rejeita o formato de tool call gerado pelo modelo, capturamos o
+    APIError e fazemos fallback para o chat síncrono, desde que nenhum chunk de
+    texto já tenha sido emitido ao cliente.
 
     Args:
         agente: Instância criada via criar_agente().
@@ -240,15 +290,27 @@ async def chat_stream(agente, query: str, thread_id: str) -> AsyncGenerator[str,
         thread_id: Identificador da sessão (habilita memória por usuário).
 
     Yields:
-        Chunks de texto conforme o LLM vai gerando.
+        Chunks de texto da resposta final do agente.
     """
     run_config = {"configurable": {"thread_id": thread_id}}
-    async for event in agente.astream_events(
-        {"messages": [HumanMessage(content=query)]},
-        config=run_config,
-        version="v2",
-    ):
-        if event["event"] == "on_chat_model_stream":
-            chunk = event["data"]["chunk"]
-            if chunk.content:
-                yield chunk.content
+    buffer: list[str] = []
+    state: dict = {"run_id": None}
+    yielded_any = False
+
+    try:
+        async for event in agente.astream_events(
+            {"messages": [HumanMessage(content=query)]},
+            config=run_config,
+            version="v2",
+        ):
+            for text in _processar_evento_stream(event, buffer, state):
+                yield text
+                yielded_any = True
+
+    except Exception as exc:
+        if "tool call validation failed" in str(exc) and not yielded_any:
+            logger.warning(f"Groq tool call format error — fallback para chat síncrono | {exc}")
+            resposta = await asyncio.to_thread(chat, agente, query, thread_id)
+            yield resposta
+        else:
+            raise
