@@ -1,5 +1,7 @@
 """Tool MCP: retorna os dados de um edital para geração de resumo em linguagem simples."""
 
+from datetime import datetime
+
 from loguru import logger
 
 from src.config import Config
@@ -38,8 +40,9 @@ def resumir_edital(
         logger.warning(f"resumir_edital | não encontrado: {numero_controle_pncp!r}")
         return {"erro": f"Licitação '{numero_controle_pncp}' não encontrada no banco de dados."}
 
-    for campo in ("data_abertura_proposta", "data_encerramento_proposta", "_extraido_em"):
-        if val := doc.get(campo):
+    for campo in ("data_abertura_proposta", "data_encerramento_proposta", "processado_em"):
+        val = doc.get(campo)
+        if val and isinstance(val, datetime):
             doc[campo] = val.isoformat()
 
     doc["fonte"] = "PNCP"

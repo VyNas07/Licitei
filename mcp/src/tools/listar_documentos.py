@@ -1,5 +1,7 @@
 """Tool MCP: retorna os dados de um edital para listagem de documentos necessários."""
 
+from datetime import datetime
+
 from loguru import logger
 
 from src.config import Config
@@ -52,7 +54,8 @@ def listar_documentos(
         logger.warning(f"listar_documentos | não encontrado: {numero_controle_pncp!r}")
         return {"erro": f"Licitação '{numero_controle_pncp}' não encontrada no banco de dados."}
 
-    if enc := doc.get("data_encerramento_proposta"):
+    enc = doc.get("data_encerramento_proposta")
+    if enc and isinstance(enc, datetime):
         doc["data_encerramento_proposta"] = enc.isoformat()
 
     doc["fonte"] = "PNCP"

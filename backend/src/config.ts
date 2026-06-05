@@ -24,7 +24,7 @@ export const config = {
   mongo: {
     uri: required('MONGO_URI'),
     dbName: required('MONGO_DB_NAME'),
-    collection: required('MONGO_COLLECTION'),
+    collection: process.env.MONGO_COLLECTION ?? 'contratos_ativos',
   },
 
   mcp: {

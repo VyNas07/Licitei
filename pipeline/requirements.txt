@@ -1,0 +1,29 @@
+# Kafka
+confluent-kafka==2.3.0
+
+# HTTP
+requests>=2.31.0
+
+# Validação de dados
+pydantic>=2.5.0
+
+# Camada Bronze — Parquet
+pyarrow>=14.0.0
+
+# Camada Silver — ACID, dedup, time travel
+pyiceberg[pyarrow]>=0.6.0
+
+# Camada Gold — MongoDB
+pymongo>=4.6.0
+
+# Orquestração
+prefect>=2.14.0
+
+# Dashboard
+streamlit>=1.30.0
+plotly>=5.18.0
+pandas>=2.1.0
+
+# Utilitários
+python-dotenv>=1.0.0
+loguru>=0.7.0

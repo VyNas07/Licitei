@@ -1,4 +1,4 @@
-"""Loader da camada Bronze — persiste batches em Parquet particionado por data.
+"""Writer da camada Bronze — persiste batches em Parquet particionado por data.
 
 Particionamento:
     {BRONZE_BASE_PATH}/contratacoes/year=YYYY/month=MM/day=DD/batch_<timestamp>.parquet
@@ -7,7 +7,6 @@ O arquivo é imutável após criação. O sufixo timestamp garante que execuçõ
 repetidas para a mesma data não sobrescrevam arquivos anteriores.
 """
 
-import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -36,17 +35,17 @@ _SCHEMA = pa.schema(
 )
 
 
-class BronzeLoader:
+class BronzeWriter:
     """Grava batches de contratos validados em arquivos Parquet particionados."""
 
     def __init__(self, base_path: str) -> None:
-        """Inicializa o loader com o caminho base da camada Bronze.
+        """Inicializa o writer com o caminho base da camada Bronze.
 
         Args:
             base_path: Diretório raiz onde os arquivos Parquet serão gravados.
         """
         self._base = Path(base_path)
-        logger.info(f"BronzeLoader inicializado | base_path={self._base.resolve()}")
+        logger.info(f"BronzeWriter inicializado | base_path={self._base.resolve()}")
 
     def gravar(self, registros: list[PNCPRawContract]) -> Path:
         """Grava um batch de registros em um único arquivo Parquet.
@@ -85,7 +84,7 @@ class BronzeLoader:
         pq.write_table(tabela, destino, compression="snappy")
 
         logger.info(
-            f"Batch gravado | "
+            f"Bronze gravado | "
             f"{len(registros)} registros | "
             f"arquivo={destino}"
         )
@@ -95,7 +94,7 @@ class BronzeLoader:
 def _contrato_para_dict(contrato: PNCPRawContract) -> dict:
     """Converte um contrato para dicionário compatível com o schema PyArrow."""
 
-    def _normalizar_dt(dt):
+    def _normalizar_dt(dt: datetime | None) -> datetime | None:
         if dt is None:
             return None
         if dt.tzinfo is None:

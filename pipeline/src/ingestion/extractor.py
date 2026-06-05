@@ -33,7 +33,7 @@ class PNCPExtractor:
         self._tamanho_pagina = tamanho_pagina
         self._timeout = timeout
         self._session = requests.Session()
-        self._session.headers.update({"User-Agent": "Licitei-ETL/1.0 (CESAR School ADS)"})
+        self._session.headers.update({"User-Agent": "Licitei-Pipeline/1.0 (CESAR School ADS)"})
         logger.info(
             f"PNCPExtractor inicializado | base_url={self._base_url} "
             f"| tamanho_pagina={self._tamanho_pagina}"
@@ -52,7 +52,7 @@ class PNCPExtractor:
         falhas permanentes e erros 5xx/rede com retry exponencial.
 
         Args:
-            endpoint: Caminho do endpoint relativo à base_url (ex: '/v1/contratacoes/publicacao').
+            endpoint: Caminho do endpoint relativo à base_url.
             params: Parâmetros de query string base (sem pagina/tamanhoPagina).
             pagina: Número da página a ser buscada (começa em 1).
             tentativa: Número da tentativa atual (usado no cálculo do backoff).
@@ -93,7 +93,10 @@ class PNCPExtractor:
             return self._retry(endpoint, params, pagina, tentativa, response.status_code)
 
         response.raise_for_status()
-        return response.json()
+        try:
+            return response.json()
+        except requests.exceptions.JSONDecodeError:
+            return self._retry(endpoint, params, pagina, tentativa, "corpo-vazio-200")
 
     def _retry(
         self,
@@ -144,9 +147,9 @@ class PNCPExtractor:
         """Loop de paginação genérico para qualquer endpoint do PNCP.
 
         Args:
-            endpoint: Caminho do endpoint (ex: '/v1/contratacoes/publicacao').
+            endpoint: Caminho do endpoint (ex: '/contratacoes/publicacao').
             params: Parâmetros base da requisição (sem pagina/tamanhoPagina).
-            descricao: Rótulo descritivo usado nos logs (ex: 'publicações').
+            descricao: Rótulo descritivo usado nos logs.
 
         Returns:
             Lista com todos os registros extraídos de todas as páginas.
@@ -185,7 +188,6 @@ class PNCPExtractor:
             if resultado.get("paginasRestantes", 0) == 0:
                 break
 
-            # Proteção contra loop infinito
             if total_paginas is not None and pagina >= total_paginas:
                 break
 
@@ -205,10 +207,9 @@ class PNCPExtractor:
 
         Args:
             codigo_modalidade: Código da modalidade de contratação (obrigatório pela API).
-                Ex: 8 = Dispensa de Licitação.
             data_inicial: Data de início da consulta no formato YYYYMMDD.
             data_final: Data de fim da consulta no formato YYYYMMDD.
-            uf: Sigla do estado para filtrar (ex: 'PE'). None retorna todos os estados.
+            uf: Sigla do estado para filtrar. None retorna todos os estados.
 
         Returns:
             Lista de dicionários com os dados brutos de cada contratação.
@@ -225,32 +226,4 @@ class PNCPExtractor:
             "/contratacoes/publicacao",
             params,
             f"publicações ({data_inicial}–{data_final}, modalidade={codigo_modalidade})",
-        )
-
-    def extrair_propostas(
-        self,
-        data_final: str,
-        uf: str | None = None,
-    ) -> list[dict]:
-        """Extrai contratações com recebimento de propostas em aberto.
-
-        Retorna licitações ativas onde o prazo de envio de propostas ainda não encerrou.
-        A data_final deve ser maior ou igual à data atual (validação feita no pipeline).
-
-        Args:
-            data_final: Data limite de encerramento das propostas (formato YYYYMMDD).
-                Deve ser >= data atual para evitar erro 422 da API.
-            uf: Sigla do estado para filtrar (ex: 'PE'). None retorna todos os estados.
-
-        Returns:
-            Lista de dicionários com os dados brutos de cada licitação aberta.
-        """
-        params: dict[str, Any] = {"dataFinal": data_final}
-        if uf:
-            params["uf"] = uf
-
-        return self._extrair_endpoint(
-            "/contratacoes/proposta",
-            params,
-            f"propostas abertas (dataFinal={data_final})",
         )
