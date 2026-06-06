@@ -45,7 +45,7 @@ export default function Cadastro() {
 
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email: email.trim(),
       password: senha,
     });
@@ -60,6 +60,15 @@ export default function Cadastro() {
       return;
     }
 
+    if (!authData.session) {
+      setLoading(false);
+      Alert.alert(
+        'Confirme seu e-mail',
+        `Enviamos um link de confirmação para ${email.trim()}. Acesse seu e-mail e clique no link para ativar sua conta.`,
+      );
+      return;
+    }
+
     try {
       await api.put('/perfil', {
         nome_fantasia: nome,
@@ -68,6 +77,7 @@ export default function Cadastro() {
       });
     } catch (err) {
       console.warn('Perfil não criado, mas usuário cadastrado:', err);
+      Alert.alert('Atenção', 'Conta criada, mas o perfil não pôde ser salvo. Complete-o em Configurações.');
     }
 
     setLoading(false);

@@ -1,10 +1,34 @@
-import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { useState, useEffect } from 'react';
+import { Tabs, useRouter } from 'expo-router';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import api from '../../src/services/api';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    api.get('/perfil')
+      .then(() => setReady(true))
+      .catch((err) => {
+        if (err?.response?.status === 404) {
+          router.replace('/completar-perfil');
+        } else {
+          setReady(true);
+        }
+      });
+  }, []);
+
+  if (!ready) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC' }}>
+        <ActivityIndicator size="large" color="#0F172A" />
+      </View>
+    );
+  }
 
   return (
     <Tabs
