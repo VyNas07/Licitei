@@ -55,10 +55,8 @@ export default function RootLayout() {
           router.replace('/onboarding');
         }
       }
-    } else {
-      if (inTabs || inOnboarding) {
-        router.replace('/(auth)/login');
-      }
+    } else if (inTabs || inOnboarding || pathname === '/completar-perfil') {
+      router.replace('/(auth)/login');
     }
   }, [session, loading, onboardingDone, segments, pathname, router]);
 

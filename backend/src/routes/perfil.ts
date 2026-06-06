@@ -33,6 +33,7 @@ export const perfilRoutes = new Elysia({ prefix: '/perfil' })
       if (body.nome_fantasia) updates['nome_fantasia'] = body.nome_fantasia
       if (body.uf) updates['uf'] = body.uf.toUpperCase()
       if (body.ramo_atuacao) updates['ramo_atuacao'] = body.ramo_atuacao
+      if (body.cnae) updates['cnae'] = body.cnae
 
       if (body.cnpj) {
         const cnpjLimpo = body.cnpj.replaceAll(/\D/g, '')
@@ -57,11 +58,28 @@ export const perfilRoutes = new Elysia({ prefix: '/perfil' })
         }
       }
 
-      const { data, error } = await supabase
-        .from('mei_profile')
-        .upsert(updates, { onConflict: 'user_id' })
-        .select()
-        .single()
+      // Upsert apenas quando os campos obrigatórios estão presentes (criação completa).
+      // Atualizações parciais (ex: só cnae/ramo) usam update para evitar violação NOT NULL
+      // nos campos obrigatórios que não foram enviados no body.
+      const isFullCreate = Boolean(updates['nome_fantasia'] && updates['cnpj'] && updates['uf'])
+
+      let data, error
+
+      if (isFullCreate) {
+        ;({ data, error } = await supabase
+          .from('mei_profile')
+          .upsert(updates, { onConflict: 'user_id' })
+          .select()
+          .single())
+      } else {
+        const { user_id: _uid, ...fields } = updates
+        ;({ data, error } = await supabase
+          .from('mei_profile')
+          .update(fields)
+          .eq('user_id', userId)
+          .select()
+          .single())
+      }
 
       if (error) {
         if (error.code === '23502') {
@@ -81,6 +99,7 @@ export const perfilRoutes = new Elysia({ prefix: '/perfil' })
         cnpj: t.Optional(t.String()),
         uf: t.Optional(t.String({ minLength: 2, maxLength: 2 })),
         ramo_atuacao: t.Optional(t.String()),
+        cnae: t.Optional(t.String()),
       }),
     }
   )

@@ -92,6 +92,14 @@ function matchesKeywords(objeto: string, keywords: string[]): boolean {
 const buildCacheKey = (uf: string, valor: string, cnae: string) =>
   `oportunidades_${uf}_${valor}_${cnae}`;
 
+function validaFaixaValor(valor: number, faixa: string): boolean {
+  if (faixa === 'Todos') return true;
+  if (faixa === 'Até R$ 80 mil (exclusivo MEI)') return valor <= 80000;
+  if (faixa === 'R$ 80 mil – R$ 200 mil') return valor > 80000 && valor <= 200000;
+  if (faixa === 'Acima de R$ 200 mil') return valor > 200000;
+  return true;
+}
+
 export default function HomeUsuario() {
   const router = useRouter();
 
@@ -110,6 +118,7 @@ export default function HomeUsuario() {
   const [modalBuscasSalvas, setModalBuscasSalvas] = useState(false);
   const [pagina, setPagina] = useState(1);
   const [nomeUsuario, setNomeUsuario] = useState('');
+  const [cnaesDoPerfil, setCnaesDoPerfil] = useState<string[]>([]);
   const ITENS_POR_PAGINA = 5;
 
   const { buscas, carregando: carregandoBuscas, erro: erroBuscas, carregar: recarregarBuscas, salvar, remover } = useBuscasSalvas();
@@ -142,17 +151,12 @@ export default function HomeUsuario() {
 
   useEffect(() => {
     api.get('/perfil')
-      .then(({ data }) => setNomeUsuario(data.nome_fantasia ?? ''))
-      .catch(() => {}); // silent fail — mantém string vazia
+      .then(({ data }) => {
+        setNomeUsuario(data.nome_fantasia ?? '');
+        if (data.cnae) setCnaesDoPerfil([data.cnae]);
+      })
+      .catch(() => {});
   }, []);
-
-  const validaFaixaValor = (valor: number, faixa: string) => {
-    if (faixa === 'Todos') return true;
-    if (faixa === 'Até R$ 80 mil (exclusivo MEI)') return valor <= 80000;
-    if (faixa === 'R$ 80 mil – R$ 200 mil') return valor > 80000 && valor <= 200000;
-    if (faixa === 'Acima de R$ 200 mil') return valor > 200000;
-    return true;
-  };
 
   const contagensDinamicas = useMemo(() => {
     const stats: Record<string, number> = {};
@@ -359,11 +363,12 @@ export default function HomeUsuario() {
         contagens={contagensDinamicas}
       />
       
-      <FilterModal 
-        visivel={modalFiltros} 
-        fechar={() => setModalFiltros(false)} 
-        filtrosAtuais={filtrosAvancados} 
-        aplicar={(f) => { setFiltrosAvancados(f); setPagina(1); }} 
+      <FilterModal
+        visivel={modalFiltros}
+        fechar={() => setModalFiltros(false)}
+        filtrosAtuais={filtrosAvancados}
+        aplicar={(f) => { setFiltrosAvancados(f); setPagina(1); }}
+        cnaesDoPerfil={cnaesDoPerfil}
       />
     </SafeAreaView>
   );
