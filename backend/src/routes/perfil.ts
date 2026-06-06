@@ -3,6 +3,8 @@ import { authPlugin } from '../middleware/auth'
 import { supabase } from '../db/supabase'
 import { getCnaesFromCnpj } from '../services/brasilapi'
 
+const USER_OWNED_TABLES = ['saved_searches', 'documentos', 'participacoes', 'mei_profile'] as const
+
 export const perfilRoutes = new Elysia({ prefix: '/perfil' })
   .use(authPlugin)
 
@@ -82,3 +84,55 @@ export const perfilRoutes = new Elysia({ prefix: '/perfil' })
       }),
     }
   )
+
+  // DELETE /perfil/account — remove a conta autenticada e dados pessoais associados (LGPD)
+  .delete('/account', async ({ userId, set }) => {
+    const { data: documentos, error: documentosError } = await supabase
+      .from('documentos')
+      .select('url')
+      .eq('user_id', userId)
+
+    if (documentosError) {
+      set.status = 500
+      return { error: 'Erro ao buscar documentos da conta' }
+    }
+
+    const storagePaths = (documentos ?? [])
+      .map((documento) => documento.url)
+      .filter((url): url is string => Boolean(url))
+
+    if (storagePaths.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from('documentos')
+        .remove(storagePaths)
+
+      if (storageError) {
+        set.status = 500
+        return { error: 'Erro ao remover arquivos da conta' }
+      }
+    }
+
+    const tabelasComErro: string[] = []
+    for (const table of USER_OWNED_TABLES) {
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq('user_id', userId)
+
+      if (error) tabelasComErro.push(table)
+    }
+
+    if (tabelasComErro.length > 0) {
+      set.status = 500
+      return { error: `Erro ao remover dados em: ${tabelasComErro.join(', ')}. Conta de autenticação mantida para nova tentativa.` }
+    }
+
+    const { error: authError } = await supabase.auth.admin.deleteUser(userId)
+
+    if (authError) {
+      set.status = 500
+      return { error: 'Dados removidos, mas erro ao encerrar sessão de autenticação. Contate o suporte.' }
+    }
+
+    return { message: 'Conta removida com sucesso' }
+  })

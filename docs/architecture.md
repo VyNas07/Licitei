@@ -5,8 +5,8 @@
 O **Licitei** resolve um problema de acesso e complexidade: as licitações públicas brasileiras
 estão disponíveis no portal PNCP, mas sua interface e linguagem técnica são barreiras reais
 para Microempreendedores Individuais (MEIs). A plataforma consome os dados diretamente da
-API pública do PNCP via pipeline ETL, os processa e os armazena em bases otimizadas para
-cada tipo de consulta.
+API pública do PNCP via pipeline Medallion com Kafka, os processa em três camadas (Bronze →
+Silver → Gold) e os armazena em bases otimizadas para cada tipo de consulta.
 
 O dado processado é servido por uma API REST (Elysia) consumida pelo app mobile e por um
 servidor MCP (FastMCP) que alimenta um assistente de IA. O assistente interpreta editais
@@ -19,14 +19,17 @@ alcançáveis para quem não tem familiaridade com o processo público.
 
 ```mermaid
 flowchart LR
-    A[Dados do Governo] --> B[API PNCP]
-    B --> C[ETL]
-    C --> E[(MongoDB Atlas)]
+    A[API PNCP] --> B[Extract Worker]
+    B -->|raw.licitacoes| C[Transform Worker]
+    C -->|Bronze Parquet| F[(Bronze\nParquet local)]
+    C -->|transformed.licitacoes| D[Load Worker]
+    D -->|Silver| S[(Silver\nPyIceberg + SQLite)]
+    D -->|Gold| E[(MongoDB Atlas\ncontratos_ativos\nKPIs)]
     E --> G[MCP / FastMCP]
     E --> I[Backend - Elysia]
     G --> H{LLM - Groq}
     H --> G
-    I <--> D[(Supabase - Postgres)]
+    I <--> DB[(Supabase - Postgres)]
     I --> G
     G --> I
     I <--> J[App Mobile]
@@ -38,18 +41,17 @@ flowchart LR
 
 | Camada | Tecnologia | Responsabilidade |
 | --- | --- | --- |
-| Extração (ETL batch) | Python · `requests` | Paginação completa da API PNCP com retry e backoff exponencial |
-| Ingestão (DataOps) | Kafka (KRaft) · `kafka-python` | Producer publica editais no tópico `editais_raw`; consumer consome em micro-batches |
-| Bronze | Apache Parquet · PyArrow | Dado bruto imutável, particionado por data de extração — base para reprocessamento |
-| Silver | Apache Iceberg · PyIceberg | Dado limpo, tipado, deduplicado — ACID e time travel *(Sprint 3)* |
-| Gold | MongoDB Atlas | KPIs agregados prontos para o app: por UF, CNAE, prazo e elegibilidade *(Sprint 3)* |
-| Transformação | Python · `pandas` | Normalização de campos, cast de tipos, descarte de registros inválidos |
-| Carga documental | MongoDB Atlas | Armazenamento dos editais para consultas flexíveis e full-text |
+| Extração | Python · `requests` | Extract Worker pagina a API PNCP e publica uma mensagem Kafka por licitação |
+| Ingestão (Kafka) | Zookeeper + `confluentinc/cp-kafka:7.5.0` · `confluent-kafka` | Tópicos `raw.licitacoes` e `transformed.licitacoes` com DLQs para registros inválidos |
+| Bronze | Apache Parquet · PyArrow | Dado bruto imutável, particionado por `year/month/day` — base para reprocessamento |
+| Silver | Apache Iceberg · PyIceberg | Dado limpo, tipado, deduplicado — ACID e time travel via snapshots; upsert SQLite paralelo |
+| Gold | MongoDB Atlas | `contratos_ativos` (coleção principal) + 5 coleções KPI agregadas do dataset completo |
+| DLQ | Kafka topics `.dlq` | Preserva mensagens com erro sem bloquear o pipeline; monitorável independentemente |
 | Dados do usuário | Supabase (Postgres) | Perfis MEI, participações, documentos e alertas — escritos pelo backend |
-| Servidor MCP | FastMCP · Python | Tools expostas ao LLM: busca, resumo, documentos necessários |
-| LLM | Groq llama-3.3-70b-versatile (prod) · qwen2.5:7b Ollama (dev) | Interpretação de linguagem natural, geração de respostas |
-| Backend | Elysia · TypeScript | API REST com autenticação JWT, integração MongoDB + Supabase + MCP |
-| Mobile | React Native | Interface do usuário: busca, detalhe do edital, assistente IA |
+| Servidor MCP | FastMCP · Python · LangGraph ReAct | Tools expostas ao LLM: busca, listagem, data atual, resumo, checklist, documentos |
+| LLM | Groq llama-3.3-70b-versatile (prod) · Ollama (dev fallback) | Interpretação de linguagem natural, geração de respostas |
+| Backend | Elysia · TypeScript | API REST com auth JWT, integração MongoDB (`contratos_ativos`) + Supabase + MCP |
+| Mobile | React Native · Expo Router | Interface do usuário: busca, detalhe, assistente IA, alertas, participações |
 
 ---
 
@@ -57,37 +59,40 @@ flowchart LR
 
 ```text
 API PNCP
-  ├─► ETL batch (extractor → transformer → loader)
-  │     └─► MongoDB Atlas         — editais normalizados (consulta direta pelo backend)
-  │
-  └─► DataOps pipeline
-        └─► Kafka (editais_raw)
-              └─► Bronze (Parquet, particionado por data) — dado raw imutável
-                    └─► Silver (PyIceberg — Sprint 3)     — dado limpo + time travel
-                          └─► Gold (MongoDB Atlas — Sprint 3) — KPIs para o app
+  └─► Extract Worker (pipeline/)
+        └─► Kafka raw.licitacoes
+              └─► Transform Worker
+                    ├─► Bronze (Parquet, particionado por year/month/day) — dado bruto imutável
+                    └─► Kafka transformed.licitacoes
+                          └─► Load Worker
+                                ├─► Silver (PyIceberg — ACID, dedup, time travel)
+                                ├─► SQLite  (upsert por numero_controle_pncp)
+                                └─► Gold MongoDB Atlas
+                                      ├─► contratos_ativos  — coleção principal de editais
+                                      └─► kpi_por_uf · kpi_por_modalidade · kpi_prazos
+                                          kpi_elegibilidade · kpi_dashboard
 
-MongoDB Atlas
-  ├─► Backend Elysia (API REST)   — consultas de editais
+MongoDB Atlas (contratos_ativos + KPIs)
+  ├─► Backend Elysia (API REST)   — GET /editais, GET /alertas
   └─► Servidor MCP (FastMCP)      — tools do assistente IA
 
 Supabase (Postgres)
-  └─► Backend Elysia              — dados do usuário: perfil MEI, participações, documentos
+  └─► Backend Elysia              — perfil MEI, participações, documentos, alertas
 
 Backend Elysia
-  ├─► Servidor MCP (FastMCP)      — encaminha query do usuário via HTTP
-  └─► Mobile React Native         — API REST (telas de busca, detalhe, perfil)
+  ├─► Servidor MCP (FastMCP)      — encaminha query via HTTP + SSE (proxy)
+  └─► Mobile React Native         — API REST autenticada por JWT
 
-Servidor MCP
-  └─► LLM (Groq · fallback Ollama)
-        └─► Backend Elysia        — resposta do assistente via SSE
-              └─► Mobile          — tela do assistente IA
+Servidor MCP (LangGraph ReAct)
+  └─► LLM Groq llama-3.3-70b-versatile (fallback: Ollama)
+        └─► resposta streaming SSE → Backend → Mobile
 ```
 
 **Passo a passo:**
 
-1. O pipeline ETL roda sob demanda ou agendado, consultando `/contratacoes/publicacao` e `/contratacoes/proposta` na API PNCP.
-2. Os registros são normalizados (snake_case, tipos, campos aninhados) e persistidos via upsert no MongoDB Atlas.
-3. O backend Elysia expõe endpoints REST autenticados por JWT, consultando MongoDB para editais e Supabase para dados do usuário.
-4. O servidor MCP conecta-se ao MongoDB e expõe tools ao LLM: busca de editais, resumo de objeto, lista de documentos exigidos.
-5. Quando o usuário aciona o assistente no app, o backend encaminha a mensagem ao MCP via HTTP + SSE; o MCP chama o LLM com as tools disponíveis e devolve a resposta em stream.
-6. O Mobile consome os endpoints REST para as telas de busca e detalhe, e o stream SSE para a tela do assistente.
+1. O Extract Worker roda sob demanda ou agendado pelo Prefect, consultando `/contratacoes/publicacao` na API PNCP e publicando uma mensagem Kafka por licitação em `raw.licitacoes`.
+2. O Transform Worker consome `raw.licitacoes`, grava o dado bruto em Parquet (Bronze), normaliza e enriquece os campos (snake_case, tipos, `elegivel_mei`, `dias_ate_encerramento`, `faixa_valor`) e publica em `transformed.licitacoes`. Registros inválidos vão para o DLQ sem bloquear o pipeline.
+3. O Load Worker consome `transformed.licitacoes` e persiste nas três camadas: Silver (PyIceberg), SQLite e Gold (MongoDB). Os KPIs são recalculados após cada ciclo via agregação sobre o dataset completo.
+4. O backend Elysia expõe endpoints REST autenticados por JWT, consultando `contratos_ativos` para editais e Supabase para dados do usuário.
+5. O servidor MCP conecta-se ao MongoDB e expõe tools ao LLM (agente LangGraph ReAct): busca, listagem, resumo, checklist, documentos e data atual.
+6. Quando o usuário aciona o assistente no app, o backend encaminha via HTTP + SSE; o MCP chama o LLM e devolve a resposta em stream.

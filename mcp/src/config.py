@@ -29,6 +29,7 @@ class Config:
     mcp_host: str
     mcp_port: int
     cache_ttl: int
+    sqlite_memoria_path: str
 
 
 def _ler_opcional(var: str) -> str | None:
@@ -79,4 +80,5 @@ def carregar_config() -> Config:
         mcp_host=os.getenv("MCP_HOST", "0.0.0.0"),
         mcp_port=int(os.getenv("PORT", os.getenv("MCP_PORT", "8000"))),
         cache_ttl=int(os.getenv("CACHE_TTL", "3600")),
+        sqlite_memoria_path=os.getenv("SQLITE_MEMORIA_PATH", "data/memoria.db"),
     )

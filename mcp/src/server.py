@@ -7,8 +7,10 @@ Execução:
     python -m src.server
 """
 
+import asyncio
 import json
 import sys
+import uuid
 from pathlib import Path
 
 from fastmcp import FastMCP
@@ -16,14 +18,16 @@ from loguru import logger
 from starlette.requests import Request
 from starlette.responses import JSONResponse, StreamingResponse
 
+from src.agente import chat as _chat, chat_stream as _chat_stream, criar_agente
 from src.cache import Cache
 from src.config import carregar_config
-from src.llm import chat, chat_stream
 from src.tools.buscar_licitacoes import buscar_licitacoes as _buscar
+from src.tools.data_atual import data_atual as _data_atual
 from src.tools.detalhar_licitacao import detalhar_licitacao as _detalhar
 from src.tools.gerar_checklist import gerar_checklist as _checklist
 from src.tools.keywords_cnae import keywords_cnae as _keywords_cnae
 from src.tools.listar_documentos import listar_documentos as _documentos
+from src.tools.listar_licitacoes import listar_licitacoes as _listar_licitacoes
 from src.tools.resumir_edital import resumir_edital as _resumir
 
 # ---------------------------------------------------------------------------
@@ -68,17 +72,9 @@ def _sse_event(event: str, data: dict) -> bytes:
 _configurar_logger()
 config = carregar_config()
 cache = Cache(ttl=config.cache_ttl)
+agente = criar_agente(config)
 
 mcp = FastMCP("licitei")
-
-_ferramentas = {
-    "buscar_licitacoes": lambda **kw: _buscar(**kw, config=config),
-    "detalhar_licitacao": lambda **kw: _detalhar(**kw, config=config),
-    "keywords_cnae": lambda **kw: _keywords_cnae(**kw),
-    "resumir_edital": lambda **kw: _resumir(**kw, config=config),
-    "gerar_checklist": lambda **kw: _checklist(**kw, config=config),
-    "listar_documentos": lambda **kw: _documentos(**kw, config=config),
-}
 
 # ---------------------------------------------------------------------------
 # Tools MCP
@@ -158,6 +154,39 @@ def listar_documentos(numero_controle_pncp: str) -> dict:
     return _documentos(numero_controle_pncp=numero_controle_pncp, config=config)
 
 
+@mcp.tool()
+def data_atual() -> dict:
+    """Retorna a data e hora atual do servidor.
+
+    Use quando precisar saber a data atual para verificar se um edital está
+    vencido ou calcular prazos.
+    """
+    return _data_atual()
+
+
+@mcp.tool()
+def listar_licitacoes(
+    termo: str,
+    uf: str | None = None,
+    valor_max: float | None = None,
+    limite: int = 50,
+) -> dict:
+    """Lista todas as licitações correspondentes a uma busca, com contagem total.
+
+    Use quando o usuário quiser ver uma lista abrangente de licitações.
+    Retorna o total real encontrado e até 200 resultados.
+
+    Args:
+        termo: Palavra-chave para buscar (ex: "limpeza", "TI", "obras").
+        uf: Sigla do estado para filtrar (ex: "PE", "SP"). Opcional.
+        valor_max: Valor máximo estimado em reais. Opcional.
+        limite: Quantidade máxima de resultados (padrão: 50, máximo: 200).
+    """
+    return _listar_licitacoes(
+        termo=termo, uf=uf, valor_max=valor_max, limite=limite, config=config
+    )
+
+
 # ---------------------------------------------------------------------------
 # Endpoint HTTP: POST /chat
 # ---------------------------------------------------------------------------
@@ -165,12 +194,10 @@ def listar_documentos(numero_controle_pncp: str) -> dict:
 
 @mcp.custom_route("/chat", methods=["POST"])
 async def chat_handler(request: Request) -> JSONResponse:
-    """Recebe uma query em linguagem natural e retorna a resposta do LLM.
+    """Recebe query e thread_id, retorna resposta do agente LangGraph.
 
-    Verifica o cache antes de chamar o LLM. Armazena a resposta no cache
-    ao final para reutilização em queries idênticas.
-
-    Body JSON: {"query": "licitações de limpeza em PE"}
+    Body JSON: {"query": "licitações de limpeza em PE", "thread_id": "user-uuid"}
+    thread_id é opcional — sem ele, cada request é uma conversa independente.
     """
     try:
         body = await request.json()
@@ -181,15 +208,17 @@ async def chat_handler(request: Request) -> JSONResponse:
     if not query:
         return JSONResponse({"erro": "Campo 'query' é obrigatório."}, status_code=400)
 
+    thread_id = body.get("thread_id") or str(uuid.uuid4())
+
     try:
-        chave = Cache.chave(query)
+        chave = Cache.chave(f"{thread_id}:{query}")
         cached = cache.get(chave)
         if cached:
             logger.info(f"Cache hit | query={query!r}")
             return JSONResponse({"resposta": cached, "cache": True})
 
-        logger.info(f"Cache miss | query={query!r}")
-        resposta = chat(query=query, config=config, ferramentas=_ferramentas)
+        logger.info(f"Cache miss | query={query!r} | thread_id={thread_id!r}")
+        resposta = await asyncio.to_thread(_chat, agente, query, thread_id)
         cache.set(chave, resposta)
 
         return JSONResponse({"resposta": resposta, "cache": False})
@@ -198,9 +227,17 @@ async def chat_handler(request: Request) -> JSONResponse:
         return JSONResponse({"erro": str(exc)}, status_code=500)
 
 
+# ---------------------------------------------------------------------------
+# Endpoint HTTP: POST /chat/stream
+# ---------------------------------------------------------------------------
+
+
 @mcp.custom_route("/chat/stream", methods=["POST"])
 async def chat_stream_handler(request: Request) -> StreamingResponse | JSONResponse:
-    """Recebe uma query e devolve a resposta do LLM em SSE real."""
+    """Recebe query e thread_id, devolve tokens do agente LangGraph via SSE.
+
+    Body JSON: {"query": "...", "thread_id": "user-uuid"}
+    """
     try:
         body = await request.json()
     except Exception:
@@ -210,30 +247,14 @@ async def chat_stream_handler(request: Request) -> StreamingResponse | JSONRespo
     if not query:
         return JSONResponse({"erro": "Campo 'query' é obrigatório."}, status_code=400)
 
-    def event_stream():
+    thread_id = body.get("thread_id") or str(uuid.uuid4())
+
+    async def event_stream():
         yield _sse_event("start", {"message": "Processando pergunta"})
-
         try:
-            chave = Cache.chave(query)
-            cached = cache.get(chave)
-            if cached:
-                logger.info(f"Cache hit (stream) | query={query!r}")
-                yield _sse_event("message", {"content": cached, "cache": True})
-                yield _sse_event("done", {"cache": True})
-                return
-
-            logger.info(f"Cache miss (stream) | query={query!r}")
-            resposta_partes: list[str] = []
-
-            for event in chat_stream(
-                query=query, config=config, ferramentas=_ferramentas
-            ):
-                if event["event"] == "message":
-                    resposta_partes.append(str(event["data"].get("content", "")))
-                yield _sse_event(event["event"], event["data"])
-
-            cache.set(chave, "".join(resposta_partes))
-            yield _sse_event("done", {"cache": False})
+            async for chunk in _chat_stream(agente, query, thread_id):
+                yield _sse_event("message", {"content": chunk})
+            yield _sse_event("done", {})
         except Exception as exc:
             logger.exception(f"Erro no /chat/stream | query={query!r}")
             yield _sse_event(

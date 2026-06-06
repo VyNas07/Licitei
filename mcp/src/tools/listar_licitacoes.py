@@ -1,4 +1,4 @@
-"""Tool MCP: busca licitações no MongoDB por palavra-chave e filtros opcionais."""
+"""Tool MCP: lista licitações com contagem total de resultados."""
 
 from datetime import datetime
 
@@ -21,31 +21,32 @@ _CAMPOS = {
 }
 
 
-def buscar_licitacoes(
+def listar_licitacoes(
     termo: str,
     uf: str | None = None,
     valor_max: float | None = None,
-    limite: int = 10,
+    limite: int = 50,
     config: Config | None = None,
-) -> list[dict]:
-    """Busca licitações públicas no banco de dados por palavra-chave.
+) -> dict:
+    """Lista licitações públicas com contagem total de resultados.
 
-    Realiza busca textual no campo objeto_compra da licitação. Pode ser filtrada
-    por estado (UF) e valor máximo estimado.
+    Realiza busca textual no campo objeto_compra. Retorna o total real de
+    documentos encontrados antes da aplicação do limite, útil para informar
+    ao usuário quantas oportunidades existem no banco.
 
     Args:
-        termo: Palavra-chave para buscar no objeto da licitação (ex: "limpeza", "TI").
+        termo: Palavra-chave para buscar no objeto da licitação (ex: "limpeza").
         uf: Sigla do estado para filtrar (ex: "PE", "SP"). Opcional.
         valor_max: Valor máximo estimado em reais. Opcional.
-        limite: Quantidade máxima de resultados (padrão: 10, máximo: 50).
+        limite: Quantidade máxima de resultados (padrão: 50, máximo: 200).
         config: Configurações do servidor. Injetado pelo servidor.
 
     Returns:
-        Lista de licitações com campos resumidos.
+        Dict com total_encontrado, resultados e limite_aplicado.
     """
     assert config is not None, "Config não injetado — use o servidor MCP para chamar esta tool"
 
-    limite = min(limite, 50)
+    limite = min(limite, 200)
     query: dict = {"objeto_compra": {"$regex": termo, "$options": "i"}}
 
     if uf:
@@ -53,9 +54,10 @@ def buscar_licitacoes(
     if valor_max is not None:
         query["valor_total_estimado"] = {"$lte": valor_max}
 
-    logger.debug(f"buscar_licitacoes | termo={termo!r} | uf={uf} | valor_max={valor_max} | limite={limite}")
+    logger.debug(f"listar_licitacoes | termo={termo!r} | uf={uf} | limite={limite}")
 
     with MongoManager(config.mongo_uri, config.mongo_db_name, config.mongo_collection) as mongo:
+        total = mongo.collection.count_documents(query)
         cursor = mongo.collection.find(query, _CAMPOS).limit(limite)
         resultados = []
         for doc in cursor:
@@ -64,5 +66,9 @@ def buscar_licitacoes(
                 doc["data_encerramento_proposta"] = enc.isoformat()
             resultados.append(doc)
 
-    logger.info(f"buscar_licitacoes | {len(resultados)} resultado(s) para {termo!r}")
-    return resultados
+    logger.info(f"listar_licitacoes | {len(resultados)} de {total} total para {termo!r}")
+    return {
+        "total_encontrado": total,
+        "resultados": resultados,
+        "limite_aplicado": limite,
+    }

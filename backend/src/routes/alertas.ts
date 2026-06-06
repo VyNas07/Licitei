@@ -78,7 +78,7 @@ async function alertasNovosEditais(perfil: Perfil): Promise<Record<string, unkno
   const collection = await getCollection()
   const limite48h = new Date(Date.now() - 48 * 60 * 60 * 1000)
   const filter: Filter<Document> = {
-    _extraido_em: { $gte: limite48h },
+    processado_em: { $gte: limite48h.toISOString() },
     objeto_compra: { $regex: keywords.slice(0, 8).map(escapeRegex).join('|'), $options: 'i' },
     valor_total_estimado: { $lte: TETO_MEI },
   }

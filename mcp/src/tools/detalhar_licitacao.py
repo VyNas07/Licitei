@@ -1,5 +1,7 @@
 """Tool MCP: retorna o documento completo de uma licitação pelo ID."""
 
+from datetime import datetime
+
 from loguru import logger
 
 from src.config import Config
@@ -35,8 +37,9 @@ def detalhar_licitacao(
         logger.warning(f"detalhar_licitacao | não encontrado: {numero_controle_pncp!r}")
         return {"erro": f"Licitação '{numero_controle_pncp}' não encontrada no banco de dados."}
 
-    for campo in ("data_abertura_proposta", "data_encerramento_proposta", "_extraido_em"):
-        if val := doc.get(campo):
+    for campo in ("data_abertura_proposta", "data_encerramento_proposta", "processado_em"):
+        val = doc.get(campo)
+        if val and isinstance(val, datetime):
             doc[campo] = val.isoformat()
 
     logger.info(f"detalhar_licitacao | encontrado: {numero_controle_pncp!r}")
