@@ -12,7 +12,6 @@ import {
   Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { PERFIL_MOCK } from '../../lib/mock-data'; // Importando seu perfil real[cite: 1]
 
 interface FiltrosOportunidade {
   uf: string;
@@ -27,6 +26,7 @@ interface Props {
   readonly fechar: () => void;
   readonly filtrosAtuais: FiltrosOportunidade;
   readonly aplicar: (filtros: FiltrosOportunidade) => void;
+  readonly cnaesDoPerfil?: string[];
 }
 
 const CIDADES_POR_UF: Record<string, string[]> = {
@@ -37,7 +37,7 @@ const CIDADES_POR_UF: Record<string, string[]> = {
   BA: ['Salvador', 'Feira de Santana', 'Vitória da Conquista', 'Camaçari'],
 };
 
-export function FilterModal({ visivel, fechar, filtrosAtuais, aplicar }: Props) {
+export function FilterModal({ visivel, fechar, filtrosAtuais, aplicar, cnaesDoPerfil = [] }: Props) {
   const [uf, setUf] = useState(filtrosAtuais?.uf || 'Todas');
   const [municipio, setMunicipio] = useState(filtrosAtuais?.municipio || '');
   const [valor, setValor] = useState(filtrosAtuais?.valor || 'Todos');
@@ -49,9 +49,6 @@ export function FilterModal({ visivel, fechar, filtrosAtuais, aplicar }: Props) 
   const ufsPrincipais = ['Todas', 'PE', 'SP', 'RJ', 'MG', 'BA'];
   const todosEstados = ['AC', 'AL', 'AP', 'AM', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'PA', 'PB', 'PR', 'PI', 'RN', 'RS', 'RO', 'RR', 'SC', 'SE', 'TO'];
   
-  // Pegando as CNAEs dinamicamente do seu mock[cite: 1]
-  const cnaesDoPerfil = PERFIL_MOCK.cnaes.map(c => c.codigo);
-
   useEffect(() => {
     if (uf !== 'Todas' && municipio.length >= 1) {
       const filtradas = CIDADES_POR_UF[uf]?.filter(c =>
