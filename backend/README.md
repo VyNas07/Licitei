@@ -155,6 +155,9 @@ EXPO_PUBLIC_API_URL=http://localhost:3000
 | `bun install` | Instala dependências respeitando `bun.lock`. |
 | `bun run dev` | Inicia a API com hot reload. |
 | `bun run start` | Inicia a API sem hot reload. |
+| `bun run smoke:prod` | Executa smoke tests read-only contra o backend publicado. |
+
+Guia dos smoke tests: [`SMOKE.md`](SMOKE.md).
 
 ---
 
