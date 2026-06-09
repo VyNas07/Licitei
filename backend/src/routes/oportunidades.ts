@@ -45,8 +45,7 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
 
         if (uf) filter['uf'] = uf.toUpperCase()
 
-        // TODO: restaurar em produção — filtra só editais ainda abertos
-        // filter['data_encerramento_proposta'] = { $gte: new Date() }
+        filter['data_encerramento_proposta'] = { $gte: new Date() }
 
         if (keywords.length > 0) {
           const escapeRegex = (str: string) => str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
@@ -76,8 +75,16 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
           collection.countDocuments(filter),
         ])
 
+        const agora = Date.now()
+        const dataComDias = data.map((edital: Document) => ({
+          ...edital,
+          dias_ate_encerramento: edital.data_encerramento_proposta
+            ? Math.ceil((new Date(edital.data_encerramento_proposta as string).getTime() - agora) / 86_400_000)
+            : -1,
+        }))
+
         return {
-          data,
+          data: dataComDias,
           total,
           page: pageNum,
           pages: Math.ceil(total / limitNum),

@@ -11,13 +11,16 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
     '/',
     async ({ query, set }) => {
       try {
-        const { page = 1, limit = 20, uf, valor_min, valor_max, situacao, q } = query
+        const { page = 1, limit = 20, uf, valor_min, valor_max, situacao, q, incluir_vencidos = false } = query
         const pageNum = Math.max(1, Number(page))
         const limitNum = Math.min(50, Math.max(1, Number(limit)))
         const skip = (pageNum - 1) * limitNum
 
-        // TODO: filtrar por data_encerramento_proposta em produção
         const filter: Filter<Document> = {}
+
+        if (!incluir_vencidos) {
+          filter['data_encerramento_proposta'] = { $gte: new Date() }
+        }
 
         const escapeRegex = (str: string) => str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
         if (uf) filter['uf'] = uf.toUpperCase()
@@ -36,7 +39,18 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
         const [data, total] = await Promise.all([
           collection.aggregate([
             { $match: filter },
-            { $addFields: { _sort_data: { $ifNull: ['$data_encerramento_proposta', nullsSentinel] } } },
+            {
+              $addFields: {
+                _sort_data: { $ifNull: ['$data_encerramento_proposta', nullsSentinel] },
+                dias_ate_encerramento: {
+                  $cond: {
+                    if: { $gt: ['$data_encerramento_proposta', null] },
+                    then: { $toInt: { $divide: [{ $subtract: ['$data_encerramento_proposta', '$$NOW'] }, 86_400_000] } },
+                    else: -1,
+                  },
+                },
+              },
+            },
             { $sort: { _sort_data: 1 } },
             { $skip: skip },
             { $limit: limitNum },
@@ -65,6 +79,7 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
         valor_max: t.Optional(t.Numeric()),
         situacao: t.Optional(t.String()),
         q: t.Optional(t.String()),
+        incluir_vencidos: t.Optional(t.BooleanString()),
       }),
     }
   )
