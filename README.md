@@ -69,6 +69,7 @@ Escolha o track em que vai trabalhar e siga o README correspondente:
 
 | Subprojeto | README |
 | --- | --- |
+| Setup Backend + Mobile | [SETUP.md](SETUP.md) |
 | Pipeline (Kafka + Medallion + ETL) | [pipeline/README.md](pipeline/README.md) |
 | Backend (API REST) | [backend/README.md](backend/README.md) |
 | Mobile (app React Native) | [mobile/README.md](mobile/README.md) |

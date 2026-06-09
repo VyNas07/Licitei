@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "start": "bun src/index.ts"
+    "start": "bun src/index.ts",
+    "smoke:prod": "bun run scripts/smoke-production.ts"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.2.3",
