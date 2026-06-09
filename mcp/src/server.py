@@ -85,19 +85,21 @@ mcp = FastMCP("licitei")
 def buscar_licitacoes(
     termo: str,
     uf: str | None = None,
+    valor_min: float | None = None,
     valor_max: float | None = None,
     limite: int = 10,
 ) -> list[dict]:
     """Busca licitações públicas por palavra-chave no objeto da compra.
 
     Args:
-        termo: Palavra-chave para buscar (ex: "limpeza", "TI", "obras").
+        termo: Palavra-chave para buscar (ex: "limpeza", "informática", "obras").
         uf: Sigla do estado para filtrar (ex: "PE", "SP"). Opcional.
+        valor_min: Valor mínimo estimado em reais. Opcional.
         valor_max: Valor máximo estimado em reais. Opcional.
         limite: Quantidade máxima de resultados (padrão: 10, máximo: 50).
     """
     return _buscar(
-        termo=termo, uf=uf, valor_max=valor_max, limite=limite, config=config
+        termo=termo, uf=uf, valor_min=valor_min, valor_max=valor_max, limite=limite, config=config
     )
 
 
@@ -168,6 +170,7 @@ def data_atual() -> dict:
 def listar_licitacoes(
     termo: str,
     uf: str | None = None,
+    valor_min: float | None = None,
     valor_max: float | None = None,
     limite: int = 50,
 ) -> dict:
@@ -177,13 +180,14 @@ def listar_licitacoes(
     Retorna o total real encontrado e até 200 resultados.
 
     Args:
-        termo: Palavra-chave para buscar (ex: "limpeza", "TI", "obras").
+        termo: Palavra-chave para buscar (ex: "limpeza", "informática", "obras").
         uf: Sigla do estado para filtrar (ex: "PE", "SP"). Opcional.
+        valor_min: Valor mínimo estimado em reais. Opcional.
         valor_max: Valor máximo estimado em reais. Opcional.
         limite: Quantidade máxima de resultados (padrão: 50, máximo: 200).
     """
     return _listar_licitacoes(
-        termo=termo, uf=uf, valor_max=valor_max, limite=limite, config=config
+        termo=termo, uf=uf, valor_min=valor_min, valor_max=valor_max, limite=limite, config=config
     )
 
 

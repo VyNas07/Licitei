@@ -30,19 +30,30 @@ sobre um edital antes), manter esse loop manual ficou insustentável.
 
 ## Decisão
 
-Migrar para **LangGraph** usando `create_react_agent` (prebuilt) com `SqliteSaver` como
-checkpointer. Arquivos `llm.py` e `client.py` removidos; substituídos por `agente.py`.
+Migrar para **LangGraph** usando `create_react_agent` (prebuilt) com `MemorySaver`
+(checkpointer **in-memory**) como camada de memória. Arquivos `llm.py` e `client.py`
+removidos; substituídos por `agente.py`.
 
-**SqliteSaver sobre outras opções de persistência:**
-Redis e Postgres exigiriam infra extra. SQLite local é suficiente para o volume do projeto
-e mantém zero dependência de serviço externo para a camada de memória.
+**`MemorySaver` (in-memory) sobre persistência em disco/serviço externo:**
+Redis e Postgres exigiriam infra extra; mesmo o `SqliteSaver` adicionaria gestão de arquivo
+e migração de schema. Para o caso de uso — memória de conversa por `thread_id` dentro de uma
+sessão do servidor — o `MemorySaver` é suficiente e mantém **zero dependência** para a camada
+de memória. O agente é criado uma única vez no startup (`criar_agente`) e o histórico vive
+enquanto o processo do servidor estiver de pé.
+
+**Tradeoff aceito:** a memória é **volátil** — reiniciar o servidor MCP limpa todo o histórico
+de conversas. Aceitável para o MVP, já que o valor está no contexto da conversa em andamento,
+não no histórico de longo prazo. Caso a persistência entre reinícios passe a ser requisito,
+a troca para `SqliteSaver` é localizada (uma linha em `criar_agente`).
 
 ## Consequências
 
-- Memória de conversa por `thread_id` sem nenhuma infra extra além do SQLite
+- Memória de conversa por `thread_id` em RAM, sem nenhuma infra extra (volátil — ver tradeoff acima)
 - Loop ReAct gerenciado pelo LangGraph — sem código de orquestração custom
 - `chat_stream()` via `astream_events` disponível para o endpoint SSE da Sprint 3
-- Nova variável de ambiente: `SQLITE_MEMORIA_PATH` (padrão: `data/memoria.db`)
+- A variável de ambiente `SQLITE_MEMORIA_PATH` permanece em `config.py` (padrão: `data/memoria.db`),
+  mas **não é usada** como backend do checkpointer atual — fica reservada para uma eventual
+  migração futura para `SqliteSaver`
 - ADR 001 atualizado implicitamente: o cliente LLM agora é `ChatGroq` / `ChatOpenAI`
   (LangChain) em vez do SDK `openai` com `base_url` customizado
 
