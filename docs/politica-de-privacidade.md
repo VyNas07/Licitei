@@ -132,7 +132,7 @@ Para exercer qualquer direito não disponível diretamente no app, entre em cont
 
 O aplicativo Licitei **não utiliza cookies de rastreamento** nem tecnologias de monitoramento comportamental para fins publicitários.
 
-Utilizamos apenas armazenamento local no dispositivo (AsyncStorage) para manter sua sessão ativa entre usos do app. Esses dados ficam no seu próprio dispositivo e não são acessados por terceiros.
+Utilizamos armazenamento seguro local no dispositivo, via Expo SecureStore em ambiente mobile nativo, para manter sua sessão ativa entre usos do app. Esses dados ficam no seu próprio dispositivo e não são acessados por terceiros.
 
 ---
 
