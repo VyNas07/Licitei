@@ -51,7 +51,7 @@ O gerenciamento de senhas é totalmente delegado ao Supabase Auth.
 **Validações no cliente:**
 
 - Login: campos não podem estar vazios
-- Cadastro: campos obrigatórios verificados — força de senha não é validada no cliente
+- Cadastro: campos obrigatórios verificados — componente `PasswordRequirements` (`mobile/src/components/auth/PasswordRequirements.tsx`) exibe indicadores visuais em tempo real para os 5 critérios (mínimo 8 caracteres, minúscula, maiúscula, número e símbolo); botão de cadastro fica desabilitado até todos os critérios serem atendidos
 
 **Configuração Supabase Auth:**
 
@@ -150,8 +150,7 @@ emitindo campos sensíveis (CNPJ, nome, e-mail) nas rotas do backend. O handler 
 de erros (`index.ts:39`) registra apenas `error.code` e `error.message` genéricos do
 framework — sem dados do usuário.
 
-> **Nota:** validação em produção (Railway) pendente — projeto ainda não deployado (Sprint 2).
-> Verificar logs após o deploy previsto para o final da Sprint 2.
+> **Nota:** validação em produção (Render) realizada após deploy. Logs revisados — sem PII identificado nas rotas do backend.
 
 ---
 
@@ -226,14 +225,14 @@ Cada usuário acessa apenas seus próprios registros. Confirmado na especificaç
 
 ### 2. Consentimento
 
-Tela de consentimento ainda não implementada no app — identificada como gap durante revisão de segurança da Sprint 2.
+Tela de consentimento implementada no onboarding na Sprint 3 (`mobile/app/(auth)/cadastro.tsx`). O usuário deve aceitar os Termos de Uso e a Política de Privacidade antes de concluir o cadastro.
 
 | Item | Status |
 | --- | --- |
-| Termos de Uso redigidos | ✅ Rascunho revisado — `docs/termos-de-uso.md` |
-| Política de Privacidade redigida | ✅ Rascunho revisado — `docs/politica-de-privacidade.md` |
-| Tela de aceite de Termos de Uso e Política de Privacidade no onboarding | ⚠️ Gap — previsto para Sprint 3 (Track 2 Mobile) |
-| Log de aceite armazenado (data/hora + versão) | ⚠️ Gap — depende da tela ser implementada (Sprint 3) |
+| Termos de Uso redigidos | ✅ Revisado — `docs/termos-de-uso.md` |
+| Política de Privacidade redigida | ✅ Revisado — `docs/politica-de-privacidade.md` |
+| Tela de aceite de Termos de Uso e Política de Privacidade no onboarding | ✅ Implementado na Sprint 3 |
+| Log de aceite armazenado (data/hora + versão) | ⚠️ Não implementado — aceite não é persistido com timestamp; aceitável para MVP acadêmico |
 
 ### 3. Direitos do titular
 
@@ -243,12 +242,11 @@ Verificado por inspeção do código-fonte do backend (`backend/src/routes/`) em
 | --- | --- | --- |
 | Acesso aos dados | `GET /perfil` — retorna todos os campos do `mei_profile` | ✅ Implementado |
 | Correção | `PUT /perfil` — permite editar nome, CNPJ, UF, ramo de atuação | ✅ Implementado |
-| Exclusão | Nenhum — não existe `DELETE /perfil` ou fluxo de "excluir conta" | ⚠️ Gap |
-| Portabilidade | Nenhum — não existe endpoint de exportação de dados | ⚠️ Gap |
-| Revogação do consentimento | Nenhum — não existe fluxo de cancelamento de conta | ⚠️ Gap |
+| Exclusão | `DELETE /perfil` — remove conta e dados do usuário; fluxo de exclusão implementado no app mobile | ✅ Implementado na Sprint 3 |
+| Portabilidade | Nenhum — não existe endpoint de exportação de dados | ⚠️ Aceitável para MVP acadêmico |
+| Revogação do consentimento | Coberto pelo fluxo de exclusão de conta | ✅ Implementado na Sprint 3 |
 
-> Os gaps de exclusão, portabilidade e revogação são aceitáveis para um MVP em Sprint 2.
-> Devem ser adicionados ao backlog para Sprint 3 ou 4 antes da entrega final (13/06).
+> Gaps de exclusão e revogação encerrados na Sprint 3. Portabilidade permanece fora do escopo do MVP acadêmico.
 
 ---
 
@@ -260,9 +258,9 @@ Verificado por inspeção do código-fonte do backend (`backend/src/routes/`) em
 | ~~Screenshot de encryption at rest no Supabase~~ | ~~Vyktor / Pedro~~ | ~~13/05~~ ✅ Documentado via política oficial Supabase |
 | ~~Confirmar RLS ativo em produção (todas as tabelas)~~ | ~~Vyktor / Pedro~~ | ~~13/05~~ ✅ |
 | ~~Migrar mobile de `AsyncStorage` → `SecureStore`~~ | ~~Pedro / Yuri~~ | ~~Sprint 2~~ ✅ |
-| Revisar logs Railway — confirmar sem PII | Vyktor / Pedro | Pós-deploy (fim Sprint 2) |
-| Implementar tela de consentimento no onboarding | Thaíssa / Yuri / Pedro | Sprint 3 |
-| Implementar fluxo de exclusão de conta (`DELETE /perfil`) | Pedro / Yuri | Sprint 3 |
+| ~~Revisar logs Railway — confirmar sem PII~~ | ~~Vyktor / Pedro~~ | ~~Pós-deploy~~ ✅ Render — sem PII nos logs |
+| ~~Implementar tela de consentimento no onboarding~~ | ~~Thaíssa / Yuri / Pedro~~ | ~~Sprint 3~~ ✅ |
+| ~~Implementar fluxo de exclusão de conta (`DELETE /perfil`)~~ | ~~Pedro / Yuri~~ | ~~Sprint 3~~ ✅ |
 
 ---
 
@@ -298,6 +296,7 @@ pontos de entrada do Licitei:
 | Timeout no chat IA | Proxy para MCP usa timeout de 30 segundos | ✅ |
 | Proteção contra regex injection | Termos de busca são escapados antes de montar regex no MongoDB | ✅ |
 | Chaves privadas fora do app | `SUPABASE_SERVICE_ROLE_KEY`, `MONGO_URI` e chaves LLM ficam apenas em variáveis de ambiente server-side | ✅ |
+| SLA de infraestrutura | Backend e MCP hospedados no Render (99.9% uptime garantido conforme [SLA oficial](https://render.com/docs/sla)); HTTPS obrigatório | ✅ |
 
 ---
 
@@ -334,6 +333,7 @@ infraestrutura.
 
 | Risco | Impacto | Mitigação atual | Ação futura |
 | --- | --- | --- | --- |
+| Ataque volumétrico (DDoS) | Indisponibilidade do backend e MCP | O projeto não possui WAF ou CDN próprio; a mitigação depende da infraestrutura do Render (proteção de rede no nível do provedor). O rate limiting da aplicação mitiga abuso de API mas não protege contra flood de TCP/UDP | Avaliar CDN ou WAF em produção pós-MVP |
 | Força bruta no login | Tentativas repetidas de senha | Delegado ao Supabase Auth | Revisar políticas de rate limit/MFA no painel Supabase |
 | Abuso do chat IA | Consumo excessivo de LLM e custo/indisponibilidade | Rate limit no backend + timeout de 30s | Criar limite específico por usuário para `/chat` |
 | Indisponibilidade do MCP | Chat indisponível | Backend retorna erro 503 amigável | Monitoramento e fallback operacional |
@@ -349,9 +349,9 @@ infraestrutura.
 
 | Serviço | Dados / Função | Estratégia de continuidade |
 | --- | --- | --- |
-| Supabase Auth/Postgres | Usuários, perfis, participações, documentos, buscas e alertas | Backup gerenciado pela plataforma; exportação manual SQL no MVP |
+| Supabase Auth/Postgres | Usuários, perfis, participações, documentos, buscas e alertas | Free tier não inclui PITR (Point-In-Time Recovery); estratégia no MVP é exportação manual SQL semanal. PITR disponível em planos pagos para produção. |
 | Supabase Storage | Arquivos enviados pelo MEI | Armazenamento gerenciado pela Supabase; bucket privado e metadados no Postgres |
-| MongoDB Atlas | Licitações processadas e KPIs | Snapshot/backup conforme plano Atlas; dados públicos podem ser reprocessados pelo pipeline |
+| MongoDB Atlas | Licitações processadas e KPIs | Plano M0 (free tier) não inclui backup automático. Dados são públicos e reprocessáveis via pipeline PNCP — estratégia de recuperação é reexecução do pipeline, não restauração de snapshot. |
 | Pipeline PNCP | Extração e transformação de licitações | Reexecução manual ou orquestrada via Prefect |
 | Backend Elysia | API consumida pelo app | Reimplantação a partir do GitHub e variáveis de ambiente |
 | MCP / Agente IA | Chat e ferramentas de IA | Reimplantação a partir do GitHub e variáveis de ambiente |
@@ -368,7 +368,7 @@ infraestrutura.
 | Perfil do usuário | Supabase | Média/Alta — depende de backup/exportação Supabase |
 | Participações e buscas salvas | Supabase | Média/Alta — depende de backup/exportação Supabase |
 | Documentos enviados | Supabase Storage | Média — depende de backup da plataforma e do arquivo original do usuário |
-| Logs | Railway/serviço de hospedagem | Baixa criticidade — usados apenas para diagnóstico |
+| Logs | Render (serviço de hospedagem) | Baixa criticidade — usados apenas para diagnóstico |
 
 ---
 
@@ -427,7 +427,7 @@ Em caso de indisponibilidade ou perda de ambiente, o procedimento mínimo de rec
 | Supabase | Auth, Postgres e Storage | E-mail, perfil MEI, CNPJ, documentos, participações, buscas e alertas | Alto | RLS, JWT, bucket privado, service role apenas no backend, criptografia em repouso |
 | MongoDB Atlas | Licitações processadas e KPIs | Dados públicos do PNCP, sem PII direta | Médio | Criptografia em repouso, credencial privada, acesso apenas server-side |
 | Groq | LLM da LicIA | Perguntas do usuário e contexto enviado pelo agente | Médio/Alto | Enviar apenas contexto necessário; não usar tools administrativas |
-| Railway | Hospedagem do backend/MCP quando deployado | Tráfego da API, logs técnicos e variáveis de ambiente | Médio | HTTPS, variáveis de ambiente e revisão de logs sem PII |
+| Render | Hospedagem do backend e MCP em produção (`licitei-backend.onrender.com`, `licitei-mcp.onrender.com`) | Tráfego da API, logs técnicos e variáveis de ambiente | Médio | HTTPS obrigatório, variáveis de ambiente server-side, revisão de logs sem PII, SLA 99.9% |
 | Expo / EAS | Build e distribuição do app mobile | Artefatos do app e metadados de build | Baixo/Médio | Não incluir secrets privadas no bundle mobile |
 | BrasilAPI | Consulta pública de CNPJ/CNAE | CNPJ usado para obter CNAE | Médio | Uso limitado à finalidade de matching de oportunidades |
 | PNCP | Fonte oficial de licitações | Dados públicos de contratações | Baixo | Fonte governamental oficial; dados tratados como públicos |
@@ -459,7 +459,7 @@ Os fornecedores foram avaliados conforme os seguintes critérios:
 | Supabase | Concentra autenticação e dados pessoais | RLS obrigatório, service role protegida, backups/exportações |
 | Groq | Pode receber texto digitado pelo usuário no chat | Não enviar documentos sensíveis ao LLM sem necessidade |
 | BrasilAPI | Recebe CNPJ para consulta CNAE | Consulta justificada pela finalidade do serviço |
-| Railway | Logs podem conter dados se a aplicação registrar PII | Revisar logs após deploy e evitar `console.log` de dados pessoais |
+| Render | Logs podem conter dados se a aplicação registrar PII | Revisão realizada após deploy — sem PII nos logs do backend |
 | Expo | Variáveis `EXPO_PUBLIC_*` são públicas no app | Nunca colocar secrets privadas como `service_role` ou `MONGO_URI` no mobile |
 
 ---
@@ -481,7 +481,7 @@ Os fornecedores foram avaliados conforme os seguintes critérios:
 ### 5. Conclusão da gestão de fornecedores
 
 O Licitei utiliza fornecedores compatíveis com o escopo de um MVP acadêmico. Os maiores
-riscos estão concentrados em Supabase, Groq e Railway, por tratarem autenticação, dados
+riscos estão concentrados em Supabase, Groq e Render, por tratarem autenticação, dados
 pessoais, prompts de usuário e logs operacionais. A mitigação adotada é minimizar o envio
 de dados, manter credenciais privadas fora do app mobile, usar RLS no Supabase e revisar
 logs e variáveis de ambiente antes da apresentação final.

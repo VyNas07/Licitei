@@ -1,8 +1,8 @@
 # Termos de Uso — Licitei
 
-**Versão:** 1.0  
+**Versão:** 1.1  
 **Vigência:** 14/05/2026  
-**Última atualização:** 14/05/2026
+**Última atualização:** 10/06/2026
 
 ---
 
@@ -112,7 +112,7 @@ Podemos suspender ou encerrar sua conta caso identifiquemos:
 
 ### 7.3 Encerramento por você
 
-Você pode encerrar sua conta a qualquer momento. [A DEFINIR — fluxo de exclusão de conta previsto para Sprint 3.] Após o encerramento, seus dados serão excluídos em até 30 dias, conforme nossa Política de Privacidade.
+Você pode encerrar sua conta a qualquer momento em Configurações → Excluir conta no app. Após o encerramento, seus dados serão excluídos em até 30 dias, conforme nossa Política de Privacidade.
 
 ---
 

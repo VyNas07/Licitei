@@ -1,8 +1,8 @@
 # Política de Privacidade — Licitei
 
-**Versão:** 1.0  
+**Versão:** 1.1  
 **Vigência:** 14/05/2026  
-**Última atualização:** 14/05/2026
+**Última atualização:** 10/06/2026
 
 ---
 
@@ -74,7 +74,7 @@ Não vendemos seus dados. Não compartilhamos com anunciantes. Utilizamos apenas
 | --- | --- | --- |
 | **Supabase** | Armazena seu perfil, documentos, participações e autenticação | EUA (AWS) |
 | **MongoDB Atlas** | Armazena dados de licitações (informações públicas do PNCP) | Brasil (AWS São Paulo) |
-| **Railway** | Hospeda o servidor do aplicativo | EUA |
+| **Render** | Hospeda o servidor do aplicativo (backend e agente IA) | EUA |
 | **Groq** | Processa as consultas ao assistente de IA integrado | EUA |
 | **Expo / EAS** | Distribui as atualizações do app mobile | EUA |
 | **BrasilAPI** | Consulta pública para obter o CNAE a partir do CNPJ | Brasil |
@@ -118,7 +118,7 @@ Você tem os seguintes direitos garantidos pela LGPD:
 | **Confirmação:** saber se tratamos dados seus | Disponível em Configurações → Meu Perfil no app |
 | **Acesso:** ver quais dados temos sobre você | Disponível em Configurações → Meu Perfil no app |
 | **Correção:** corrigir dados incorretos ou desatualizados | Disponível em Configurações → Meu Perfil no app |
-| **Exclusão / Anonimização / Bloqueio:** apagar ou bloquear dados desnecessários | [A DEFINIR — fluxo de exclusão de conta previsto para Sprint 3] |
+| **Exclusão / Anonimização / Bloqueio:** apagar ou bloquear dados desnecessários | Disponível em Configurações → Excluir conta no app. Dados excluídos em até 30 dias. |
 | **Portabilidade:** receber seus dados em formato estruturado | Solicitar via [EMAIL DE CONTATO] |
 | **Informação sobre compartilhamento:** saber com quem seus dados foram compartilhados | Seção 5 desta Política |
 | **Revogação do consentimento:** cancelar o uso dos seus dados | Solicitar via [EMAIL DE CONTATO] — implica encerramento da conta |
@@ -144,7 +144,7 @@ O Licitei é destinado exclusivamente a **Microempreendedores Individuais (MEIs)
 
 ## 11. Transferência internacional de dados
 
-Alguns de nossos suboperadores (Supabase, Railway, Groq, Expo) estão localizados fora do Brasil. Essas transferências são realizadas em conformidade com o **art. 33 da LGPD** e com a **Resolução CD/ANPD nº 19/2024**, que regulamenta as Cláusulas Padrão Contratuais (CPCs) para transferências internacionais. Os suboperadores são contratados com obrigações contratuais de proteção equivalentes às previstas na legislação brasileira, e nenhum dado é transferido para fins além dos descritos nesta Política.
+Alguns de nossos suboperadores (Supabase, Render, Groq, Expo) estão localizados fora do Brasil. Essas transferências são realizadas em conformidade com o **art. 33 da LGPD** e com a **Resolução CD/ANPD nº 19/2024**, que regulamenta as Cláusulas Padrão Contratuais (CPCs) para transferências internacionais. Os suboperadores são contratados com obrigações contratuais de proteção equivalentes às previstas na legislação brasileira, e nenhum dado é transferido para fins além dos descritos nesta Política.
 
 ---
 
