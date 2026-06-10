@@ -13,9 +13,9 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
     '/',
     async ({ userId, query, set }) => {
       try {
-        const { page = 1, limit = 20, uf, valor_max, cnae } = query
+        const { page = 1, limit = 20, uf, municipio, valor_max, cnae, incluir_vencidos = false } = query
         const pageNum = Math.max(1, Number(page))
-        const limitNum = Math.min(50, Math.max(1, Number(limit)))
+        const limitNum = Math.min(100, Math.max(1, Number(limit)))
         const skip = (pageNum - 1) * limitNum
 
         // 1. Busca perfil do usuário no Supabase
@@ -45,10 +45,14 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
 
         if (uf) filter['uf'] = uf.toUpperCase()
 
-        filter['data_encerramento_proposta'] = { $gte: new Date() }
+        const escapeRegex = (str: string) => str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
+        if (municipio) filter['municipio'] = { $regex: escapeRegex(municipio), $options: 'i' }
+
+        if (!incluir_vencidos) {
+          filter['data_encerramento_proposta'] = { $gte: new Date() }
+        }
 
         if (keywords.length > 0) {
-          const escapeRegex = (str: string) => str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
           filter['objeto_compra'] = { $regex: keywords.slice(0, 10).map(escapeRegex).join('|'), $options: 'i' }
         }
 
@@ -79,7 +83,7 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
         const dataComDias = data.map((edital: Document) => ({
           ...edital,
           dias_ate_encerramento: edital.data_encerramento_proposta
-            ? Math.ceil((new Date(edital.data_encerramento_proposta as string).getTime() - agora) / 86_400_000)
+            ? Math.ceil((new Date(edital.data_encerramento_proposta as Date | string).getTime() - agora) / 86_400_000)
             : -1,
         }))
 
@@ -100,8 +104,10 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
         page: t.Optional(t.Numeric()),
         limit: t.Optional(t.Numeric()),
         uf: t.Optional(t.String()),
+        municipio: t.Optional(t.String()),
         valor_max: t.Optional(t.Numeric()),
         cnae: t.Optional(t.String()),
+        incluir_vencidos: t.Optional(t.BooleanString()),
       }),
     }
   )
