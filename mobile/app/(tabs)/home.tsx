@@ -21,7 +21,6 @@ import { FilterModal } from '../../src/components/editais/FilterModal';
 import { BuscasSalvasModal } from '../../src/components/editais/BuscasSalvasModal';
 import { useBuscasSalvas } from '../../src/hooks/useBuscasSalvas';
 import type { FiltrosBusca, BuscaSalva } from '../../src/hooks/useBuscasSalvas';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../src/services/api';
 
 interface EditalAPI {
@@ -65,6 +64,8 @@ function mapEdital(e: EditalAPI): EditalCard {
   };
 }
 
+const LOTE = 25;
+
 const TODAS_CATEGORIAS = [
   { id: '1', icone: 'construct' as const, nome: 'Tecnologia',
     keywords: ['software', 'sistema', 'tecnologia', 'informática', 'aplicativo', 'desenvolvimento', 'licença', 'servidor', 'computador', 'web', 'suporte técnico', 'hardware'] },
@@ -89,15 +90,11 @@ function matchesKeywords(objeto: string, keywords: string[]): boolean {
   return keywords.some(k => lower.includes(k));
 }
 
-const buildCacheKey = (uf: string, valor: string, cnae: string) =>
-  `oportunidades_${uf}_${valor}_${cnae}`;
-
-function validaFaixaValor(valor: number, faixa: string): boolean {
-  if (faixa === 'Todos') return true;
-  if (faixa === 'Até R$ 80 mil (exclusivo MEI)') return valor <= 80000;
-  if (faixa === 'R$ 80 mil – R$ 200 mil') return valor > 80000 && valor <= 200000;
-  if (faixa === 'Acima de R$ 200 mil') return valor > 200000;
-  return true;
+function buildValorParams(valor: string): Record<string, string> {
+  if (valor === 'Até R$ 80 mil (exclusivo MEI)') return { valor_max: '80000' };
+  if (valor === 'R$ 80 mil – R$ 200 mil') return { valor_min: '80000', valor_max: '200000' };
+  if (valor === 'Acima de R$ 200 mil') return { valor_min: '200000' };
+  return {};
 }
 
 export default function HomeUsuario() {
@@ -105,7 +102,12 @@ export default function HomeUsuario() {
 
   const [editais, setEditais] = useState<EditalCard[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [carregandoMais, setCarregandoMais] = useState(false);
+  const [totalBackend, setTotalBackend] = useState(0);
+  const [paginasBackend, setPaginasBackend] = useState(1);
+  const [paginaBackend, setPaginaBackend] = useState(1);
   const [busca, setBusca] = useState('');
+  const [buscaDebounced, setBuscaDebounced] = useState('');
   const [selecionadas, setSelecionadas] = useState<string[]>([]);
   const [filtrosAvancados, setFiltrosAvancados] = useState({
     uf: 'Todas',
@@ -113,41 +115,58 @@ export default function HomeUsuario() {
     valor: 'Todos',
     cnae: '',
   });
+  const [mostrarVencidos, setMostrarVencidos] = useState(false);
+  const [modoExibicao, setModoExibicao] = useState<'todos' | 'para_voce'>('todos');
   const [modalCategorias, setModalCategorias] = useState(false);
   const [modalFiltros, setModalFiltros] = useState(false);
   const [modalBuscasSalvas, setModalBuscasSalvas] = useState(false);
-  const [pagina, setPagina] = useState(1);
   const [nomeUsuario, setNomeUsuario] = useState('');
   const [cnaesDoPerfil, setCnaesDoPerfil] = useState<string[]>([]);
-  const ITENS_POR_PAGINA = 5;
 
   const { buscas, carregando: carregandoBuscas, erro: erroBuscas, carregar: recarregarBuscas, salvar, remover } = useBuscasSalvas();
 
-  const buscarOportunidades = useCallback(async () => {
-    setCarregando(true);
-    const cacheKey = buildCacheKey(filtrosAvancados.uf, filtrosAvancados.valor, filtrosAvancados.cnae);
+  useEffect(() => {
+    const timer = setTimeout(() => setBuscaDebounced(busca), 400);
+    return () => clearTimeout(timer);
+  }, [busca]);
+
+  const buscarEditais = useCallback(async (pagina = 1, append = false) => {
+    if (append) setCarregandoMais(true);
+    else setCarregando(true);
+
+    const params: Record<string, string> = { limit: String(LOTE), page: String(pagina) };
+
+    if (filtrosAvancados.uf !== 'Todas') params.uf = filtrosAvancados.uf;
+    if (filtrosAvancados.municipio) params.municipio = filtrosAvancados.municipio;
+    if (buscaDebounced) params.q = buscaDebounced;
+    params.incluir_vencidos = String(mostrarVencidos);
+
+    Object.assign(params, buildValorParams(filtrosAvancados.valor));
+
+    if (selecionadas.length > 0) {
+      const kws = selecionadas.flatMap(id => KEYWORDS_BY_CATEGORY[id] ?? []);
+      params.keywords = [...new Set(kws)].slice(0, 30).join('|');
+    }
+
+    const endpoint = modoExibicao === 'para_voce' ? '/oportunidades' : '/editais';
+    if (modoExibicao === 'para_voce' && filtrosAvancados.cnae) params.cnae = filtrosAvancados.cnae;
+
     try {
-      const params: Record<string, string> = { limit: '50' };
-      if (filtrosAvancados.uf !== 'Todas') params.uf = filtrosAvancados.uf;
-      if (filtrosAvancados.valor === 'Até R$ 80 mil (exclusivo MEI)') params.valor_max = '80000';
-      if (filtrosAvancados.cnae) params.cnae = filtrosAvancados.cnae;
-      const { data } = await api.get('/oportunidades', { params });
+      const { data } = await api.get(endpoint, { params });
       const mapped = (data.data ?? []).map(mapEdital);
-      setEditais(mapped);
-      AsyncStorage.setItem(cacheKey, JSON.stringify(mapped)).catch(() => {});
+      setEditais(prev => append ? [...prev, ...mapped] : mapped);
+      setTotalBackend(data.total ?? 0);
+      setPaginasBackend(data.pages ?? 1);
+      setPaginaBackend(pagina);
     } catch {
-      try {
-        const cached = await AsyncStorage.getItem(cacheKey);
-        setEditais(cached ? JSON.parse(cached) : []);
-      } catch {
-        setEditais([]);
-      }
+      if (!append) setEditais([]);
     } finally {
       setCarregando(false);
+      setCarregandoMais(false);
     }
-  }, [filtrosAvancados.uf, filtrosAvancados.valor, filtrosAvancados.cnae]);
+  }, [filtrosAvancados, buscaDebounced, mostrarVencidos, modoExibicao, selecionadas]);
 
-  useEffect(() => { buscarOportunidades(); }, [buscarOportunidades]);
+  useEffect(() => { buscarEditais(1, false); }, [buscarEditais]);
 
   useEffect(() => {
     api.get('/perfil')
@@ -162,34 +181,18 @@ export default function HomeUsuario() {
     const stats: Record<string, number> = {};
     TODAS_CATEGORIAS.forEach(cat => { stats[cat.id] = 0; });
     editais.forEach(e => {
-      const termo = busca.toLowerCase();
-      if (busca !== '' && !e.objeto.toLowerCase().includes(termo) && !e.orgao.toLowerCase().includes(termo)) return;
       TODAS_CATEGORIAS.forEach(cat => {
         if (matchesKeywords(e.objeto, cat.keywords)) stats[cat.id] += 1;
       });
     });
     return stats;
-  }, [editais, busca]);
-
-  const editaisFiltrados = useMemo(() => {
-    return editais.filter(e => {
-      const termo = busca.toLowerCase();
-      const matchBusca = busca === '' || e.objeto.toLowerCase().includes(termo) || e.orgao.toLowerCase().includes(termo);
-      const matchMun = filtrosAvancados.municipio === '' || (e.municipio?.toLowerCase().includes(filtrosAvancados.municipio.toLowerCase()));
-      const matchValor = validaFaixaValor(e.valor, filtrosAvancados.valor);
-      const matchCategoria = selecionadas.length === 0 ||
-        selecionadas.some(id => matchesKeywords(e.objeto, KEYWORDS_BY_CATEGORY[id] ?? []));
-      return matchBusca && matchMun && matchValor && matchCategoria;
-    });
-  }, [editais, selecionadas, filtrosAvancados, busca]);
-
-  const totalPaginas = Math.ceil(editaisFiltrados.length / ITENS_POR_PAGINA);
-  const editaisExibidos = editaisFiltrados.slice((pagina - 1) * ITENS_POR_PAGINA, pagina * ITENS_POR_PAGINA);
+  }, [editais]);
 
   const limparTudo = () => {
     setSelecionadas([]);
-    setPagina(1);
     setBusca('');
+    setMostrarVencidos(false);
+    setPaginaBackend(1);
     setFiltrosAvancados({ uf: 'Todas', municipio: '', valor: 'Todos', cnae: '' });
   };
 
@@ -224,7 +227,6 @@ export default function HomeUsuario() {
     } else {
       setSelecionadas([]);
     }
-    setPagina(1);
   };
 
   const temFiltrosAtivos =
@@ -238,7 +240,7 @@ export default function HomeUsuario() {
   return (
     <SafeAreaView style={estilos.areaSegura}>
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
-      
+
       <View style={estilos.cabecalho}>
         <View style={estilos.linhaTopo}>
           <View>
@@ -254,12 +256,12 @@ export default function HomeUsuario() {
         <View style={estilos.containerBusca}>
           <View style={estilos.barraBusca}>
             <Ionicons name="search-outline" size={18} color="#94A3B8" />
-            <TextInput 
+            <TextInput
               style={estilos.inputReal}
               placeholder="Buscar editais..."
               placeholderTextColor="#94A3B8"
               value={busca}
-              onChangeText={(t) => { setBusca(t); setPagina(1); }}
+              onChangeText={(t) => setBusca(t)}
             />
           </View>
           <TouchableOpacity style={estilos.botaoFiltroAvancado} onPress={() => setModalFiltros(true)}>
@@ -307,20 +309,58 @@ export default function HomeUsuario() {
 
         <View style={estilos.secao}>
           <View style={estilos.cabecalhoSecao}>
-            <Text style={estilos.tituloSecao}>Oportunidades para você</Text>
-            {!carregando && <Text style={estilos.contador}>{editaisFiltrados.length} encontrados</Text>}
+            <Text style={estilos.tituloSecao}>
+              {modoExibicao === 'todos' ? 'Todos os editais' : 'Para você'}
+            </Text>
+            {!carregando && (
+              <Text style={estilos.contador}>{editais.length} de {totalBackend}</Text>
+            )}
           </View>
+          <View style={estilos.pillsContainer}>
+            <TouchableOpacity
+              style={[estilos.pill, modoExibicao === 'todos' && estilos.pillAtivo]}
+              onPress={() => setModoExibicao('todos')}
+            >
+              <Text style={[estilos.pillTexto, modoExibicao === 'todos' && estilos.pillTextoAtivo]}>Todos</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[estilos.pill, modoExibicao === 'para_voce' && estilos.pillAtivo]}
+              onPress={() => setModoExibicao('para_voce')}
+            >
+              <Ionicons name="star" size={12} color={modoExibicao === 'para_voce' ? '#FFF' : '#64748B'} />
+              <Text style={[estilos.pillTexto, modoExibicao === 'para_voce' && estilos.pillTextoAtivo]}>Para você</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={[estilos.chipVencidos, mostrarVencidos && estilos.chipVencidosAtivo]}
+            onPress={() => setMostrarVencidos(v => !v)}
+          >
+            <Ionicons
+              name={mostrarVencidos ? 'eye' : 'eye-off-outline'}
+              size={13}
+              color={mostrarVencidos ? '#FFF' : '#64748B'}
+            />
+            <Text style={[estilos.chipVencidosTexto, mostrarVencidos && estilos.chipVencidosTextoAtivo]}>
+              {mostrarVencidos ? 'Ocultar vencidos' : 'Mostrar vencidos'}
+            </Text>
+          </TouchableOpacity>
+
           {carregando ? (
             <ActivityIndicator size="large" color="#0F172A" style={{ marginTop: 40 }} />
-          ) : editaisExibidos.map(edital => (
+          ) : editais.map(edital => (
             <EditalCard key={edital.id} onPress={() => router.push({ pathname: '/edital/[id]', params: { id: edital.id } })} item={edital} />
           ))}
-          {totalPaginas > 1 && (
-            <View style={estilos.paginacaoContainer}>
-              <TouchableOpacity disabled={pagina === 1} onPress={() => setPagina(p => p - 1)} style={[estilos.btnPag, pagina === 1 && { opacity: 0.3 }]}><Ionicons name="chevron-back" size={20} color="#0F172A" /></TouchableOpacity>
-              <Text style={estilos.textoPagina}>Página {pagina} de {totalPaginas}</Text>
-              <TouchableOpacity disabled={pagina === totalPaginas} onPress={() => setPagina(p => p + 1)} style={[estilos.btnPag, pagina === totalPaginas && { opacity: 0.3 }]}><Ionicons name="chevron-forward" size={20} color="#0F172A" /></TouchableOpacity>
-            </View>
+
+          {paginaBackend < paginasBackend && !carregando && (
+            <TouchableOpacity
+              style={estilos.btnCarregarMais}
+              onPress={() => buscarEditais(paginaBackend + 1, true)}
+              disabled={carregandoMais}
+            >
+              {carregandoMais
+                ? <ActivityIndicator size="small" color="#0F172A" />
+                : <Text style={estilos.textoBtnCarregarMais}>Carregar mais</Text>}
+            </TouchableOpacity>
           )}
         </View>
       </ScrollView>
@@ -355,19 +395,19 @@ export default function HomeUsuario() {
       />
 
       <CategoryModal
-        visivel={modalCategorias} 
-        fechar={() => setModalCategorias(false)} 
-        categorias={TODAS_CATEGORIAS} 
-        selecionadas={selecionadas} 
-        alternarSelecao={(id) => { setPagina(1); setSelecionadas(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]); }}
+        visivel={modalCategorias}
+        fechar={() => setModalCategorias(false)}
+        categorias={TODAS_CATEGORIAS}
+        selecionadas={selecionadas}
+        alternarSelecao={(id) => setSelecionadas(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id])}
         contagens={contagensDinamicas}
       />
-      
+
       <FilterModal
         visivel={modalFiltros}
         fechar={() => setModalFiltros(false)}
         filtrosAtuais={filtrosAvancados}
-        aplicar={(f) => { setFiltrosAvancados(f); setPagina(1); }}
+        aplicar={(f) => setFiltrosAvancados(f)}
         cnaesDoPerfil={cnaesDoPerfil}
       />
     </SafeAreaView>
@@ -403,7 +443,15 @@ const estilos = StyleSheet.create({
   textoBtnAcao: { fontSize: 14, fontWeight: 'bold', color: '#FFF' },
   listaSelecionados: { marginTop: 10 },
   contador: { fontSize: 12, color: '#64748B', fontWeight: '600' },
-  paginacaoContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 20, marginTop: 25 },
-  btnPag: { padding: 10, backgroundColor: '#FFF', borderRadius: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4 },
-  textoPagina: { fontWeight: 'bold', color: '#0F172A', fontSize: 13 }
+  pillsContainer: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#F1F5F9', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 },
+  pillAtivo: { backgroundColor: '#0F172A' },
+  pillTexto: { fontSize: 13, fontWeight: '600', color: '#64748B' },
+  pillTextoAtivo: { color: '#FFF' },
+  chipVencidos: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', backgroundColor: '#F1F5F9', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 12 },
+  chipVencidosAtivo: { backgroundColor: '#0F172A' },
+  chipVencidosTexto: { fontSize: 12, color: '#64748B', fontWeight: '600' },
+  chipVencidosTextoAtivo: { color: '#FFF' },
+  btnCarregarMais: { height: 48, backgroundColor: '#FFF', borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  textoBtnCarregarMais: { fontSize: 14, fontWeight: '600', color: '#0F172A' },
 });
