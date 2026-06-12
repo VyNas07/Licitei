@@ -18,10 +18,6 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
 
         const filter: Filter<Document> = {}
 
-        if (!incluir_vencidos) {
-          filter['data_encerramento_proposta'] = { $gte: new Date() }
-        }
-
         const escapeRegex = (str: string) => str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
         if (uf) filter['uf'] = uf.toUpperCase()
         if (municipio) filter['municipio'] = { $regex: escapeRegex(municipio), $options: 'i' }
@@ -34,17 +30,30 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
           filter['valor_total_estimado'] = valorFilter
         }
 
+        // Todas as condições OR-style reunidas aqui para evitar conflito de chaves $or/$and
+        const mustMatch: Filter<Document>[] = []
+
+        // Editais sem data_encerramento_proposta (null/ausente) são incluídos como "sem prazo definido"
+        if (!incluir_vencidos) {
+          mustMatch.push({ $or: [
+            { data_encerramento_proposta: { $gte: new Date() } },
+            { data_encerramento_proposta: { $exists: false } },
+            { data_encerramento_proposta: null },
+          ]})
+        }
+
         // q busca em objeto_compra e orgao_razao_social; keywords filtra categorias só em objeto_compra
-        const textConditions: Filter<Document>[] = []
         if (q) {
           const qRegex = { $regex: escapeRegex(q), $options: 'i' }
-          textConditions.push({ $or: [{ objeto_compra: qRegex }, { orgao_razao_social: qRegex }] })
+          mustMatch.push({ $or: [{ objeto_compra: qRegex }, { orgao_razao_social: qRegex }] })
         }
         if (keywords) {
-          textConditions.push({ objeto_compra: { $regex: keywords, $options: 'i' } })
+          const safeKeywords = keywords.slice(0, 200).split('|').slice(0, 10).map(escapeRegex).join('|')
+          mustMatch.push({ objeto_compra: { $regex: safeKeywords, $options: 'i' } })
         }
-        if (textConditions.length === 1) Object.assign(filter, textConditions[0])
-        if (textConditions.length === 2) filter['$and'] = textConditions
+
+        if (mustMatch.length === 1) Object.assign(filter, mustMatch[0])
+        if (mustMatch.length > 1) filter['$and'] = mustMatch
 
         const collection = await getCollection()
         const nullsSentinel = new Date('9999-12-31T00:00:00.000Z')

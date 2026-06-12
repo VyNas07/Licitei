@@ -48,8 +48,13 @@ export const oportunidadesRoutes = new Elysia({ prefix: '/oportunidades' })
         const escapeRegex = (str: string) => str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
         if (municipio) filter['municipio'] = { $regex: escapeRegex(municipio), $options: 'i' }
 
+        // Editais sem data_encerramento_proposta (null/ausente) são incluídos como "sem prazo definido"
         if (!incluir_vencidos) {
-          filter['data_encerramento_proposta'] = { $gte: new Date() }
+          filter['$or'] = [
+            { data_encerramento_proposta: { $gte: new Date() } },
+            { data_encerramento_proposta: { $exists: false } },
+            { data_encerramento_proposta: null },
+          ]
         }
 
         if (keywords.length > 0) {
