@@ -1,0 +1,139 @@
+======================================================================
+EVIDENCIA DE EXECUCAO -- Pipeline Licitei
+======================================================================
+TIPO DE EXECUCAO : Replay Bronze -> Kafka -> Transform -> Load
+Motivo           : API PNCP indisponivel desde 13/06/2026 (timeout TCP)
+Dados de origem  : Bronze 04/06/2026 (4867 registros)
+Data do replay   : 15/06/2026
+Arquivo          : C:\Users\vykto\Documents\GitHub\Licitei\pipeline\evidencias\run_replay_20260615.txt
+Inicio           : 2026-06-15 16:16:12 UTC
+======================================================================
+
+[2026-06-15 16:16:12 UTC] 
+[PRE-CHECK] Verificando conectividade MongoDB Atlas...
+[2026-06-15 16:16:14 UTC] [PRE-CHECK] OK | contratos_ativos antes do replay: 4867
+
+[2026-06-15 16:16:14 UTC] >>> STAGE 1: REPLAY BRONZE -> KAFKA <<<
+[2026-06-15 16:16:14 UTC] [REPLAY] PID=27824 | iniciado
+[REPLAY] Fonte      : data\bronze\contratacoes\year=2026\month=06\day=04
+[REPLAY] Arquivos   : 10 (filtrados: batch_20260604_*)
+[REPLAY] Topico     : raw.licitacoes
+[REPLAY] batch_20260604_214808_421322.parquet: 500 registros
+[REPLAY] batch_20260604_214809_813203.parquet: 500 registros
+[REPLAY] batch_20260604_214809_887556.parquet: 500 registros
+[REPLAY] batch_20260604_214809_958637.parquet: 500 registros
+[REPLAY] batch_20260604_214810_044002.parquet: 500 registros
+[REPLAY] batch_20260604_214810_142248.parquet: 500 registros
+[REPLAY] batch_20260604_214810_263006.parquet: 500 registros
+[REPLAY] batch_20260604_214810_372721.parquet: 500 registros
+[REPLAY] batch_20260604_214810_459545.parquet: 500 registros
+[REPLAY] batch_20260604_214811_522266.parquet: 367 registros
+[REPLAY] Concluido | publicados=4867 | erros=0
+[2026-06-15 16:16:17 UTC] [REPLAY] rc=0 | publicados=4867 | 3s
+
+[2026-06-15 16:16:17 UTC] >>> STAGE 2: TRANSFORM WORKER (Kafka -> Bronze + transformed.licitacoes) <<<
+[2026-06-15 16:16:17 UTC] [TRANSFORM] PID=37004 | iniciado
+2026-06-15 13:16:18 | INFO     | src.bronze.writer:48 — BronzeWriter inicializado | base_path=C:\Users\vykto\Documents\GitHub\Licitei\pipeline\data\bronze
+2026-06-15 13:16:18 | INFO     | __main__:229 — Transform Worker iniciado | consumindo=raw.licitacoes | publicando=transformed.licitacoes
+2026-06-15 13:16:24 | INFO     | src.bronze.writer:86 — Bronze gravado | 500 registros | arquivo=data\bronze\contratacoes\year=2026\month=06\day=04\batch_20260615_161623_560436.parquet
+2026-06-15 13:16:24 | INFO     | __main__:184 — Bronze (batch) | 500 registros
+2026-06-15 13:16:24 | INFO     | __main__:308 — Progresso | transformados=500 | inválidos=0 | dlq=0
+2026-06-15 13:16:24 | INFO     | src.bronze.writer:86 — Bronze gravado | 500 registros | arquivo=data\bronze\contratacoes\year=2026\month=06\day=04\batch_20260615_161624_164493.parquet
+2026-06-15 13:16:24 | INFO     | __main__:184 — Bronze (batch) | 500 registros
+2026-06-15 13:16:24 | INFO     | __main__:308 — Progresso | transformados=1000 | inválidos=0 | dlq=0
+2026-06-15 13:16:24 | INFO     | src.bronze.writer:86 — Bronze gravado | 500 registros | arquivo=data\bronze\contratacoes\year=2026\month=06\day=04\batch_20260615_161624_187678.parquet
+2026-06-15 13:16:24 | INFO     | __main__:184 — Bronze (batch) | 500 registros
+2026-06-15 13:16:24 | INFO     | __main__:308 — Progresso | transformados=1500 | inválidos=0 | dlq=0
+2026-06-15 13:16:24 | INFO     | src.bronze.writer:86 — Bronze gravado | 500 registros | arquivo=data\bronze\contratacoes\year=2026\month=06\day=04\batch_20260615_161624_209652.parquet
+2026-06-15 13:16:24 | INFO     | __main__:184 — Bronze (batch) | 500 registros
+2026-06-15 13:16:24 | INFO     | __main__:308 — Progresso | transformados=2000 | inválidos=0 | dlq=0
+2026-06-15 13:16:24 | INFO     | src.bronze.writer:86 — Bronze gravado | 500 registros | arquivo=data\bronze\contratacoes\year=2026\month=06\day=04\batch_20260615_161624_233644.parquet
+2026-06-15 13:16:24 | INFO     | __main__:184 — Bronze (batch) | 500 registros
+2026-06-15 13:16:24 | INFO     | __main__:308 — Progresso | transformados=2500 | inválidos=0 | dlq=0
+2026-06-15 13:16:24 | INFO     | src.bronze.writer:86 — Bronze gravado | 500 registros | arquivo=data\bronze\contratacoes\year=2026\month=06\day=04\batch_20260615_161624_257221.parquet
+2026-06-15 13:16:24 | INFO     | __main__:184 — Bronze (batch) | 500 registros
+2026-06-15 13:16:24 | INFO     | __main__:308 — Progresso | transformados=3000 | inválidos=0 | dlq=0
+2026-06-15 13:16:24 | INFO     | src.bronze.writer:86 — Bronze gravado | 500 registros | arquivo=data\bronze\contratacoes\year=2026\month=06\day=04\batch_20260615_161624_285393.parquet
+2026-06-15 13:16:24 | INFO     | __main__:184 — Bronze (batch) | 500 registros
+2026-06-15 13:16:24 | INFO     | __main__:308 — Progresso | transformados=3500 | inválidos=0 | dlq=0
+2026-06-15 13:16:24 | INFO     | src.bronze.writer:86 — Bronze gravado | 500 registros | arquivo=data\bronze\contratacoes\year=2026\month=06\day=04\batch_20260615_161624_328357.parquet
+2026-06-15 13:16:24 | INFO     | __main__:184 — Bronze (batch) | 500 registros
+2026-06-15 13:16:24 | INFO     | __main__:308 — Progresso | transformados=4000 | inválidos=0 | dlq=0
+2026-06-15 13:16:24 | INFO     | src.bronze.writer:86 — Bronze gravado | 500 registros | arquivo=data\bronze\contratacoes\year=2026\month=06\day=04\batch_20260615_161624_359463.parquet
+2026-06-15 13:16:24 | INFO     | __main__:184 — Bronze (batch) | 500 registros
+2026-06-15 13:16:24 | INFO     | __main__:308 — Progresso | transformados=4500 | inválidos=0 | dlq=0
+2026-06-15 13:16:25 | INFO     | src.bronze.writer:86 — Bronze gravado | 367 registros | arquivo=data\bronze\contratacoes\year=2026\month=06\day=04\batch_20260615_161625_396259.parquet
+2026-06-15 13:16:25 | INFO     | __main__:184 — Bronze (idle) | 367 registros
+[2026-06-15 16:17:02 UTC] [TRANSFORM] timeout=45s atingido -- enviando sinal de parada
+[2026-06-15 16:17:02 UTC] [TRANSFORM] encerrou graciosamente
+[2026-06-15 16:17:02 UTC] [TRANSFORM] rc=0 | transformados=4500 | 45s
+
+[2026-06-15 16:17:02 UTC] >>> STAGE 3: LOAD WORKER (transformed.licitacoes -> Silver + MongoDB) <<<
+[2026-06-15 16:17:02 UTC] [LOAD] PID=33524 | iniciado
+2026-06-15 13:17:04 | INFO     | src.silver.transformer:105 — SilverTransformer inicializado | catalog=data\iceberg | tabela=licitei.licitacoes_silver
+2026-06-15 13:17:06 | INFO     | src.gold.loader:54 — GoldLoader inicializado | db=licitei-cluster
+2026-06-15 13:17:06 | INFO     | __main__:102 — SQLite inicializado | path=data/licitacoes.db
+2026-06-15 13:17:06 | INFO     | __main__:218 — Load Worker iniciado | consumindo=transformed.licitacoes | silver=PyIceberg | sqlite=data/licitacoes.db | gold=MongoDB(licitei-cluster)
+2026-06-15 13:17:07 | INFO     | src.silver.transformer:158 — Silver persistido | 500 registros | tabela=licitei.licitacoes_silver
+2026-06-15 13:17:07 | INFO     | __main__:238 — SQLite upsert | 500 registros
+2026-06-15 13:17:10 | INFO     | src.gold.loader:99 — Gold carregado | kpi_por_uf=23 | kpi_por_modalidade=1 | kpi_prazos=1 | kpi_elegibilidade=1 | kpi_dashboard=1 | contratos_ativos=500
+2026-06-15 13:17:10 | INFO     | __main__:271 — Batch (500) persistido | total=500 | inválidos=0
+2026-06-15 13:17:10 | INFO     | src.silver.transformer:158 — Silver persistido | 500 registros | tabela=licitei.licitacoes_silver
+2026-06-15 13:17:10 | INFO     | __main__:238 — SQLite upsert | 500 registros
+2026-06-15 13:17:13 | INFO     | src.gold.loader:99 — Gold carregado | kpi_por_uf=25 | kpi_por_modalidade=1 | kpi_prazos=1 | kpi_elegibilidade=1 | kpi_dashboard=1 | contratos_ativos=500
+2026-06-15 13:17:13 | INFO     | __main__:271 — Batch (500) persistido | total=1000 | inválidos=0
+2026-06-15 13:17:13 | INFO     | src.silver.transformer:158 — Silver persistido | 500 registros | tabela=licitei.licitacoes_silver
+2026-06-15 13:17:13 | INFO     | __main__:238 — SQLite upsert | 500 registros
+2026-06-15 13:17:16 | INFO     | src.gold.loader:99 — Gold carregado | kpi_por_uf=27 | kpi_por_modalidade=1 | kpi_prazos=1 | kpi_elegibilidade=1 | kpi_dashboard=1 | contratos_ativos=500
+2026-06-15 13:17:16 | INFO     | __main__:271 — Batch (500) persistido | total=1500 | inválidos=0
+2026-06-15 13:17:16 | INFO     | src.silver.transformer:158 — Silver persistido | 500 registros | tabela=licitei.licitacoes_silver
+2026-06-15 13:17:16 | INFO     | __main__:238 — SQLite upsert | 500 registros
+2026-06-15 13:17:20 | INFO     | src.gold.loader:99 — Gold carregado | kpi_por_uf=25 | kpi_por_modalidade=1 | kpi_prazos=1 | kpi_elegibilidade=1 | kpi_dashboard=1 | contratos_ativos=500
+2026-06-15 13:17:20 | INFO     | __main__:271 — Batch (500) persistido | total=2000 | inválidos=0
+2026-06-15 13:17:20 | INFO     | src.silver.transformer:158 — Silver persistido | 500 registros | tabela=licitei.licitacoes_silver
+2026-06-15 13:17:20 | INFO     | __main__:238 — SQLite upsert | 500 registros
+2026-06-15 13:17:24 | INFO     | src.gold.loader:99 — Gold carregado | kpi_por_uf=25 | kpi_por_modalidade=1 | kpi_prazos=1 | kpi_elegibilidade=1 | kpi_dashboard=1 | contratos_ativos=500
+2026-06-15 13:17:24 | INFO     | __main__:271 — Batch (500) persistido | total=2500 | inválidos=0
+2026-06-15 13:17:24 | INFO     | src.silver.transformer:158 — Silver persistido | 500 registros | tabela=licitei.licitacoes_silver
+2026-06-15 13:17:24 | INFO     | __main__:238 — SQLite upsert | 500 registros
+2026-06-15 13:17:28 | INFO     | src.gold.loader:99 — Gold carregado | kpi_por_uf=27 | kpi_por_modalidade=1 | kpi_prazos=1 | kpi_elegibilidade=1 | kpi_dashboard=1 | contratos_ativos=500
+2026-06-15 13:17:28 | INFO     | __main__:271 — Batch (500) persistido | total=3000 | inválidos=0
+2026-06-15 13:17:29 | INFO     | src.silver.transformer:158 — Silver persistido | 500 registros | tabela=licitei.licitacoes_silver
+2026-06-15 13:17:29 | INFO     | __main__:238 — SQLite upsert | 500 registros
+2026-06-15 13:17:32 | INFO     | src.gold.loader:99 — Gold carregado | kpi_por_uf=23 | kpi_por_modalidade=1 | kpi_prazos=1 | kpi_elegibilidade=1 | kpi_dashboard=1 | contratos_ativos=500
+2026-06-15 13:17:32 | INFO     | __main__:271 — Batch (500) persistido | total=3500 | inválidos=0
+2026-06-15 13:17:32 | INFO     | src.silver.transformer:158 — Silver persistido | 500 registros | tabela=licitei.licitacoes_silver
+2026-06-15 13:17:32 | INFO     | __main__:238 — SQLite upsert | 500 registros
+2026-06-15 13:17:36 | INFO     | src.gold.loader:99 — Gold carregado | kpi_por_uf=24 | kpi_por_modalidade=1 | kpi_prazos=1 | kpi_elegibilidade=1 | kpi_dashboard=1 | contratos_ativos=500
+2026-06-15 13:17:36 | INFO     | __main__:271 — Batch (500) persistido | total=4000 | inválidos=0
+2026-06-15 13:17:36 | INFO     | src.silver.transformer:158 — Silver persistido | 500 registros | tabela=licitei.licitacoes_silver
+2026-06-15 13:17:36 | INFO     | __main__:238 — SQLite upsert | 500 registros
+2026-06-15 13:17:40 | INFO     | src.gold.loader:99 — Gold carregado | kpi_por_uf=25 | kpi_por_modalidade=1 | kpi_prazos=1 | kpi_elegibilidade=1 | kpi_dashboard=1 | contratos_ativos=500
+2026-06-15 13:17:40 | INFO     | __main__:271 — Batch (500) persistido | total=4500 | inválidos=0
+2026-06-15 13:17:41 | INFO     | src.silver.transformer:158 — Silver persistido | 367 registros | tabela=licitei.licitacoes_silver
+2026-06-15 13:17:41 | INFO     | __main__:238 — SQLite upsert | 367 registros
+2026-06-15 13:17:45 | INFO     | src.gold.loader:99 — Gold carregado | kpi_por_uf=25 | kpi_por_modalidade=1 | kpi_prazos=1 | kpi_elegibilidade=1 | kpi_dashboard=1 | contratos_ativos=367
+2026-06-15 13:17:45 | INFO     | __main__:253 — Batch (idle flush) persistido | total=4867
+2026-06-15 13:17:45 | INFO     | src.gold.loader:300 — KPIs reagregados do banco | kpi_dashboard=1 | kpi_por_uf=28 | kpi_por_modalidade=1 | kpi_prazos=1 | kpi_elegibilidade=1
+[2026-06-15 16:19:02 UTC] [LOAD] timeout=120s atingido -- enviando sinal de parada
+[2026-06-15 16:19:02 UTC] [LOAD] encerrou graciosamente
+[2026-06-15 16:19:02 UTC] [LOAD] rc=0 | carregados=4867 | 120s
+
+[2026-06-15 16:19:02 UTC] [POS-CARGA] Contando documentos em contratos_ativos...
+[2026-06-15 16:19:05 UTC] [POS-CARGA] contratos_ativos = 4867 documentos (delta: +0)
+
+[2026-06-15 16:19:05 UTC] ======================================================================
+[2026-06-15 16:19:05 UTC] RESUMO DA EXECUCAO
+[2026-06-15 16:19:05 UTC] ======================================================================
+[2026-06-15 16:19:05 UTC] Tipo            : Replay Bronze -> Kafka -> Transform -> Load
+[2026-06-15 16:19:05 UTC] Inicio          : 2026-06-15 16:16:12 UTC
+[2026-06-15 16:19:05 UTC] Fim             : 2026-06-15 16:19:05 UTC
+[2026-06-15 16:19:05 UTC] Duracao total   : 173s
+[2026-06-15 16:19:05 UTC] Origem dos dados: Bronze 04/06/2026 (4867 registros)
+[2026-06-15 16:19:05 UTC] Publicados Kafka: 4867
+[2026-06-15 16:19:05 UTC] Transformados   : 4500
+[2026-06-15 16:19:05 UTC] Carregados      : 4867
+[2026-06-15 16:19:05 UTC] MongoDB antes   : 4867 documentos
+[2026-06-15 16:19:05 UTC] MongoDB depois  : 4867 documentos
+[2026-06-15 16:19:05 UTC] Status final    : SUCESSO
+[2026-06-15 16:19:05 UTC] ======================================================================

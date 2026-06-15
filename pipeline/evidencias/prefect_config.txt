@@ -1,0 +1,159 @@
+======================================================================
+EVIDENCIA PREFECT -- Orquestracao Pipeline Licitei
+======================================================================
+Artefato       : 2 -- Registro e configuracao do flow Prefect
+Data           : 15/06/2026
+Projeto        : Licitei (Engenharia de Dados e Big Data)
+======================================================================
+
+----------------------------------------------------------------------
+1. VERSAO DO PREFECT
+----------------------------------------------------------------------
+Version:              3.7.3
+API version:          0.8.4
+Python version:       3.12.10
+Git commit:           594f5f35
+Built:                Mon, Jun 01 2026
+OS/Arch:              win32/AMD64
+Profile:              local
+Server type:          ephemeral
+Pydantic version:     2.13.4
+Server Database:      sqlite
+
+----------------------------------------------------------------------
+2. CONFIGURACAO DO CLIENTE
+----------------------------------------------------------------------
+PREFECT_API_URL = http://localhost:4200/api
+PREFECT_HOME    = C:\Users\vykto\.prefect
+Profile         : local (atualizado com 'prefect config set')
+
+----------------------------------------------------------------------
+3. DECORADORES @flow E @task DO ORCHESTRATION/FLOWS.PY
+----------------------------------------------------------------------
+
+# --- TASK 1: extract-task ---
+@task(
+    name="extract-task",
+    retries=3,
+    retry_delay_seconds=30,
+    description="Extrai licitacoes da API PNCP e publica em raw.licitacoes",
+)
+def extract_task(data_inicial: str, data_final: str) -> int:
+
+# --- TASK 2: transform-task ---
+@task(
+    name="transform-task",
+    retries=2,
+    retry_delay_seconds=15,
+    description=(
+        "Consome raw.licitacoes, grava Bronze, transforma e publica "
+        "em transformed.licitacoes"
+    ),
+)
+def transform_task() -> int:
+
+# --- TASK 3: load-task ---
+@task(
+    name="load-task",
+    retries=2,
+    retry_delay_seconds=15,
+    description="Consome transformed.licitacoes e persiste em Silver, SQLite e Gold",
+)
+def load_task() -> int:
+
+# --- FLOW PRINCIPAL ---
+@flow(
+    name="pipeline-licitei",
+    description=(
+        "Pipeline unificado Licitei -- extrai do PNCP, grava Bronze, "
+        "transforma para Silver e agrega KPIs no Gold."
+    ),
+    log_prints=True,
+)
+def pipeline_licitei(
+    data_inicial: str | None = None,
+    data_final: str | None = None,
+) -> None:
+
+----------------------------------------------------------------------
+4. SCHEDULE CONFIGURADO
+----------------------------------------------------------------------
+
+Modo de registro:
+    python orchestration/flows.py --serve
+
+Chamada de serve() em flows.py:
+    pipeline_licitei.serve(
+        name="pipeline-licitei-diario",
+        cron="0 6 * * *",
+        tags=["pipeline", "pncp", "licitei", "medallion"],
+    )
+
+Interpretacao do cron "0 6 * * *":
+    Execucao diaria as 06:00 UTC
+    (equivale a 03:00 BRT / 04:00 BRST)
+
+----------------------------------------------------------------------
+5. CONFIRMACAO VIA API PREFECT (http://localhost:4200/api)
+----------------------------------------------------------------------
+
+>>> POST /api/flows/filter
+[
+  {
+    "id": "d0db5fa9-e8fb-482b-b493-7a340dc69739",
+    "created": "2026-06-15T16:47:10.570625Z",
+    "updated": "2026-06-15T16:47:10.570625Z",
+    "name": "pipeline-licitei",
+    "tags": [],
+    "labels": {}
+  }
+]
+
+>>> POST /api/deployments/filter
+[
+  {
+    "id": "36dfd747-5cf4-4870-ac6a-26fea984c124",
+    "created": "2026-06-15T16:47:10.603859Z",
+    "updated": "2026-06-15T16:47:10.600770Z",
+    "name": "pipeline-licitei-diario",
+    "version": "c2e0460c",
+    "description": "Pipeline unificado Licitei -- extrai do PNCP, grava Bronze, transforma para Silver e agrega KPIs no Gold.",
+    "flow_id": "d0db5fa9-e8fb-482b-b493-7a340dc69739",
+    "paused": false,
+    "schedules": [
+      {
+        "id": "8ed41462-8f63-4a9f-9db2-69ed07566a10",
+        "created": "2026-06-15T16:47:10.648662Z",
+        "deployment_id": "36dfd747-5cf4-4870-ac6a-26fea984c124",
+        "schedule": {
+          "cron": "0 6 * * *",
+          "timezone": null,
+          "day_or": true
+        },
+        "active": true
+      }
+    ],
+    "tags": ["pipeline", "pncp", "licitei", "medallion"],
+    "entrypoint": "orchestration\\flows.py:pipeline_licitei",
+    "status": "NOT_READY",
+    "enforce_parameter_schema": true
+  }
+]
+
+Nota: status "NOT_READY" e esperado -- significa que o deployment esta
+registrado mas nenhum worker pool esta ativo para executar runs agendados.
+O registro em si esta confirmado (id, cron, tags e entrypoint presentes).
+
+----------------------------------------------------------------------
+6. URL DO DEPLOYMENT NA UI LOCAL
+----------------------------------------------------------------------
+http://localhost:4200/deployments/deployment/36dfd747-5cf4-4870-ac6a-26fea984c124
+
+----------------------------------------------------------------------
+7. COMANDO PARA DISPARAR UM RUN MANUAL
+----------------------------------------------------------------------
+prefect deployment run 'pipeline-licitei/pipeline-licitei-diario'
+
+======================================================================
+STATUS: SUCESSO -- Flow registrado, deployment ativo, cron configurado
+======================================================================
