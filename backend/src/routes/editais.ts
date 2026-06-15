@@ -83,7 +83,8 @@ export const editaisRoutes = new Elysia({ prefix: '/editais' })
           page: pageNum,
           pages: Math.ceil(total / limitNum),
         }
-      } catch {
+      } catch (err) {
+        console.error('[editais] erro na query:', err)
         set.status = 500
         return { error: 'Erro ao buscar editais' }
       }
