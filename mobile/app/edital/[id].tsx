@@ -11,6 +11,7 @@ import {
   Animated,
   ActivityIndicator,
   Alert,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -21,10 +22,18 @@ import {
   Building2,
   Target,
   CheckCircle2,
+  ExternalLink,
 } from "lucide-react-native";
 import api from "../../src/services/api";
 
 const MEI_EXCLUSIVO_TETO = 80000;
+
+function buildPncpUrl(numero: string): string | null {
+  const m = /^(\d{14})-\d+-(\d+)\/(\d{4})$/.exec(numero);
+  if (!m) return null;
+  const [, cnpj, seq, ano] = m;
+  return `https://pncp.gov.br/app/editais/${cnpj}/${ano}/${seq}`;
+}
 
 function formatBRL(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -116,6 +125,7 @@ export default function EditalDetailScreen() {
     );
   }
 
+  const pncpUrl = buildPncpUrl(edital.numero_controle_pncp);
   const exclusivoMEI = edital.valor_total_estimado <= MEI_EXCLUSIVO_TETO;
   const match =
     edital.valor_total_estimado <= 40000
@@ -180,6 +190,11 @@ export default function EditalDetailScreen() {
               label="Data limite"
               value={formatDate(edital.data_encerramento_proposta)}
             />
+            <SummaryRow
+              icon={FileCheck2}
+              label="Nº Controle PNCP"
+              value={edital.numero_controle_pncp}
+            />
           </View>
 
           {!jaParticipando && (
@@ -204,6 +219,17 @@ export default function EditalDetailScreen() {
             <CheckCircle2 size={16} color="#0F172A" />
             <Text style={styles.checklistButtonText}>Ver Checklist de Habilitação</Text>
           </TouchableOpacity>
+
+          {pncpUrl && (
+            <TouchableOpacity
+              style={styles.pncpButton}
+              onPress={() => Linking.openURL(pncpUrl)}
+              activeOpacity={0.85}
+            >
+              <ExternalLink size={16} color="#0F172A" />
+              <Text style={styles.pncpButtonText}>Ver no PNCP</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
 
@@ -359,6 +385,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
   },
   checklistButtonText: { color: "#0F172A", fontWeight: "bold", fontSize: 15 },
+  pncpButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 16,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: "#0F172A",
+    backgroundColor: "#FFF",
+  },
+  pncpButtonText: { color: "#0F172A", fontWeight: "bold", fontSize: 15 },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(15, 23, 42, 0.9)",
