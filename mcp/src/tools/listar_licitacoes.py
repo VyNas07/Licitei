@@ -1,5 +1,6 @@
 """Tool MCP: lista licitações com contagem total de resultados."""
 
+import re
 from datetime import datetime
 
 from loguru import logger
@@ -24,6 +25,7 @@ _CAMPOS = {
 def listar_licitacoes(
     termo: str,
     uf: str | None = None,
+    valor_min: float | None = None,
     valor_max: float | None = None,
     limite: int = 50,
     config: Config | None = None,
@@ -37,6 +39,7 @@ def listar_licitacoes(
     Args:
         termo: Palavra-chave para buscar no objeto da licitação (ex: "limpeza").
         uf: Sigla do estado para filtrar (ex: "PE", "SP"). Opcional.
+        valor_min: Valor mínimo estimado em reais. Opcional.
         valor_max: Valor máximo estimado em reais. Opcional.
         limite: Quantidade máxima de resultados (padrão: 50, máximo: 200).
         config: Configurações do servidor. Injetado pelo servidor.
@@ -47,14 +50,21 @@ def listar_licitacoes(
     assert config is not None, "Config não injetado — use o servidor MCP para chamar esta tool"
 
     limite = min(limite, 200)
-    query: dict = {"objeto_compra": {"$regex": termo, "$options": "i"}}
+    padrao = rf"\b{re.escape(termo)}\b"
+    query: dict = {"objeto_compra": {"$regex": padrao, "$options": "i"}}
 
     if uf:
         query["uf"] = uf.upper()
-    if valor_max is not None:
-        query["valor_total_estimado"] = {"$lte": valor_max}
 
-    logger.debug(f"listar_licitacoes | termo={termo!r} | uf={uf} | limite={limite}")
+    filtro_valor: dict = {}
+    if valor_min is not None:
+        filtro_valor["$gte"] = valor_min
+    if valor_max is not None:
+        filtro_valor["$lte"] = valor_max
+    if filtro_valor:
+        query["valor_total_estimado"] = filtro_valor
+
+    logger.debug(f"listar_licitacoes | termo={termo!r} | uf={uf} | valor_min={valor_min} | valor_max={valor_max} | limite={limite}")
 
     with MongoManager(config.mongo_uri, config.mongo_db_name, config.mongo_collection) as mongo:
         total = mongo.collection.count_documents(query)

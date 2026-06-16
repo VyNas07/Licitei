@@ -1,0 +1,64 @@
+======================================================================
+EVIDENCIA DLQ -- Pipeline Licitei
+======================================================================
+Data          : 2026-06-15 21:11:04 UTC
+Topico origem : raw.licitacoes
+Topico DLQ    : transformed.licitacoes.dlq
+======================================================================
+
+MENSAGEM VENENOSA ENVIADA:
+  numero_controle_pncp : POISON-DEMO-001
+  objeto_compra        : Registro de teste — campos obrigatorios ausentes
+  Campos omitidos      : modalidade_nome, situacao_compra_nome, orgao_cnpj,
+                         orgao_razao_social, uf, municipio, valor_total_estimado
+  Erro esperado        : pydantic_core.ValidationError (campos obrigatorios ausentes)
+
+  Status publicacao: OK
+
+TRANSFORM WORKER -- SAIDA (ultimas linhas capturadas):
+2026-06-15 18:11:05 | INFO     | src.bronze.writer:48 — BronzeWriter inicializado | base_path=C:\Users\vykto\Documents\GitHub\Licitei\pipeline\data\bronze
+2026-06-15 18:11:05 | INFO     | __main__:229 — Transform Worker iniciado | consumindo=raw.licitacoes | publicando=transformed.licitacoes
+2026-06-15 18:11:08 | WARNING  | __main__:266 — Payload bruto inválido | id=POISON-DEMO-001 | 8 validation errors for PNCPRawContract
+valor_total_estimado
+  Field required [type=missing, input_value={'numero_controle_pncp': ... obrigatorios ausentes'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/missing
+modalidade_nome
+  Field required [type=missing, input_value={'numero_controle_pncp': ... obrigatorios ausentes'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/missing
+situacao_compra_nome
+  Field required [type=missing, input_value={'numero_controle_pncp': ... obrigatorios ausentes'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/missing
+orgao_cnpj
+  Field required [type=missing, input_value={'numero_controle_pncp': ... obrigatorios ausentes'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/missing
+orgao_razao_social
+  Field required [type=missing, input_value={'numero_controle_pncp': ... obrigatorios ausentes'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/missing
+uf
+  Field required [type=missing, input_value={'numero_controle_pncp': ... obrigatorios ausentes'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/missing
+municipio
+  Field required [type=missing, input_value={'numero_controle_pncp': ... obrigatorios ausentes'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/missing
+extraido_em
+  Field required [type=missing, input_value={'numero_controle_pncp': ... obrigatorios ausentes'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/missing
+    Field required [type=missing, input_value={'numero_controle_pncp': ... obrigatorios ausentes'}, input_type=dict]
+      For further information visit https://errors.pydantic.dev/2.13/v/missing
+  municipio
+    Field required [type=missing, input_value={'numero_controle_pncp': ... obrigatorios ausentes'}, input_type=dict]
+      For further information visit https://errors.pydantic.dev/2.13/v/missing
+  extraido_em
+    Field required [type=missing, input_value={'numero_controle_pncp': ... obrigatorios ausentes'}, input_type=dict]
+      For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+MENSAGENS NO DLQ (transformed.licitacoes.dlq):
+  numero_controle_pncp : POISON-DEMO-001
+  falhou_em            : 2026-06-15T21:11:08.411063+00:00
+  erro (resumo)        : Traceback (most recent call last): |   File "C:\Users\vykto\Documents\GitHub\Licitei\pipeline\workers\transform_worker.py", line 264, in consumir |     contrato_raw = PNCPRawContract(**raw_payload)
+
+======================================================================
+STATUS: SUCESSO -- registro malformado capturado e descartado no DLQ
+Mensagens no DLQ lidas : 1
+POISON-DEMO-001 no DLQ : SIM
+======================================================================

@@ -18,6 +18,7 @@ export const authPlugin = new Elysia({ name: 'auth' })
     const { data: { user }, error } = await supabase.auth.getUser(token)
 
     if (error || !user) {
+      console.error('[auth] token inválido:', error?.message)
       set.status = 401
       throw new Error('Token inválido ou expirado')
     }
