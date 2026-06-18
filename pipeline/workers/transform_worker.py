@@ -172,6 +172,30 @@ def _publicar_dlq(
     producer.produce(topico_dlq, value=payload, on_delivery=_delivery_report)
 
 
+def _log_schema_drift(
+    exc: ValidationError,
+    payload: dict,
+    campos_contrato: set[str],
+    numero_controle: str,
+    afetados: int,
+) -> None:
+    """Loga desvio de esquema com prefixo [SCHEMA_DRIFT] estruturado."""
+    erros = exc.errors()
+    ausentes = [str(e["loc"][0]) for e in erros if e["type"] == "missing"]
+    incompativeis = [str(e["loc"][0]) for e in erros if e["type"] != "missing"]
+    extras = [k for k in payload if k not in campos_contrato]
+
+    partes = [f"[SCHEMA_DRIFT] id={numero_controle} | afetados={afetados}"]
+    if ausentes:
+        partes.append(f"ausentes={','.join(ausentes)}")
+    if incompativeis:
+        partes.append(f"tipo_errado={','.join(incompativeis)}")
+    if extras:
+        partes.append(f"extras={','.join(extras)}")
+
+    logger.warning(" | ".join(partes))
+
+
 def _flush_e_commit(
     batch: list,
     writer: BronzeWriter,
@@ -262,10 +286,14 @@ def consumir(config=None) -> int:
             # 1. Valida o dado bruto
             try:
                 contrato_raw = PNCPRawContract(**raw_payload)
-            except (ValidationError, Exception) as exc:
-                logger.warning(
-                    f"Payload bruto inválido | id={numero_controle} | {exc}"
-                )
+            except ValidationError as exc:
+                total_invalidos += 1
+                _log_schema_drift(exc, raw_payload, set(PNCPRawContract.model_fields), numero_controle, total_invalidos)
+                _publicar_dlq(producer, topico_dlq, numero_controle, traceback.format_exc())
+                _flush_e_commit(batch_bronze, bronze_writer, consumer, "validacao-erro")
+                continue
+            except Exception as exc:
+                logger.warning(f"Payload bruto inválido — erro inesperado | id={numero_controle} | {exc}")
                 total_invalidos += 1
                 _publicar_dlq(producer, topico_dlq, numero_controle, traceback.format_exc())
                 _flush_e_commit(batch_bronze, bronze_writer, consumer, "validacao-erro")
@@ -283,10 +311,14 @@ def consumir(config=None) -> int:
             try:
                 transformado = _transformar(raw_payload, processado_em)
                 silver = EditaisSilverContract(**transformado)
-            except (ValidationError, Exception) as exc:
-                logger.warning(
-                    f"Falha na transformação | id={numero_controle} | {exc}"
-                )
+            except ValidationError as exc:
+                total_dlq += 1
+                _log_schema_drift(exc, transformado, set(EditaisSilverContract.model_fields), numero_controle, total_dlq)
+                _publicar_dlq(producer, topico_dlq, numero_controle, traceback.format_exc())
+                _flush_e_commit(batch_bronze, bronze_writer, consumer, "transform-erro")
+                continue
+            except Exception as exc:
+                logger.warning(f"Falha na transformação — erro inesperado | id={numero_controle} | {exc}")
                 total_dlq += 1
                 _publicar_dlq(producer, topico_dlq, numero_controle, traceback.format_exc())
                 _flush_e_commit(batch_bronze, bronze_writer, consumer, "transform-erro")

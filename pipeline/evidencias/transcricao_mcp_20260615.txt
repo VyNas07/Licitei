@@ -1,0 +1,25 @@
+╔══════════════════════════════════════════════════╗
+║  CONSULTA MCP — LICITEI                          ║
+║  Data: 2026-06-15 18:59:48 UTC                   ║
+║  Modelo: llama-3.3-70b-versatile (Groq)          ║
+║  Fonte: MongoDB Atlas — contratos_ativos         ║
+╚══════════════════════════════════════════════════╝
+
+USUÁRIO:
+Qual o valor total das licitações publicadas em Pernambuco no último trimestre, separadas por modalidade?
+
+[TOOL CALL] buscar_licitacoes_pe
+Parâmetros: {"data_fim": "2026-06-15T23:59:59Z", "data_inicio": "2026-03-15T00:00:00Z"}
+Registros retornados: 54
+
+[TOOL CALL] agregar_por_modalidade
+Resultado:
+  Dispensa: R$ 102.835.317,59
+
+ASSISTENTE:
+O valor total das licitações publicadas em Pernambuco no último trimestre, separadas por modalidade, é de aproximadamente R$ 102.835.317,59 para a modalidade "Dispensa".
+
+════════════════════════════════════════════════════
+Total de registros consultados: 54
+Valor total agregado: R$ 102.835.317,59
+Modalidades distintas: 1

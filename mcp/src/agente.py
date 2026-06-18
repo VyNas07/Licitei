@@ -63,20 +63,24 @@ def _criar_ferramentas(config: Config) -> list:
     def buscar_licitacoes(
         termo: str,
         uf: str | None = None,
+        valor_min: float | None = None,
         valor_max: float | None = None,
         limite: int | str = 10,
     ) -> str:
         """Busca licitações públicas por palavra-chave no objeto da compra.
 
         Use quando o usuário quiser encontrar licitações por ramo, serviço ou produto.
+        Para faixas de valor (ex: "de 5 mil a 15 mil"), passe valor_min e valor_max juntos.
+        Prefira termos completos em vez de siglas curtas (ex: 'informática' em vez de 'TI').
 
         Args:
-            termo: Palavra-chave para buscar (ex: 'limpeza', 'TI', 'obras').
+            termo: Palavra-chave para buscar (ex: 'limpeza', 'informática', 'obras').
             uf: Sigla do estado para filtrar (ex: 'PE', 'SP'). Opcional.
+            valor_min: Valor mínimo estimado em reais. Opcional.
             valor_max: Valor máximo estimado em reais. Opcional.
             limite: Quantidade máxima de resultados (padrão: 10, máximo: 50).
         """
-        result = _buscar(termo=termo, uf=uf, valor_max=valor_max, limite=int(limite), config=config)
+        result = _buscar(termo=termo, uf=uf, valor_min=valor_min, valor_max=valor_max, limite=int(limite), config=config)
         return json.dumps(result, ensure_ascii=False, default=str)
 
     @tool
@@ -149,6 +153,7 @@ def _criar_ferramentas(config: Config) -> list:
     def listar_licitacoes(
         termo: str,
         uf: str | None = None,
+        valor_min: float | None = None,
         valor_max: float | None = None,
         limite: int | str = 50,
     ) -> str:
@@ -161,13 +166,14 @@ def _criar_ferramentas(config: Config) -> list:
         "todas as licitações" ou "quantas licitações existem".
 
         Args:
-            termo: Palavra-chave para buscar (ex: 'limpeza', 'TI', 'obras').
+            termo: Palavra-chave para buscar (ex: 'limpeza', 'informática', 'obras').
             uf: Sigla do estado para filtrar (ex: 'PE', 'SP'). Opcional.
+            valor_min: Valor mínimo estimado em reais. Opcional.
             valor_max: Valor máximo estimado em reais. Opcional.
             limite: Quantidade máxima de resultados (padrão: 50, máximo: 200).
         """
         result = _listar_licitacoes(
-            termo=termo, uf=uf, valor_max=valor_max, limite=int(limite), config=config
+            termo=termo, uf=uf, valor_min=valor_min, valor_max=valor_max, limite=int(limite), config=config
         )
         return json.dumps(result, ensure_ascii=False, default=str)
 

@@ -18,6 +18,7 @@ import api from '../../src/services/api';
 
 import { Footer } from '../../src/components/landing/Footer';
 import { AuthHeader } from '../../src/components/auth/AuthHeader';
+import { PasswordRequirements, senhaValida } from '../../src/components/auth/PasswordRequirements';
 
 function formatCnpj(v: string) {
   const d = v.replace(/\D/g, "").slice(0, 14);
@@ -35,11 +36,17 @@ export default function Cadastro() {
   const [uf, setUf] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [senhaDigitada, setSenhaDigitada] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleCadastro() {
     if (!email || !senha || !nome || !cnpj || !uf) {
       Alert.alert('Atenção', 'Por favor, preencha todos os campos.');
+      return;
+    }
+
+    if (!senhaValida(senha)) {
+      Alert.alert('Senha inválida', 'Sua senha não atende todos os requisitos de segurança.');
       return;
     }
 
@@ -183,18 +190,22 @@ export default function Cadastro() {
                   <Ionicons name="lock-closed-outline" size={18} color="#94A3B8" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 8 caracteres"
                     secureTextEntry
                     value={senha}
-                    onChangeText={setSenha}
+                    onChangeText={(text) => {
+                      setSenha(text);
+                      if (!senhaDigitada && text.length > 0) setSenhaDigitada(true);
+                    }}
                   />
                 </View>
+                {senhaDigitada && <PasswordRequirements senha={senha} />}
               </View>
 
-              <TouchableOpacity 
-                style={styles.submitButton} 
+              <TouchableOpacity
+                style={[styles.submitButton, (!senhaValida(senha) || loading) && styles.submitButtonDisabled]}
                 onPress={handleCadastro}
-                disabled={loading}
+                disabled={!senhaValida(senha) || loading}
               >
                 {loading ? (
                   <ActivityIndicator color="#FFF" />
@@ -247,6 +258,7 @@ const styles = StyleSheet.create({
   infoText: { flex: 1, fontSize: 11, color: '#1E3A8A', lineHeight: 16 },
 
   submitButton: { backgroundColor: '#0F172A', height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  submitButtonDisabled: { backgroundColor: '#94A3B8' },
   submitButtonText: { color: '#FFF', fontSize: 14, fontWeight: '600' },
 
   footerText: { textAlign: 'center', fontSize: 12, color: '#64748B', marginTop: 20 },
