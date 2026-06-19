@@ -2,8 +2,10 @@
 
 import re
 from datetime import datetime
+from typing import Optional
 
 from loguru import logger
+from pydantic import Field
 
 from src.config import Config
 from src.db import MongoManager
@@ -23,21 +25,38 @@ _CAMPOS = {
 
 
 def buscar_licitacoes(
-    termo: str,
-    uf: str | None = None,
-    valor_min: float | None = None,
-    valor_max: float | None = None,
+    termo: Optional[str] = Field(
+        default=None,
+        description=(
+            "Palavra-chave para buscar no campo objeto_compra (regex, case-insensitive). "
+            "OMITA este campo quando o usuário não especificou assunto — "
+            "a busca retornará editais sem filtro de texto."
+        ),
+    ),
+    uf: Optional[str] = Field(
+        default=None,
+        description="Sigla do estado para filtrar (ex: 'PE', 'SP'). Omita se o usuário não especificou estado.",
+    ),
+    valor_min: Optional[float] = Field(
+        default=None,
+        description="Valor mínimo estimado em reais. Omita se o usuário não especificou valor mínimo.",
+    ),
+    valor_max: Optional[float] = Field(
+        default=None,
+        description="Valor máximo estimado em reais. Omita se o usuário não especificou valor máximo.",
+    ),
     limite: int = 10,
     config: Config | None = None,
 ) -> list[dict]:
-    """Busca licitações públicas no banco de dados por palavra-chave.
+    """Busca licitações públicas no banco de dados.
 
     Realiza busca textual no campo objeto_compra da licitação. Pode ser filtrada
-    por estado (UF) e faixa de valor estimado.
+    por estado (UF) e faixa de valor estimado. Quando nenhum filtro é fornecido,
+    retorna licitações quaisquer do banco.
 
     Args:
-        termo: Palavra-chave para buscar no objeto da licitação (ex: "limpeza", "informática").
-        uf: Sigla do estado para filtrar (ex: "PE", "SP"). Opcional.
+        termo: Palavra-chave para buscar no objeto da licitação. Opcional.
+        uf: Sigla do estado para filtrar. Opcional.
         valor_min: Valor mínimo estimado em reais. Opcional.
         valor_max: Valor máximo estimado em reais. Opcional.
         limite: Quantidade máxima de resultados (padrão: 10, máximo: 50).
@@ -49,19 +68,16 @@ def buscar_licitacoes(
     assert config is not None, "Config não injetado — use o servidor MCP para chamar esta tool"
 
     limite = min(limite, 50)
-    padrao = rf"\b{re.escape(termo)}\b"
-    query: dict = {"objeto_compra": {"$regex": padrao, "$options": "i"}}
+    query: dict = {}
 
+    if termo:
+        query["objeto_compra"] = {"$regex": rf"\b{re.escape(termo)}\b", "$options": "i"}
     if uf:
         query["uf"] = uf.upper()
-
-    filtro_valor: dict = {}
     if valor_min is not None:
-        filtro_valor["$gte"] = valor_min
+        query.setdefault("valor_total_estimado", {})["$gte"] = valor_min
     if valor_max is not None:
-        filtro_valor["$lte"] = valor_max
-    if filtro_valor:
-        query["valor_total_estimado"] = filtro_valor
+        query.setdefault("valor_total_estimado", {})["$lte"] = valor_max
 
     logger.debug(f"buscar_licitacoes | termo={termo!r} | uf={uf} | valor_min={valor_min} | valor_max={valor_max} | limite={limite}")
 
@@ -74,5 +90,5 @@ def buscar_licitacoes(
                 doc["data_encerramento_proposta"] = enc.isoformat()
             resultados.append(doc)
 
-    logger.info(f"buscar_licitacoes | {len(resultados)} resultado(s) para {termo!r}")
+    logger.info(f"buscar_licitacoes | {len(resultados)} resultado(s) para termo={termo!r}")
     return resultados

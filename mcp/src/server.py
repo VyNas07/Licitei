@@ -227,8 +227,21 @@ async def chat_handler(request: Request) -> JSONResponse:
 
         return JSONResponse({"resposta": resposta, "cache": False})
     except Exception as exc:
+        err_str = str(exc)
+        if "rate_limit_exceeded" in err_str or "413" in err_str or "tokens" in err_str.lower():
+            logger.warning(f"Rate limit Groq | query={query!r} | {exc}")
+            return JSONResponse(
+                {
+                    "resposta": (
+                        "⚠️ O assistente atingiu o limite de tokens por minuto do provedor de IA. "
+                        "Aguarde alguns segundos e tente novamente com uma pergunta mais específica."
+                    ),
+                    "cache": False,
+                },
+                status_code=200,
+            )
         logger.exception(f"Erro no /chat | query={query!r}")
-        return JSONResponse({"erro": str(exc)}, status_code=500)
+        return JSONResponse({"erro": err_str}, status_code=500)
 
 
 # ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 import asyncio
 import json
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
@@ -22,20 +22,46 @@ from src.tools.listar_documentos import listar_documentos as _listar
 from src.tools.listar_licitacoes import listar_licitacoes as _listar_licitacoes
 from src.tools.resumir_edital import resumir_edital as _resumir
 
-_SYSTEM_PROMPT = (
-    "Você é LicIA, uma assistente especializada em licitações públicas brasileiras "
-    "focada em ajudar Microempreendedores Individuais (MEIs) a encontrar oportunidades. "
-    "Use as ferramentas disponíveis somente quando o usuário pedir explicitamente informações "
-    "sobre licitações: buscar, listar, resumir, detalhar, gerar checklist ou listar documentos. "
-    "Para saudações, perguntas gerais ou conversas casuais, responda diretamente sem chamar nenhuma ferramenta. "
-    "Nunca chame uma ferramenta para responder a 'olá', 'oi', 'tudo bem' ou expressões similares. "
-    "Responda sempre em português, de forma clara e objetiva. "
-    "Ao apresentar resultados de licitações, destaque o objeto da compra, o órgão responsável, "
-    "o valor estimado e o prazo de encerramento. "
-    "Cite a fonte ao final de cada licitação no formato: "
-    "'Fonte: PNCP — [numero_controle_pncp] | [orgao_razao_social]'. "
-    "Quando precisar chamar ferramentas, chame sempre uma por vez e aguarde o resultado antes de chamar a próxima."
-)
+_SYSTEM_PROMPT = """Você é LicIA, uma assistente especializada em licitações públicas brasileiras,
+focada em ajudar Microempreendedores Individuais (MEIs) a encontrar oportunidades.
+
+## Quando usar ferramentas
+
+Use ferramentas sempre que o usuário demonstrar qualquer interesse em licitações,
+editais ou compras públicas — mesmo que o pedido seja vago ou sem filtros.
+
+Exemplos que DEVEM acionar ferramentas:
+- "mostre um edital", "mostre qualquer licitação", "o que tem disponível?"
+- "me mostre 1 edital aleatório"
+- "quais licitações existem?"
+
+Exemplos que NÃO devem acionar ferramentas:
+- Saudações: "olá", "oi", "tudo bem"
+- Perguntas gerais sem relação com licitações: "o que você faz?"
+
+## Regras obrigatórias para uso das ferramentas
+
+1. NUNCA invente parâmetros. Se o usuário não informou termo de busca,
+   UF, valor mínimo ou máximo — omita esses campos. Não os invente.
+
+2. Para pedidos vagos sem palavra-chave ("mostre qualquer edital",
+   "mostre 1 edital", "o que tem?"), chame `listar_licitacoes`
+   sem o campo `termo`. Isso retorna editais sem filtro de assunto.
+
+3. Chame sempre uma ferramenta por vez. Aguarde o resultado antes
+   de chamar a próxima.
+
+4. Se uma busca retornar vazio, informe honestamente e sugira
+   que o usuário tente outro termo — não tente outro termo por conta própria.
+
+## Formato de resposta
+
+- Responda sempre em português, de forma clara e objetiva.
+- Ao apresentar licitações, destaque: objeto da compra, órgão responsável,
+  valor estimado e prazo de encerramento.
+- Cite a fonte ao final de cada licitação:
+  "Fonte: PNCP — [numero_controle_pncp] | [orgao_razao_social]"
+"""
 
 
 def _criar_llm(config: Config):
@@ -61,7 +87,7 @@ def _criar_ferramentas(config: Config) -> list:
 
     @tool
     def buscar_licitacoes(
-        termo: str,
+        termo: Optional[str] = None,
         uf: str | None = None,
         valor_min: float | None = None,
         valor_max: float | None = None,
@@ -72,9 +98,10 @@ def _criar_ferramentas(config: Config) -> list:
         Use quando o usuário quiser encontrar licitações por ramo, serviço ou produto.
         Para faixas de valor (ex: "de 5 mil a 15 mil"), passe valor_min e valor_max juntos.
         Prefira termos completos em vez de siglas curtas (ex: 'informática' em vez de 'TI').
+        Quando o usuário NÃO especificou assunto, chame SEM o campo `termo` — NUNCA invente.
 
         Args:
-            termo: Palavra-chave para buscar (ex: 'limpeza', 'informática', 'obras').
+            termo: Palavra-chave para buscar (ex: 'limpeza', 'informática'). OMITA se o usuário não especificou assunto.
             uf: Sigla do estado para filtrar (ex: 'PE', 'SP'). Opcional.
             valor_min: Valor mínimo estimado em reais. Opcional.
             valor_max: Valor máximo estimado em reais. Opcional.
@@ -151,29 +178,29 @@ def _criar_ferramentas(config: Config) -> list:
 
     @tool
     def listar_licitacoes(
-        termo: str,
+        termo: Optional[str] = None,
         uf: str | None = None,
         valor_min: float | None = None,
         valor_max: float | None = None,
-        limite: int | str = 50,
+        limite: int | str = 5,
     ) -> str:
-        """Lista todas as licitações correspondentes a uma busca, com contagem total.
+        """Lista licitações com contagem total de resultados.
 
-        Use quando o usuário quiser ver uma lista abrangente de licitações ou
-        quiser saber quantas licitações existem para um tema. Retorna o total
-        real encontrado e até 200 resultados.
-        Prefira esta tool sobre buscar_licitacoes quando o usuário pedir
-        "todas as licitações" ou "quantas licitações existem".
+        Use para pedidos vagos ("mostre editais", "o que tem?", "mostre 1 edital")
+        ou quando o usuário quiser saber quantas licitações existem no banco.
+        Retorna o total real encontrado no banco e uma amostra dos resultados.
+        Prefira esta tool sobre buscar_licitacoes para pedidos sem palavra-chave.
+        Quando o usuário NÃO especificou assunto, chame SEM o campo `termo` — NUNCA invente.
 
         Args:
-            termo: Palavra-chave para buscar (ex: 'limpeza', 'informática', 'obras').
+            termo: Palavra-chave para buscar (ex: 'limpeza', 'obras'). OMITA se o usuário não especificou assunto.
             uf: Sigla do estado para filtrar (ex: 'PE', 'SP'). Opcional.
             valor_min: Valor mínimo estimado em reais. Opcional.
             valor_max: Valor máximo estimado em reais. Opcional.
-            limite: Quantidade máxima de resultados (padrão: 50, máximo: 200).
+            limite: Quantidade de resultados a exibir (padrão: 5, máximo: 10).
         """
         result = _listar_licitacoes(
-            termo=termo, uf=uf, valor_min=valor_min, valor_max=valor_max, limite=int(limite), config=config
+            termo=termo, uf=uf, valor_min=valor_min, valor_max=valor_max, limite=min(int(limite), 10), config=config
         )
         return json.dumps(result, ensure_ascii=False, default=str)
 
